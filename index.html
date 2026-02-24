@@ -1056,7 +1056,7 @@
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Send PDF to (your email)</label>
-        <input type="email" id="emailTo" placeholder="michael.hodnett@bioblue.com.au" value="michael.hodnett@bioblue.com.au">
+        <input type="email" id="emailTo" placeholder="michaelhodnett2022@gmail.com" value="michaelhodnett2022@gmail.com">
       </div>
       <div class="field-group">
         <label class="field-label">CC Email (optional)</label>
@@ -2998,7 +2998,7 @@ async function fillTestData() {
   // Auditor (already pre-filled but set again to be sure)
   document.getElementById('auditorName').value = 'Michael Hodnett';
   document.getElementById('auditorTitle').value = 'BDM';
-  document.getElementById('auditorEmail').value = 'michael.hodnett@bioblue.com.au';
+  document.getElementById('auditorEmail').value = 'michaelhodnett2022@gmail.com';
   document.getElementById('auditorMobile').value = '0427 670 726';
 
   updateProgress();
@@ -3074,7 +3074,8 @@ async function saveAndSend() {
   showToast('📧 Sending email...');
   try {
     const templateParams = {
-      to_email:      d.emailTo || 'michael.hodnett@bioblue.com.au',
+      to_email:      d.emailTo || 'michaelhodnett2022@gmail.com',
+      reply_to:      'michaelhodnett2022@gmail.com',
       customer_name: d.customerName,
       audit_date:    d.auditDate,
       address:       [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
@@ -3306,7 +3307,7 @@ function clearForm() {
   // Re-apply auditor profile and today's date
   document.getElementById('auditorName').value = 'Michael Hodnett';
   document.getElementById('auditorTitle').value = 'BDM';
-  document.getElementById('auditorEmail').value = 'michael.hodnett@bioblue.com.au';
+  document.getElementById('auditorEmail').value = 'michaelhodnett2022@gmail.com';
   document.getElementById('auditorMobile').value = '0427 670 726';
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
 
@@ -3343,7 +3344,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-fill auditor profile
   document.getElementById('auditorName').value = 'Michael Hodnett';
   document.getElementById('auditorTitle').value = 'BDM';
-  document.getElementById('auditorEmail').value = 'michael.hodnett@bioblue.com.au';
+  document.getElementById('auditorEmail').value = 'michaelhodnett2022@gmail.com';
   document.getElementById('auditorMobile').value = '0427 670 726';
 
   // Set today's date
