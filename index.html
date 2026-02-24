@@ -3136,8 +3136,29 @@ async function fillTestData() {
     photoGate: 'Y', photoTank: 'Y', nonCompComm: 'Y',
   };
 
+  // Bulk set Y/N answers using lightweight setter
   Object.entries(testAnswers).forEach(([id, val]) => {
-    setYN(id, val);
+    try {
+      // Set value directly without triggering all the update functions
+      ynValues[id] = val;
+      const item = document.getElementById('ynitem-' + id);
+      if (!item) return;
+      const q = Object.values(ynQuestions).flat().find(q => q.id === id);
+      const reverse = q?.reverseColor || false;
+      item.classList.remove('yes','no','na');
+      if (val === 'Y') item.classList.add(reverse ? 'no' : 'yes');
+      else if (val === 'N') item.classList.add(reverse ? 'yes' : 'no');
+      else if (val === 'NA') item.classList.add('na');
+      // Update button states
+      item.querySelectorAll('.yn-btn').forEach(b => {
+        b.classList.remove('active-y','active-n','active-na');
+        if (b.textContent === 'Y' && val === 'Y') b.classList.add('active-y');
+        else if (b.textContent === 'N' && val === 'N') b.classList.add('active-n');
+        else if (b.textContent === 'N/A' && val === 'NA') b.classList.add('active-na');
+      });
+    } catch(e) {
+      console.error('Failed to set YN for:', id, e);
+    }
   });
 
   // PPE checkboxes
