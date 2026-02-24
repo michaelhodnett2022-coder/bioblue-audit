@@ -1072,7 +1072,10 @@
       <span class="test-badge">🧪 TEST MODE</span>
       <span class="test-desc">Fills all fields with sample data for testing</span>
     </div>
-    <button class="test-btn" onclick="fillTestData()">⚡ Fill Test Data</button>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button class="test-btn" onclick="fillTestData()">⚡ Fill Test Data</button>
+      <button class="test-btn" style="background:white;color:var(--red);border:2px solid var(--red);" onclick="confirmClearForm()">🗑️ Clear Form</button>
+    </div>
   </div>
 
   <!-- SECTION A: SITE DETAILS -->
@@ -3026,7 +3029,6 @@ async function saveAndSend() {
 
   if (errors.length > 0) {
     errors.forEach(e => {
-      // Open section if collapsed
       const section = document.getElementById(e.section);
       if (section && section.style.display === 'none') {
         section.style.display = 'block';
@@ -3054,53 +3056,63 @@ async function saveAndSend() {
   }
 
   const d = collectFormData();
-  showToast('⏳ Generating files...');
-
-  const safeName = d.customerName.replace(/\s+/g,'_');
+  const safeName = d.customerName.replace(/[^a-zA-Z0-9]/g,'_');
   const safeDate = d.auditDate || new Date().toISOString().split('T')[0];
   const baseName = `BioBlue_Site_Audit_${safeName}_${safeDate}`;
 
-  // 1. Generate PDF as base64
+  // 1. Generate PDF
   showToast('⏳ Generating PDF...');
   const pdfDoc = await generatePDF(true);
-  const pdfBase64 = pdfDoc.output('datauristring');
 
-  // 2. Download PDF and Excel to device as backup
+  // 2. Get PDF as base64 string (data URI without the prefix)
+  const pdfDataUri = pdfDoc.output('datauristring');
+  const pdfBase64 = pdfDataUri.split('base64,')[1];
+
+  // 3. Download PDF and Excel to device as backup
   pdfDoc.save(baseName + '.pdf');
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise(r => setTimeout(r, 500));
   exportExcel(true);
+  await new Promise(r => setTimeout(r, 500));
 
-  // 3. Send via EmailJS with PDF attached
+  // 4. Send via EmailJS
   showToast('📧 Sending email...');
   try {
-    emailjs.init('VOzIE82-mIbrEcuPK');
-    await emailjs.send('service_f0s6xv5', 'template_55pubeo', {
-      to_email: d.emailTo || 'michael.hodnett@bioblue.com.au',
+    const templateParams = {
+      to_email:      d.emailTo || 'michael.hodnett@bioblue.com.au',
       customer_name: d.customerName,
-      audit_date: d.auditDate,
-      address: `${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}`,
-      auditor_name: d.auditorName || 'Michael Hodnett',
-      site_number: d.siteNumber || '—',
+      audit_date:    d.auditDate,
+      address:       [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
+      auditor_name:  d.auditorName || 'Michael Hodnett',
+      site_number:   d.siteNumber || '—',
       pdf_attachment: pdfBase64,
-      filename: baseName + '.pdf',
-    });
+    };
 
-    // 4. Save to localStorage
+    const response = await emailjs.send(
+      'service_f0s6xv5',
+      'template_55pubeo',
+      templateParams
+    );
+
+    console.log('EmailJS success:', response);
     try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
 
     document.getElementById('modalMsg').textContent =
-      `✅ Email sent successfully!\n\nPDF and Excel files have also been saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx`;
+      `✅ Email sent successfully to ${d.emailTo}!\n\nPDF and Excel also saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx`;
     document.getElementById('submitModal').classList.add('active');
     showToast('✅ Email sent!');
 
   } catch(err) {
     console.error('EmailJS error:', err);
-    // Fallback to mailto if EmailJS fails
+    const errMsg = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
+    console.error('EmailJS error detail:', errMsg);
+
+    // Fallback to mailto
     const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
     const body = encodeURIComponent(`Hi,\n\nPlease find attached the completed BioBlue Site Audit.\n\nCustomer: ${d.customerName}\nAddress: ${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}\nDate: ${d.auditDate}\nAuditor: ${d.auditorName}\n\nRegards,\n${d.auditorName}`);
     window.location.href = `mailto:${d.emailTo}?subject=${subject}&body=${body}`;
+
     document.getElementById('modalMsg').textContent =
-      `Email auto-send failed — your mail client has opened instead.\n\nFiles saved to device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease attach both files manually before sending.`;
+      `Email auto-send failed:\n${errMsg}\n\nYour mail client has opened instead.\n\nFiles saved to device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease attach both files manually.`;
     document.getElementById('submitModal').classList.add('active');
   }
 }
@@ -3315,6 +3327,9 @@ function showToast(msg) {
 // INIT
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialise EmailJS
+  emailjs.init('VOzIE82-mIbrEcuPK');
+
   renderYNGroups();
   updateAuditResults();
   initSignaturePad('sigAuditor');
