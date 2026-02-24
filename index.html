@@ -1056,7 +1056,7 @@
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Send PDF to (your email)</label>
-        <input type="email" id="emailTo" placeholder="michaelhodnett2022@gmail.com" value="michaelhodnett2022@gmail.com">
+        <input type="email" id="emailTo" placeholder="michael.hodnett@bioblue.com.au" value="michael.hodnett@bioblue.com.au">
       </div>
       <div class="field-group">
         <label class="field-label">CC Email (optional)</label>
@@ -3074,7 +3074,7 @@ async function saveAndSend() {
   showToast('📧 Sending email...');
   try {
     const templateParams = {
-      to_email:      d.emailTo || 'michaelhodnett2022@gmail.com',
+      to_email:      d.emailTo || 'michael.hodnett@bioblue.com.au',
       reply_to:      'michaelhodnett2022@gmail.com',
       customer_name: d.customerName,
       audit_date:    d.auditDate,
