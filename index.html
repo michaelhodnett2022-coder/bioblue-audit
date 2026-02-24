@@ -3080,7 +3080,8 @@ async function fillTestData() {
   // Section A — select manual new customer as test
   const sel = document.getElementById('customerSelect');
   sel.value = 'new';
-  document.getElementById('newCustomerField').style.display = 'block';
+  sel.dispatchEvent(new Event('change'));
+  await new Promise(r => setTimeout(r, 50));
   document.getElementById('customerName').value = 'VIVA TEST SITE';
   document.getElementById('customerNameHidden').value = 'VIVA TEST SITE';
 
