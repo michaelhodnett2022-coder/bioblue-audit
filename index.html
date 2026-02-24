@@ -2509,10 +2509,7 @@ async function generatePDF(returnDoc=false) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   doc.viewerPreferences({ FitWindow: false }, true);
-  doc.internal.pageSize.width = 210;
   doc.setProperties({ title: 'BioBlue Site Audit' });
-  // Open at 100% zoom
-  doc.internal.write('/OpenAction [1 0 R /XYZ null null 1.0]');
   const d = collectFormData();
   const margin = 15;
   const pageW = 210;
