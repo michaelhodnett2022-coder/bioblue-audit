@@ -2421,12 +2421,19 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      // Read EXIF orientation
       getExifOrientation(dataUrl, (orientation) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         let w = img.naturalWidth;
         let h = img.naturalHeight;
+
+        // Aggressively resize to max 800px to keep PDF small for email
+        const MAX_PX = 800;
+        if (w > MAX_PX || h > MAX_PX) {
+          const scale = MAX_PX / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
 
         // For orientations 5-8, width and height are swapped
         if (orientation >= 5 && orientation <= 8) {
@@ -2446,14 +2453,15 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
           case 6: ctx.transform(0,1,-1,0,h,0); break;
           case 7: ctx.transform(0,-1,-1,0,h,w); break;
           case 8: ctx.transform(0,-1,1,0,0,w); break;
-          default: break; // orientation 1 = normal
+          default: break;
         }
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, w, h);
         ctx.restore();
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
+        // Quality 0.4 keeps file small enough for email while still clear on PDF
+        resolve(canvas.toDataURL('image/jpeg', 0.4));
       });
     };
-    img.onerror = () => resolve(dataUrl); // fallback to original
+    img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
 }
@@ -2500,6 +2508,11 @@ function getExifOrientation(dataUrl, callback) {
 async function generatePDF(returnDoc=false) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  doc.viewerPreferences({ FitWindow: false }, true);
+  doc.internal.pageSize.width = 210;
+  doc.setProperties({ title: 'BioBlue Site Audit' });
+  // Open at 100% zoom
+  doc.internal.write('/OpenAction [1 0 R /XYZ null null 1.0]');
   const d = collectFormData();
   const margin = 15;
   const pageW = 210;
