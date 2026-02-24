@@ -3064,10 +3064,6 @@ async function saveAndSend() {
   showToast('⏳ Generating PDF...');
   const pdfDoc = await generatePDF(true);
 
-  // 2. Get PDF as base64 string (data URI without the prefix)
-  const pdfDataUri = pdfDoc.output('datauristring');
-  const pdfBase64 = pdfDataUri.split('base64,')[1];
-
   // 3. Download PDF and Excel to device as backup
   pdfDoc.save(baseName + '.pdf');
   await new Promise(r => setTimeout(r, 500));
@@ -3084,13 +3080,22 @@ async function saveAndSend() {
       address:       [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
       auditor_name:  d.auditorName || 'Michael Hodnett',
       site_number:   d.siteNumber || '—',
-      pdf_attachment: pdfBase64,
     };
+
+    // Send PDF as a proper file attachment (not a variable)
+    const pdfBlob = pdfDoc.output('blob');
+    const pdfFile = new File([pdfBlob], baseName + '.pdf', { type: 'application/pdf' });
 
     const response = await emailjs.send(
       'service_f0s6xv5',
       'template_55pubeo',
-      templateParams
+      templateParams,
+      {
+        publicKey: 'VOzIE82-mIbrEcuPK',
+        blockHeadless: false,
+        limitRate: { throttle: 0 },
+        attachments: [pdfFile],
+      }
     );
 
     console.log('EmailJS success:', response);
