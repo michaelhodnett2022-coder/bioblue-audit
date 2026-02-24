@@ -857,15 +857,15 @@
             <select id="customerSelect" onchange="autoFillCustomer(this.value); updateProgress();" style="width:100%">
               <option value="">— Select existing customer —</option>
               <optgroup label="── Express Network ──">
-                <option value="2722">BAYSWATER (WA) — 2722</option>
-                <option value="2723">BIBRA LAKE — 2723</option>
-                <option value="6936">CANNING VALE — 6936</option>
-                <option value="2140">KARRATHA TRAVEL &amp; TRUCK (NEW) — 2140</option>
-                <option value="6932">KEWDALE — 6932</option>
-                <option value="2120">KWINANA BEACH — 2120</option>
-                <option value="6942">TOM PRICE — 6942</option>
-                <option value="6933">UPPER SWAN ROADHOUSE — 6933</option>
-                <option value="2123">WANGARA — 2123</option>
+                <option value="2722">VIVA BAYSWATER (WA) — 2722</option>
+                <option value="2723">VIVA BIBRA LAKE — 2723</option>
+                <option value="6936">VIVA CANNING VALE — 6936</option>
+                <option value="2140">VIVA KARRATHA TRAVEL &amp; TRUCK (NEW) — 2140</option>
+                <option value="6932">VIVA KEWDALE — 6932</option>
+                <option value="2120">VIVA KWINANA BEACH — 2120</option>
+                <option value="6942">VIVA TOM PRICE — 6942</option>
+                <option value="6933">VIVA UPPER SWAN ROADHOUSE — 6933</option>
+                <option value="2123">VIVA WANGARA — 2123</option>
               </optgroup>
               <option value="new">✏️ New / Unlisted Customer...</option>
             </select>
@@ -1834,15 +1834,15 @@ function exportExcel(silent=false) {
 // CUSTOMER DATABASE & AUTOFILL
 // =====================================================================
 const CUSTOMERS = {
-  '2722': { name:'BAYSWATER (WA)', siteNum:'2722', network:'Express', address:'CNR JACKSON ST AND COLLIER RD', suburb:'BAYSWATER', state:'WA', postcode:'6053', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2723': { name:'BIBRA LAKE', siteNum:'2723', network:'Express', address:'1 TIMBERYARD WAY', suburb:'BIBRA LAKE', state:'WA', postcode:'6163', tankVolume:'22800', safeFill:'18906', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6936': { name:'CANNING VALE', siteNum:'6936', network:'Express', address:'280 BANNISTER RD', suburb:'CANNING VALE', state:'WA', postcode:'6155', tankVolume:'20000', safeFill:'17000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2140': { name:'KARRATHA TRAVEL & TRUCK (NEW)', siteNum:'2140', network:'Express', address:'NORTH WEST COASTAL HIGHWAY', suburb:'KARRATHA', state:'WA', postcode:'6714', tankVolume:'20000', safeFill:'21264', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6932': { name:'KEWDALE', siteNum:'6932', network:'Express', address:'KEWDALE RD & ABERNETHY RD', suburb:'KEWDALE', state:'WA', postcode:'6105', tankVolume:'20600', safeFill:'20000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2120': { name:'KWINANA BEACH', siteNum:'2120', network:'Express', address:'4 BEACH STREET', suburb:'KWINANA BEACH', state:'WA', postcode:'6167', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6942': { name:'TOM PRICE', siteNum:'6942', network:'Express', address:'1 MINE RD (CNR PARABURDOO-TOM PRICE RD)', suburb:'TOM PRICE', state:'WA', postcode:'6751', tankVolume:'20000', safeFill:'19500', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6933': { name:'UPPER SWAN ROADHOUSE', siteNum:'6933', network:'Express', address:'1333 GREAT NORTHERN HWY', suburb:'UPPER SWAN', state:'WA', postcode:'6069', tankVolume:'20000', safeFill:'19400', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2123': { name:'WANGARA', siteNum:'2123', network:'Express', address:'LOT 311 1 NICHE PARADE', suburb:'WANGARA', state:'WA', postcode:'6065', tankVolume:'20000', safeFill:'19886', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2722': { name:'VIVA BAYSWATER (WA)', siteNum:'2722', network:'Express', address:'CNR JACKSON ST AND COLLIER RD', suburb:'BAYSWATER', state:'WA', postcode:'6053', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2723': { name:'VIVA BIBRA LAKE', siteNum:'2723', network:'Express', address:'1 TIMBERYARD WAY', suburb:'BIBRA LAKE', state:'WA', postcode:'6163', tankVolume:'22800', safeFill:'18906', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6936': { name:'VIVA CANNING VALE', siteNum:'6936', network:'Express', address:'280 BANNISTER RD', suburb:'CANNING VALE', state:'WA', postcode:'6155', tankVolume:'20000', safeFill:'17000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2140': { name:'VIVA KARRATHA TRAVEL & TRUCK (NEW)', siteNum:'2140', network:'Express', address:'NORTH WEST COASTAL HIGHWAY', suburb:'KARRATHA', state:'WA', postcode:'6714', tankVolume:'20000', safeFill:'21264', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6932': { name:'VIVA KEWDALE', siteNum:'6932', network:'Express', address:'KEWDALE RD & ABERNETHY RD', suburb:'KEWDALE', state:'WA', postcode:'6105', tankVolume:'20600', safeFill:'20000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2120': { name:'VIVA KWINANA BEACH', siteNum:'2120', network:'Express', address:'4 BEACH STREET', suburb:'KWINANA BEACH', state:'WA', postcode:'6167', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6942': { name:'VIVA TOM PRICE', siteNum:'6942', network:'Express', address:'1 MINE RD (CNR PARABURDOO-TOM PRICE RD)', suburb:'TOM PRICE', state:'WA', postcode:'6751', tankVolume:'20000', safeFill:'19500', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6933': { name:'VIVA UPPER SWAN ROADHOUSE', siteNum:'6933', network:'Express', address:'1333 GREAT NORTHERN HWY', suburb:'UPPER SWAN', state:'WA', postcode:'6069', tankVolume:'20000', safeFill:'19400', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2123': { name:'VIVA WANGARA', siteNum:'2123', network:'Express', address:'LOT 311 1 NICHE PARADE', suburb:'WANGARA', state:'WA', postcode:'6065', tankVolume:'20000', safeFill:'19886', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
 };
 
 function autoFillCustomer(siteNum) {
