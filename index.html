@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <style>
   :root {
@@ -565,7 +566,13 @@
   }
 
   /* ---- STICKY FOOTER ---- */
-  .sticky-footer {
+  .btn-clear {
+    background: white;
+    color: var(--red);
+    border: 2px solid var(--red);
+  }
+  .btn-clear:hover { background: var(--red-light); }
+
     position: fixed;
     bottom: 0;
     left: 0;
@@ -1532,8 +1539,9 @@
 
 <!-- STICKY FOOTER -->
 <div class="sticky-footer">
+  <button class="btn btn-clear btn-lg" onclick="confirmClearForm()">🗑️ Clear Form</button>
   <button class="btn btn-submit btn-lg" onclick="saveAndSend()" style="min-width:260px;">
-    💾 Save to Excel &amp; Send PDF
+    📧 Complete &amp; Send Audit
   </button>
 </div>
 
@@ -2882,43 +2890,49 @@ async function saveAndSend() {
   const safeDate = d.auditDate || new Date().toISOString().split('T')[0];
   const baseName = `BioBlue_Site_Audit_${safeName}_${safeDate}`;
 
-  // 1. Download Excel
+  // 1. Generate PDF as base64
+  showToast('⏳ Generating PDF...');
+  const pdfDoc = await generatePDF(true);
+  const pdfBase64 = pdfDoc.output('datauristring');
+
+  // 2. Download PDF and Excel to device as backup
+  pdfDoc.save(baseName + '.pdf');
+  await new Promise(r => setTimeout(r, 400));
   exportExcel(true);
 
-  // 2. Download PDF
-  await new Promise(r => setTimeout(r, 600)); // slight delay so both downloads register
-  const pdfDoc = await generatePDF(true);
-  pdfDoc.save(baseName + '.pdf');
+  // 3. Send via EmailJS with PDF attached
+  showToast('📧 Sending email...');
+  try {
+    emailjs.init('VOzIE82-mIbrEcuPK');
+    await emailjs.send('service_f0s6xv5', 'template_55pubeo', {
+      to_email: d.emailTo || 'michael.hodnett@bioblue.com.au',
+      customer_name: d.customerName,
+      audit_date: d.auditDate,
+      address: `${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}`,
+      auditor_name: d.auditorName || 'Michael Hodnett',
+      site_number: d.siteNumber || '—',
+      pdf_attachment: pdfBase64,
+      filename: baseName + '.pdf',
+    });
 
-  // 3. Open mail client
-  await new Promise(r => setTimeout(r, 600));
-  const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
-  const body = encodeURIComponent(
-`Hi,
+    // 4. Save to localStorage
+    try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
 
-Please find attached the completed BioBlue Bulk AdBlue® Site Audit:
+    document.getElementById('modalMsg').textContent =
+      `✅ Email sent successfully!\n\nPDF and Excel files have also been saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx`;
+    document.getElementById('submitModal').classList.add('active');
+    showToast('✅ Email sent!');
 
-Customer:  ${d.customerName}
-Address:   ${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}
-Date:      ${d.auditDate || 'Today'}
-Auditor:   ${d.auditorName || '—'}
-
-Two files are attached:
-  • ${baseName}.pdf  — Full audit report
-  • ${baseName}.xlsx — Data record
-
-Regards,
-${d.auditorName || 'BioBlue Auditor'}`
-  );
-  const cc = d.emailCc ? `&cc=${encodeURIComponent(d.emailCc)}` : '';
-  window.location.href = `mailto:${d.emailTo}?subject=${subject}&body=${body}${cc}`;
-
-  // 4. Save draft to localStorage as backup
-  try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
-
-  document.getElementById('modalMsg').textContent =
-    `Two files have been downloaded to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nYour email client is opening — please attach both files before sending.`;
-  document.getElementById('submitModal').classList.add('active');
+  } catch(err) {
+    console.error('EmailJS error:', err);
+    // Fallback to mailto if EmailJS fails
+    const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
+    const body = encodeURIComponent(`Hi,\n\nPlease find attached the completed BioBlue Site Audit.\n\nCustomer: ${d.customerName}\nAddress: ${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}\nDate: ${d.auditDate}\nAuditor: ${d.auditorName}\n\nRegards,\n${d.auditorName}`);
+    window.location.href = `mailto:${d.emailTo}?subject=${subject}&body=${body}`;
+    document.getElementById('modalMsg').textContent =
+      `Email auto-send failed — your mail client has opened instead.\n\nFiles saved to device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease attach both files manually before sending.`;
+    document.getElementById('submitModal').classList.add('active');
+  }
 }
 
 // =====================================================================
@@ -3047,8 +3061,19 @@ function loadDraft() {
   } catch(e) {}
 }
 
+function confirmClearForm() {
+  const customerName = getCustomerName();
+  const msg = customerName
+    ? `Clear all form data for "${customerName}"?\n\nThis cannot be undone.`
+    : 'Clear all form data and start a new audit?\n\nThis cannot be undone.';
+  if (confirm(msg)) {
+    clearForm();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('✅ Form cleared — ready for next audit');
+  }
+}
+
 function clearForm() {
-  if (!confirm('Clear all form data? This cannot be undone.')) return;
   document.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],textarea,select').forEach(el => {
     if (el.id !== 'emailTo') el.value = '';
   });
@@ -3059,27 +3084,51 @@ function clearForm() {
   renderPhotos();
   clearSig('sigAuditor','sigAuditorLabel');
   clearSig('sigRep','sigRepLabel');
+
+  // Reset customer dropdown
+  document.getElementById('customerSelect').selectedIndex = 0;
+  document.getElementById('newCustomerField').style.display = 'none';
+  document.getElementById('customerNameHidden').value = '';
+
+  // Reset tank volume
   document.getElementById('tankVolumeSelect').selectedIndex = 0;
   document.getElementById('tankVolume').style.display = 'none';
   document.getElementById('tankVolume').value = '';
+
+  // Reset PPE
   document.querySelectorAll('input[name="ppe"]').forEach(cb => cb.checked = false);
   document.getElementById('ppeOtherField').style.display = 'none';
   document.getElementById('ppeOtherText').value = '';
   document.getElementById('ppeDetails').value = '';
+
+  // Reset access hours
   document.getElementById('open24hrs').checked = false;
   document.getElementById('timeFields').classList.remove('hidden');
   document.getElementById('accessOpen').value = '';
   document.getElementById('accessClose').value = '';
   document.getElementById('accessRestrictions').value = '';
   document.getElementById('accessHours').value = '';
+
+  // Reset checkboxes
   document.getElementById('photoGateDone').checked = false;
   document.getElementById('photoTankDone').checked = false;
-  document.getElementById('keyCodeField').style.display='none';
-  document.getElementById('ppeField').style.display='none';
+  document.getElementById('keyCodeField').style.display = 'none';
+  document.getElementById('ppeField').style.display = 'none';
   document.getElementById('ncWarning').classList.remove('visible');
+
+  // Re-apply auditor profile and today's date
+  document.getElementById('auditorName').value = 'Michael Hodnett';
+  document.getElementById('auditorTitle').value = 'BDM';
+  document.getElementById('auditorEmail').value = 'michael.hodnett@bioblue.com.au';
+  document.getElementById('auditorMobile').value = '0427 670 726';
+  document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
+
+  // Clear localStorage draft
+  try { localStorage.removeItem('bioblue_draft'); } catch(e) {}
+
   updateProgress();
   updateComplianceBanner();
-  showToast('🔄 Form cleared');
+  updateAuditResults();
 }
 
 // =====================================================================
