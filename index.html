@@ -1433,7 +1433,7 @@
       <div class="section-header-icon">📸</div>
       <div class="section-header-text">
         <h2>E. Site Photos</h2>
-        <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0</span></p>
+        <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0/8</span></p>
       </div>
       <div class="section-toggle" id="togglePhotos">▼</div>
     </div>
@@ -1877,15 +1877,24 @@ function handleFileSelect(e) {
   e.target.value = '';
 }
 
+const MAX_PHOTOS = 8;
+
 function addPhoto(file) {
+  if (photos.length >= MAX_PHOTOS) {
+    showToast(`⚠️ Maximum ${MAX_PHOTOS} photos allowed for email delivery`);
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     const timestamp = new Date().toLocaleString('en-AU');
-    const idx = photos.length;
     photos.push({ dataUrl: e.target.result, caption: file.name, timestamp, file });
     renderPhotos();
     updateProgress();
-    showToast('📸 Photo added');
+    if (photos.length === MAX_PHOTOS) {
+      showToast(`📸 Photo added — maximum ${MAX_PHOTOS} photos reached`);
+    } else {
+      showToast(`📸 Photo added (${photos.length}/${MAX_PHOTOS})`);
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -1905,7 +1914,7 @@ function renderPhotos() {
     `;
     grid.appendChild(div);
   });
-  document.getElementById('photoCountBadge').textContent = photos.length;
+  document.getElementById('photoCountBadge').textContent = `${photos.length}/${MAX_PHOTOS}`;
 }
 
 function removePhoto(idx) {
@@ -2424,40 +2433,50 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
       getExifOrientation(dataUrl, (orientation) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        let w = img.naturalWidth;
-        let h = img.naturalHeight;
 
-        // Aggressively resize to max 800px to keep PDF small for email
+        // Determine if we need to swap dimensions (rotated 90 or 270)
+        const swap = orientation >= 5 && orientation <= 8;
+
+        // Use target dimensions to scale correctly
+        const srcW = swap ? img.naturalHeight : img.naturalWidth;
+        const srcH = swap ? img.naturalWidth : img.naturalHeight;
+
+        // Scale to fit target box maintaining aspect ratio
+        const scale = Math.min(targetW / srcW, targetH / srcH);
+        const drawW = Math.round(srcW * scale);
+        const drawH = Math.round(srcH * scale);
+
+        // Aggressively limit size for email
         const MAX_PX = 800;
-        if (w > MAX_PX || h > MAX_PX) {
-          const scale = MAX_PX / Math.max(w, h);
-          w = Math.round(w * scale);
-          h = Math.round(h * scale);
-        }
+        const finalW = Math.min(drawW, MAX_PX);
+        const finalH = Math.min(drawH, MAX_PX);
 
-        // For orientations 5-8, width and height are swapped
-        if (orientation >= 5 && orientation <= 8) {
-          canvas.width = h;
-          canvas.height = w;
+        if (swap) {
+          canvas.width = finalH;
+          canvas.height = finalW;
         } else {
-          canvas.width = w;
-          canvas.height = h;
+          canvas.width = finalW;
+          canvas.height = finalH;
         }
 
         ctx.save();
         switch (orientation) {
-          case 2: ctx.transform(-1,0,0,1,w,0); break;
-          case 3: ctx.transform(-1,0,0,-1,w,h); break;
-          case 4: ctx.transform(1,0,0,-1,0,h); break;
+          case 2: ctx.transform(-1,0,0,1,canvas.width,0); break;
+          case 3: ctx.transform(-1,0,0,-1,canvas.width,canvas.height); break;
+          case 4: ctx.transform(1,0,0,-1,0,canvas.height); break;
           case 5: ctx.transform(0,1,1,0,0,0); break;
-          case 6: ctx.transform(0,1,-1,0,h,0); break;
-          case 7: ctx.transform(0,-1,-1,0,h,w); break;
-          case 8: ctx.transform(0,-1,1,0,0,w); break;
+          case 6: ctx.transform(0,1,-1,0,canvas.height,0); break;
+          case 7: ctx.transform(0,-1,-1,0,canvas.height,canvas.width); break;
+          case 8: ctx.transform(0,-1,1,0,0,canvas.width); break;
           default: break;
         }
-        ctx.drawImage(img, 0, 0, w, h);
+
+        if (swap) {
+          ctx.drawImage(img, 0, 0, canvas.height, canvas.width);
+        } else {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
         ctx.restore();
-        // Quality 0.4 keeps file small enough for email while still clear on PDF
         resolve(canvas.toDataURL('image/jpeg', 0.4));
       });
     };
@@ -2508,8 +2527,6 @@ function getExifOrientation(dataUrl, callback) {
 async function generatePDF(returnDoc=false) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  doc.viewerPreferences({ FitWindow: false }, true);
-  doc.setProperties({ title: 'BioBlue Site Audit' });
   const d = collectFormData();
   const margin = 15;
   const pageW = 210;
@@ -2776,37 +2793,61 @@ async function generatePDF(returnDoc=false) {
 
   // ---- SECTION E: PHOTOS ----
   if (photos.length > 0) {
-    // Always start photos on a new page for clean layout
     doc.addPage();
     y = margin;
     sectionHeader('E. SITE PHOTOS');
 
-    // Fixed photo dimensions: 3 per row, portrait-safe small size
-    const gap = 5;
-    const photoW = (contentW - gap * 2) / 3;  // 3 per row
-    const photoH = photoW * 0.72;              // slightly less than square
+    const gap = 4;
     const captionH = 8;
-    const cellH = photoH + captionH + 3;
-
-    let col = 0;
-    let rowStartY = y;
 
     for (let i = 0; i < photos.length; i++) {
-      // Start new row
+      // Detect photo orientation before layout
+      const isPortrait = await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          // Check EXIF to determine true orientation
+          getExifOrientation(photos[i].dataUrl, orientation => {
+            // Orientations 5-8 mean the image is rotated 90°, so portrait/landscape swaps
+            const rotated = orientation >= 5 && orientation <= 8;
+            const naturallyPortrait = img.naturalHeight > img.naturalWidth;
+            resolve(rotated ? !naturallyPortrait : naturallyPortrait);
+          });
+        };
+        img.onerror = () => resolve(false);
+        img.src = photos[i].dataUrl;
+      });
+
+      let photoW, photoH, photosPerRow;
+      if (isPortrait) {
+        // Portrait: 2 per row, taller cells
+        photosPerRow = 2;
+        photoW = (contentW - gap) / 2;
+        photoH = photoW * 1.3;
+      } else {
+        // Landscape: 3 per row, wider cells
+        photosPerRow = 3;
+        photoW = (contentW - gap * 2) / 3;
+        photoH = photoW * 0.72;
+      }
+
+      const cellH = photoH + captionH + 3;
+
+      // Calculate column position based on index within same-orientation group
+      // Simple approach: each photo gets its own position check
+      const col = i % photosPerRow;
+
       if (col === 0) {
         checkPage(cellH + 6);
-        rowStartY = y;
+        if (i > 0) y += 4; // small gap between rows
       }
 
       const px = margin + col * (photoW + gap);
-      const py = rowStartY;
+      const py = y;
 
-      // Draw photo with EXIF rotation correction
       try {
         const corrected = await correctImageRotation(photos[i].dataUrl, photoW, photoH);
         doc.addImage(corrected, 'JPEG', px, py, photoW, photoH, undefined, 'MEDIUM');
       } catch(e) {
-        // Fallback: draw placeholder box
         doc.setFillColor(...GRAY_LIGHT);
         doc.rect(px, py, photoW, photoH, 'F');
         doc.setTextColor(...GRAY);
@@ -2825,16 +2866,10 @@ async function generatePDF(returnDoc=false) {
       doc.text(capLine1[0], px + 2, py + photoH + 4);
       doc.text(capLine2, px + 2, py + photoH + 7);
 
-      col++;
-      if (col >= 3) {
-        col = 0;
-        y = rowStartY + cellH + 4;
+      // Advance y position after last column in row
+      if (col === photosPerRow - 1 || i === photos.length - 1) {
+        y += photoH + captionH + 3 + 4;
       }
-    }
-
-    // Finish last partial row
-    if (col > 0) {
-      y = rowStartY + cellH + 4;
     }
     y += 4;
   }
