@@ -854,7 +854,7 @@
         <div class="field-group">
           <label class="field-label required">Customer / Business Name</label>
           <div class="customer-select-wrap">
-            <select id="customerSelect" onchange="autoFillCustomer(this.value)" style="width:100%">
+            <select id="customerSelect" onchange="autoFillCustomer(this.value); updateProgress();" style="width:100%">
               <option value="">— Select existing customer —</option>
               <optgroup label="── Express Network ──">
                 <option value="2722">BAYSWATER (WA) — 2722</option>
@@ -1162,12 +1162,12 @@
 
       <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
         <label style="font-size:12px;font-weight:600;color:var(--gray-mid);display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="photoGateDone" onchange="updateProgress()"> ✅ Taken time-stamped photo of <strong>site gate/entrance</strong>
+          <input type="checkbox" id="photoGateDone" onchange="updateProgress()"> ✅ I have taken a time-stamped photo of <strong>site gate/entrance</strong>
         </label>
       </div>
       <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
         <label style="font-size:12px;font-weight:600;color:var(--gray-mid);display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="photoTankDone" onchange="updateProgress()"> ✅ Taken time-stamped photo of <strong>delivery zone &amp; AdBlue® tank/fill point</strong>
+          <input type="checkbox" id="photoTankDone" onchange="updateProgress()"> ✅ I have taken a time-stamped photo of <strong>delivery zone &amp; AdBlue® tank/fill point</strong>
         </label>
       </div>
 
@@ -1647,12 +1647,13 @@ function getSigDataUrl(canvasId) {
 // PROGRESS
 // =====================================================================
 function updateProgress() {
-  const required = ['customerName','siteAddress','auditorName','auditDate'];
-  const filled = required.filter(id => document.getElementById(id)?.value?.trim()).length;
+  const required = ['siteAddress','auditorName','auditDate'];
+  const customerFilled = getCustomerName().trim().length > 0 ? 1 : 0;
+  const filled = required.filter(id => document.getElementById(id)?.value?.trim()).length + customerFilled;
   const ynDone = Object.keys(ynValues).length;
   const ynTotal = Object.values(ynQuestions).flat().length;
   const photoCheck = (document.getElementById('photoGateDone')?.checked ? 1:0) + (document.getElementById('photoTankDone')?.checked ? 1:0);
-  const total = required.length + ynTotal + 2;
+  const total = required.length + 1 + ynTotal + 2; // +1 for customer
   const done = filled + ynDone + photoCheck;
   const pct = Math.round((done / total) * 100);
   document.getElementById('progressBar').style.width = pct + '%';
