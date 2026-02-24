@@ -2129,6 +2129,7 @@ function updateAuditResults() {
     return q.reverseColor ? val === 'Y' : val === 'N';
   });
   const c2Unanswered = c2Questions.filter(q => !ynValues[q.id]);
+  const c2Answered = c2Questions.filter(q => ynValues[q.id]);
   const c2Passed = c2Questions.filter(q => {
     const val = ynValues[q.id];
     if (!val) return false;
@@ -3129,7 +3130,7 @@ async function fillTestData() {
     fillLabelled: 'Y', safeFillMarked: 'Y', dipLabelled: 'Y', levelAccurate: 'Y',
     // C2
     dedicatedTank: 'Y', tankLabelled: 'Y', compatMaterials: 'Y',
-    noIncompat: 'Y', noLeak: 'Y', protectedTemp: 'Y', tankCleaned: 'NA',
+    noIncompat: 'N', noLeak: 'Y', protectedTemp: 'Y', tankCleaned: 'NA',
     sealedEquip: 'Y', nozzleClean: 'Y', lidSealed: 'Y',
     ventSystem: 'Y', ventCondition: 'Y', fillClean: 'Y', dustCap: 'Y',
     // F1
@@ -3139,23 +3140,26 @@ async function fillTestData() {
   // Bulk set Y/N answers using lightweight setter
   Object.entries(testAnswers).forEach(([id, val]) => {
     try {
-      // Set value directly without triggering all the update functions
       ynValues[id] = val;
       const item = document.getElementById('ynitem-' + id);
-      if (!item) return;
+      if (!item) { console.warn('Missing ynitem:', id); return; }
       const q = Object.values(ynQuestions).flat().find(q => q.id === id);
       const reverse = q?.reverseColor || false;
       item.classList.remove('yes','no','na');
       if (val === 'Y') item.classList.add(reverse ? 'no' : 'yes');
       else if (val === 'N') item.classList.add(reverse ? 'yes' : 'no');
       else if (val === 'NA') item.classList.add('na');
-      // Update button states
       item.querySelectorAll('.yn-btn').forEach(b => {
         b.classList.remove('active-y','active-n','active-na');
         if (b.textContent === 'Y' && val === 'Y') b.classList.add('active-y');
         else if (b.textContent === 'N' && val === 'N') b.classList.add('active-n');
         else if (b.textContent === 'N/A' && val === 'NA') b.classList.add('active-na');
       });
+      // Handle triggerField
+      if (q?.triggerField) {
+        const tf = document.getElementById(q.triggerField);
+        if (tf) tf.style.display = (val === 'Y') ? 'block' : 'none';
+      }
     } catch(e) {
       console.error('Failed to set YN for:', id, e);
     }
@@ -3268,6 +3272,7 @@ async function saveAndSend() {
   // 4. Send via EmailJS
   showToast('📧 Sending email...');
   try {
+    if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
     const templateParams = {
       to_email:      d.emailTo || 'michael.hodnett@bioblue.com.au',
       reply_to:      'michaelhodnett2022@gmail.com',
@@ -3519,8 +3524,12 @@ function showToast(msg) {
 // INIT
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialise EmailJS
-  emailjs.init('VOzIE82-mIbrEcuPK');
+  // Initialise EmailJS safely
+  try {
+    if (typeof emailjs !== 'undefined') {
+      emailjs.init('VOzIE82-mIbrEcuPK');
+    }
+  } catch(e) { console.warn('EmailJS not loaded:', e); }
 
   renderYNGroups();
   updateAuditResults();
