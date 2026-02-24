@@ -705,6 +705,47 @@
   }
   .test-btn:hover { background: #d97706; }
 
+  /* ---- ISO COMPLIANCE BLOCK ---- */
+  .iso-compliance-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+    border: 2px solid transparent;
+  }
+  .iso-neutral { background: var(--blue-pale); border-color: var(--blue-light); }
+  .iso-pass { background: var(--green-light); border-color: #b7e5d3; }
+  .iso-fail { background: var(--red-light); border-color: #f5c6c2; }
+  .iso-partial { background: #fffbeb; border-color: #f59e0b; }
+  .iso-compliance-icon { font-size: 24px; flex-shrink: 0; }
+  .iso-compliance-text { flex: 1; }
+  .iso-compliance-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--blue-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .iso-pass .iso-compliance-title { color: var(--green); }
+  .iso-fail .iso-compliance-title { color: var(--red); }
+  .iso-partial .iso-compliance-title { color: #92400e; }
+  .iso-compliance-sub {
+    font-size: 11.5px;
+    color: var(--gray-mid);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .iso-compliance-score {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--blue-deep);
+    flex-shrink: 0;
+  }
+  .iso-pass .iso-compliance-score { color: var(--green); }
+  .iso-fail .iso-compliance-score { color: var(--red); }
+
   /* ---- AUDIT RESULTS PANEL ---- */
   .audit-score-wrap {
     display: flex;
@@ -1585,6 +1626,20 @@
         </div>
       </div>
 
+      <p style="font-size:11px;color:var(--gray-mid);margin:-4px 0 10px;">
+        Overall pass rate excludes Section C.2 ISO-22241 QA checks — see compliance status below.
+      </p>
+
+      <!-- ISO-22241 Compliance Status -->
+      <div id="isoComplianceBlock" class="iso-compliance-block iso-neutral">
+        <div class="iso-compliance-icon" id="isoComplianceIcon">📋</div>
+        <div class="iso-compliance-text">
+          <div class="iso-compliance-title" id="isoComplianceTitle">ISO-22241 Compliance</div>
+          <div class="iso-compliance-sub" id="isoComplianceSub">Answer all C.2 questions to see compliance status</div>
+        </div>
+        <div class="iso-compliance-score" id="isoComplianceScore">—</div>
+      </div>
+
       <!-- Missed questions -->
       <div id="missedQuestionsWrap" style="display:none;">
         <div class="missed-header">⚠️ Unanswered Questions</div>
@@ -2010,28 +2065,41 @@ function updateAuditResults() {
     qs.map(q => ({ ...q, section }))
   );
 
+  // Separate C2 from everything else
+  const c2Questions = allQuestions.filter(q => q.section === 'c2');
+  const nonC2Questions = allQuestions.filter(q => q.section !== 'c2');
+
   const sectionLabels = { b1:'B.1', b2:'B.2', b3:'B.3', c1:'C.1', c2:'C.2', e1:'F.1' };
 
+  // Score non-C2 questions only
   let green = 0, red = 0, unanswered = 0;
   const missed = [];
 
-  allQuestions.forEach(q => {
+  nonC2Questions.forEach(q => {
     const val = ynValues[q.id];
     if (!val) {
       unanswered++;
       missed.push({ section: sectionLabels[q.section] || q.section, text: q.text.replace(/<[^>]+>/g,'') });
     } else if (val === 'NA') {
-      // N/A doesn't count for or against
+      // N/A excluded
     } else {
       const isGood = q.reverseColor ? val === 'N' : val === 'Y';
       if (isGood) green++; else red++;
     }
   });
 
+  // Also count unanswered C2 in missed list
+  c2Questions.forEach(q => {
+    const val = ynValues[q.id];
+    if (!val) {
+      missed.push({ section: 'C.2', text: q.text.replace(/<[^>]+>/g,'') });
+    }
+  });
+
   const total = green + red;
   const pct = total === 0 ? null : Math.round((green / total) * 100);
 
-  // Update circle
+  // Update score circle
   const circle = document.getElementById('auditScoreCircle');
   const pctEl = document.getElementById('auditScorePct');
   if (pct === null) {
@@ -2043,12 +2111,49 @@ function updateAuditResults() {
     circle.style.background = `conic-gradient(${color} ${pct}%, #e5e7eb ${pct}%)`;
   }
 
-  // Update stats
   document.getElementById('statGreen').textContent = green;
   document.getElementById('statRed').textContent = red;
-  document.getElementById('statUnanswered').textContent = unanswered;
+  document.getElementById('statUnanswered').textContent = unanswered + c2Questions.filter(q => !ynValues[q.id]).length;
 
-  // Missed questions list
+  // ---- ISO-22241 C2 Compliance Status ----
+  const isoBlock = document.getElementById('isoComplianceBlock');
+  const isoIcon = document.getElementById('isoComplianceIcon');
+  const isoTitle = document.getElementById('isoComplianceTitle');
+  const isoSub = document.getElementById('isoComplianceSub');
+  const isoScore = document.getElementById('isoComplianceScore');
+
+  const c2Answered = c2Questions.filter(q => ynValues[q.id]);
+  const c2Failed = c2Questions.filter(q => ynValues[q.id] === 'N');
+  const c2Passed = c2Questions.filter(q => ynValues[q.id] === 'Y' || ynValues[q.id] === 'NA');
+  const c2Unanswered = c2Questions.filter(q => !ynValues[q.id]);
+
+  if (c2Answered.length === 0) {
+    isoBlock.className = 'iso-compliance-block iso-neutral';
+    isoIcon.textContent = '📋';
+    isoTitle.textContent = 'ISO-22241 Compliance';
+    isoSub.textContent = 'Answer all C.2 questions to see compliance status';
+    isoScore.textContent = '—';
+  } else if (c2Failed.length > 0) {
+    isoBlock.className = 'iso-compliance-block iso-fail';
+    isoIcon.textContent = '❌';
+    isoTitle.textContent = 'NON-COMPLIANT — ISO-22241';
+    isoSub.textContent = `${c2Failed.length} C.2 item${c2Failed.length > 1 ? 's' : ''} failed. AdBlue® delivered may not meet ISO-22241 certification. Corrective action required before delivery.`;
+    isoScore.textContent = `${c2Passed.length}/${c2Questions.length}`;
+  } else if (c2Unanswered.length > 0) {
+    isoBlock.className = 'iso-compliance-block iso-partial';
+    isoIcon.textContent = '⚠️';
+    isoTitle.textContent = 'ISO-22241 — Incomplete';
+    isoSub.textContent = `${c2Unanswered.length} C.2 question${c2Unanswered.length > 1 ? 's' : ''} still unanswered. Complete all C.2 items to confirm compliance.`;
+    isoScore.textContent = `${c2Answered.length}/${c2Questions.length}`;
+  } else {
+    isoBlock.className = 'iso-compliance-block iso-pass';
+    isoIcon.textContent = '✅';
+    isoTitle.textContent = 'COMPLIANT — ISO-22241';
+    isoSub.textContent = 'All C.2 QA checks passed. Tank meets ISO-22241 requirements for AdBlue® storage and delivery.';
+    isoScore.textContent = `${c2Questions.length}/${c2Questions.length}`;
+  }
+
+  // Missed questions list (non-C2 + unanswered C2)
   const wrap = document.getElementById('missedQuestionsWrap');
   const list = document.getElementById('missedQuestionsList');
   const allDone = document.getElementById('allAnsweredMsg');
@@ -2721,62 +2826,72 @@ async function generatePDF(returnDoc=false) {
   y += 16;
 
   // ---- AUDIT SCORE SUMMARY ----
-  checkPage(36);
-  const allQs = Object.entries(ynQuestions).flatMap(([,qs]) => qs);
+  checkPage(52);
+  const allQs = Object.entries(ynQuestions).flatMap(([section,qs]) => qs.map(q=>({...q,section})));
+  const nonC2Qs = allQs.filter(q => q.section !== 'c2');
+  const c2Qs = allQs.filter(q => q.section === 'c2');
+
   let pdfGreen = 0, pdfRed = 0, pdfUnanswered = 0;
-  allQs.forEach(q => {
+  nonC2Qs.forEach(q => {
     const val = d.ynValues[q.id];
-    if (!val) { pdfUnanswered++; }
+    if (!val) pdfUnanswered++;
     else if (val !== 'NA') {
       const good = q.reverseColor ? val === 'N' : val === 'Y';
       if (good) pdfGreen++; else pdfRed++;
     }
   });
+
   const pdfTotal = pdfGreen + pdfRed;
   const pdfPct = pdfTotal > 0 ? Math.round((pdfGreen / pdfTotal) * 100) : 0;
   const scoreColor = pdfPct === 100 ? [0,135,90] : pdfPct >= 75 ? [230,126,34] : [192,57,43];
 
-  // Score banner background
+  // C2 ISO status
+  const c2Failed = c2Qs.filter(q => d.ynValues[q.id] === 'N');
+  const c2Unanswered = c2Qs.filter(q => !d.ynValues[q.id]);
+  const isoCompliant = c2Failed.length === 0 && c2Unanswered.length === 0;
+  const isoColor = isoCompliant ? [0,135,90] : [192,57,43];
+
+  // Score banner
   doc.setFillColor(...scoreColor);
-  doc.roundedRect(margin, y, contentW, 28, 2, 2, 'F');
-
-  // Big percentage
+  doc.roundedRect(margin, y, contentW, 26, 2, 2, 'F');
   doc.setTextColor(255,255,255);
-  doc.setFontSize(22);
+  doc.setFontSize(20);
   doc.setFont('helvetica','bold');
-  doc.text(`${pdfPct}%`, margin + 6, y + 18);
-
-  // Label
-  doc.setFontSize(8);
+  doc.text(`${pdfPct}%`, margin + 6, y + 17);
+  doc.setFontSize(7);
   doc.setFont('helvetica','normal');
-  doc.text('AUDIT PASS RATE', margin + 6, y + 24);
+  doc.text('SITE PASS RATE (excl. C.2)', margin + 6, y + 22);
 
-  // Stats on right side
-  const statX = margin + 55;
+  const statX = margin + 58;
   [
-    { label: 'PASSED', val: pdfGreen, col: [255,255,255] },
-    { label: 'FAILED', val: pdfRed, col: [255,220,220] },
-    { label: 'UNANSWERED', val: pdfUnanswered, col: [255,240,200] },
+    { label: 'PASSED', val: pdfGreen },
+    { label: 'FAILED', val: pdfRed },
+    { label: 'UNANSWERED', val: pdfUnanswered },
   ].forEach((s, i) => {
-    const sx = statX + i * 50;
-    doc.setTextColor(...s.col);
-    doc.setFontSize(14);
+    const sx = statX + i * 48;
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(13);
     doc.setFont('helvetica','bold');
-    doc.text(String(s.val), sx, y + 16);
-    doc.setFontSize(6.5);
+    doc.text(String(s.val), sx, y + 15);
+    doc.setFontSize(6);
     doc.setFont('helvetica','normal');
-    doc.text(s.label, sx, y + 22);
+    doc.text(s.label, sx, y + 21);
   });
+  y += 30;
 
-  // Overall result text
-  const resultText = pdfUnanswered > 0
-    ? `${pdfUnanswered} question(s) unanswered`
-    : pdfPct === 100 ? 'All checks passed' : `${pdfRed} item(s) require attention`;
+  // ISO-22241 compliance bar
+  doc.setFillColor(...isoColor);
+  doc.roundedRect(margin, y, contentW, 16, 2, 2, 'F');
   doc.setTextColor(255,255,255);
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica','italic');
-  doc.text(resultText, pageW - margin - 2, y + 14, { align: 'right' });
-  y += 33;
+  doc.setFontSize(9);
+  doc.setFont('helvetica','bold');
+  const isoText = isoCompliant
+    ? `✓ ISO-22241 COMPLIANT — All ${c2Qs.length} C.2 QA checks passed`
+    : c2Unanswered.length > 0
+      ? `⚠ ISO-22241 INCOMPLETE — ${c2Unanswered.length} C.2 question(s) unanswered`
+      : `✗ NON-COMPLIANT — ${c2Failed.length} C.2 item(s) failed. Corrective action required before delivery.`;
+  doc.text(isoText, margin + 4, y + 10);
+  y += 20;
 
   // ---- SECTION D ----
   sectionHeader('D. CORRECTIVE ACTIONS / NOTES');
