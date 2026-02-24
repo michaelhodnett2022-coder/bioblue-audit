@@ -2122,10 +2122,18 @@ function updateAuditResults() {
   const isoSub = document.getElementById('isoComplianceSub');
   const isoScore = document.getElementById('isoComplianceScore');
 
-  const c2Answered = c2Questions.filter(q => ynValues[q.id]);
-  const c2Failed = c2Questions.filter(q => ynValues[q.id] === 'N');
-  const c2Passed = c2Questions.filter(q => ynValues[q.id] === 'Y' || ynValues[q.id] === 'NA');
+  const c2Failed = c2Questions.filter(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
   const c2Unanswered = c2Questions.filter(q => !ynValues[q.id]);
+  const c2Passed = c2Questions.filter(q => {
+    const val = ynValues[q.id];
+    if (!val) return false;
+    if (val === 'NA') return true;
+    return q.reverseColor ? val === 'N' : val === 'Y';
+  });
 
   if (c2Answered.length === 0) {
     isoBlock.className = 'iso-compliance-block iso-neutral';
@@ -2846,7 +2854,11 @@ async function generatePDF(returnDoc=false) {
   const scoreColor = pdfPct === 100 ? [0,135,90] : pdfPct >= 75 ? [230,126,34] : [192,57,43];
 
   // C2 ISO status
-  const c2Failed = c2Qs.filter(q => d.ynValues[q.id] === 'N');
+  const c2Failed = c2Qs.filter(q => {
+    const val = d.ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
   const c2Unanswered = c2Qs.filter(q => !d.ynValues[q.id]);
   const isoCompliant = c2Failed.length === 0 && c2Unanswered.length === 0;
   const isoColor = isoCompliant ? [0,135,90] : [192,57,43];
