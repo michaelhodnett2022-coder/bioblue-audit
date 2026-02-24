@@ -829,7 +829,7 @@
     <div class="field-row">
       <div class="field-group">
         <label class="field-label">Send PDF to (your email)</label>
-        <input type="email" id="emailTo" placeholder="logistics@bioblue.com.au" value="logistics@bioblue.com.au">
+        <input type="email" id="emailTo" placeholder="michael.hodnett@bioblue.com.au" value="michael.hodnett@bioblue.com.au">
       </div>
       <div class="field-group">
         <label class="field-label">CC Email (optional)</label>
@@ -1305,6 +1305,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// =====================================================================
+// CUSTOMER NAME HELPER — must be defined first
+// =====================================================================
+function getCustomerName() {
+  const select = document.getElementById('customerSelect');
+  if (!select) return document.getElementById('customerName')?.value || '';
+  if (select.value === 'new') return document.getElementById('customerName')?.value || '';
+  if (select.value) return document.getElementById('customerNameHidden')?.value || '';
+  return '';
+}
+
 // =====================================================================
 // DATA DEFINITIONS
 // =====================================================================
@@ -1921,19 +1932,6 @@ function setField(id, value) {
   if (el) el.value = value || '';
 }
 
-// Helper to get customer name for PDF/Excel (works for both dropdown and new entry)
-function getCustomerName() {
-  const select = document.getElementById('customerSelect');
-  if (select.value === 'new') {
-    return document.getElementById('customerName')?.value || '';
-  }
-  if (select.value) {
-    return document.getElementById('customerNameHidden').value || '';
-  }
-  return '';
-}
-
-// =====================================================================
 // =====================================================================
 function toggle24hrs(checkbox) {
   const timeFields = document.getElementById('timeFields');
