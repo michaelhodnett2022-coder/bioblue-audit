@@ -649,6 +649,159 @@
     line-height: 1.5;
   }
 
+  /* ---- AUDIT RESULTS PANEL ---- */
+  .audit-score-wrap {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 0;
+  }
+  .audit-score-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: conic-gradient(var(--green) 0%, var(--gray-light) 0%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    transition: background 0.5s;
+  }
+  .audit-score-circle::after {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: white;
+  }
+  .audit-score-pct {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--blue-deep);
+    position: relative;
+    z-index: 1;
+    line-height: 1.1;
+  }
+  .audit-score-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    position: relative;
+    z-index: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .audit-score-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .score-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 56px;
+  }
+  .score-stat span {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .score-stat small {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gray-mid);
+  }
+  .score-stat.green span { color: var(--green); }
+  .score-stat.red span { color: var(--red); }
+  .score-stat.gray span { color: var(--gray-mid); }
+  .missed-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--orange);
+    margin: 12px 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid var(--orange-light);
+  }
+  .missed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--orange-light);
+    border-left: 3px solid var(--orange);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 5px;
+    font-size: 13px;
+    color: var(--gray-dark);
+  }
+  .missed-item-section {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--orange);
+    text-transform: uppercase;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .all-answered-msg {
+    text-align: center;
+    padding: 14px;
+    background: var(--green-light);
+    border-radius: var(--radius-sm);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  /* ---- PPE CHECKBOXES ---- */
+  .ppe-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .ppe-check-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: white;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .ppe-check-item:hover {
+    border-color: var(--blue-bright);
+    color: var(--blue-bright);
+  }
+  .ppe-check-item input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--blue-bright);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ppe-check-item:has(input:checked) {
+    background: var(--blue-light);
+    border-color: var(--blue-bright);
+    color: var(--blue-deep);
+    font-weight: 600;
+  }
+  .ppe-other-wrap {
+    border-style: dashed;
+  }
+
   /* ---- AUTOFILL HIGHLIGHT ---- */
   .customer-select-wrap select {
     background: var(--blue-pale);
@@ -785,6 +938,24 @@
     color: var(--gray-mid);
     padding-top: 16px;
     flex-shrink: 0;
+  }
+
+  input.field-error, select.field-error {
+    border-color: var(--red) !important;
+    background: var(--red-light) !important;
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.15) !important;
+    animation: shake 0.3s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  .field-error-msg {
+    font-size: 11px;
+    color: var(--red);
+    font-weight: 600;
+    margin-top: 3px;
   }
 
   /* highlight required */
@@ -935,6 +1106,16 @@
           <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
         </div>
       </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Site Number</label>
+          <input type="text" id="siteNumber" placeholder="Auto-filled from customer selection">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Network</label>
+          <input type="text" id="siteNetwork" placeholder="e.g. Express">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1010,8 +1191,22 @@
         <div class="inline-details-field">
           <div class="inline-details-arrow">↳</div>
           <div class="inline-details-content">
-            <label class="field-label">If Yes — provide PPE details</label>
-            <input type="text" id="ppeDetails" placeholder="e.g. Hard Hat, Hi-Vis vest required">
+            <label class="field-label">If Yes — select all PPE required</label>
+            <div class="ppe-checkboxes">
+              <label class="ppe-check-item"><input type="checkbox" name="ppe" value="Hi-Vis Vest" onchange="updatePPE()"><span>🦺 Hi-Vis Vest</span></label>
+              <label class="ppe-check-item"><input type="checkbox" name="ppe" value="Long Sleeve Hi-Vis" onchange="updatePPE()"><span>👕 Long Sleeve Hi-Vis</span></label>
+              <label class="ppe-check-item"><input type="checkbox" name="ppe" value="Steel Cap Boots" onchange="updatePPE()"><span>👢 Steel Cap Boots</span></label>
+              <label class="ppe-check-item"><input type="checkbox" name="ppe" value="Hard Hat" onchange="updatePPE()"><span>⛑️ Hard Hat</span></label>
+              <label class="ppe-check-item"><input type="checkbox" name="ppe" value="Safety Glasses" onchange="updatePPE()"><span>🥽 Safety Glasses</span></label>
+              <label class="ppe-check-item ppe-other-wrap">
+                <input type="checkbox" name="ppe" value="Other" id="ppeOtherCheck" onchange="updatePPE(); togglePPEOther(this)">
+                <span>✏️ Other — please state:</span>
+              </label>
+              <div id="ppeOtherField" style="display:none; margin-top:6px;">
+                <input type="text" id="ppeOtherText" placeholder="Describe other PPE required..." oninput="updatePPE()">
+              </div>
+            </div>
+            <input type="hidden" id="ppeDetails">
           </div>
         </div>
       </div>
@@ -1058,13 +1253,29 @@
         </div>
         <div class="field-group">
           <label class="field-label">Tank Type</label>
-          <input type="text" id="tankType" placeholder="e.g. Slimline Poly, IBC">
+          <select id="tankType">
+            <option value="">Select...</option>
+            <option value="Poly Slim">Poly Slim</option>
+            <option value="Poly Round">Poly Round</option>
+            <option value="In Ground">In Ground</option>
+            <option value="Cabinet Type">Cabinet Type</option>
+          </select>
         </div>
       </div>
       <div class="field-row three">
         <div class="field-group">
           <label class="field-label">Tank Volume (L)</label>
-          <input type="number" id="tankVolume" placeholder="e.g. 5000">
+          <select id="tankVolumeSelect" onchange="toggleTankVolumeOther(this.value)">
+            <option value="">Select...</option>
+            <option value="2500">2,500L</option>
+            <option value="5000">5,000L</option>
+            <option value="10000">10,000L</option>
+            <option value="20000">20,000L</option>
+            <option value="20600">20,600L</option>
+            <option value="22800">22,800L</option>
+            <option value="other">Other — please state</option>
+          </select>
+          <input type="number" id="tankVolume" placeholder="Enter volume in litres..." style="display:none; margin-top:8px;">
         </div>
         <div class="field-group">
           <label class="field-label">Safe Fill Level (L)</label>
@@ -1281,6 +1492,42 @@
     </div>
   </div>
 
+  <!-- AUDIT RESULTS PANEL -->
+  <div class="section-card" id="auditResultsPanel">
+    <div class="section-header" onclick="toggleSection('sectionResults')">
+      <div class="section-header-icon">📊</div>
+      <div class="section-header-text">
+        <h2>Audit Results Summary</h2>
+        <p>Live score and unanswered questions</p>
+      </div>
+      <div class="section-toggle" id="toggleResults">▼</div>
+    </div>
+    <div class="section-body" id="sectionResults">
+
+      <!-- Score display -->
+      <div class="audit-score-wrap">
+        <div class="audit-score-circle" id="auditScoreCircle">
+          <span class="audit-score-pct" id="auditScorePct">—</span>
+          <span class="audit-score-label">Pass Rate</span>
+        </div>
+        <div class="audit-score-stats">
+          <div class="score-stat green"><span id="statGreen">0</span><small>Passed</small></div>
+          <div class="score-stat red"><span id="statRed">0</span><small>Failed</small></div>
+          <div class="score-stat gray"><span id="statUnanswered">0</span><small>Unanswered</small></div>
+        </div>
+      </div>
+
+      <!-- Missed questions -->
+      <div id="missedQuestionsWrap" style="display:none;">
+        <div class="missed-header">⚠️ Unanswered Questions</div>
+        <div id="missedQuestionsList"></div>
+      </div>
+
+      <div id="allAnsweredMsg" style="display:none;" class="all-answered-msg">✅ All questions answered!</div>
+
+    </div>
+  </div>
+
 </div><!-- end main-content -->
 
 <!-- STICKY FOOTER -->
@@ -1323,7 +1570,7 @@ function getCustomerName() {
 const ynQuestions = {
   'b1': [
     { id: 'truckAccess', text: 'Is truck access to/from the customer site free of obstruction?' },
-    { id: 'overheadWires', text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?' },
+    { id: 'overheadWires', text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
     { id: 'manoeuvre', text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
     { id: 'noReverse', text: 'Can vehicle be manoeuvred without reversing on premises?' },
     { id: 'parkingMarked', text: 'Parking and unloading areas are clearly marked or communicated.' },
@@ -1357,7 +1604,7 @@ const ynQuestions = {
     { id: 'dedicatedTank', text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
     { id: 'tankLabelled', text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
     { id: 'compatMaterials', text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
-    { id: 'noIncompat', text: 'Tank/dispensing unit does NOT contain copper, brass, aluminium, or uncoated mild steel.<sup>2</sup>' },
+    { id: 'noIncompat', text: 'Tank/dispensing unit does NOT contain copper, brass, aluminium, or uncoated mild steel.<sup>2</sup>', reverseColor: true },
     { id: 'noLeak', text: 'Storage tank is free of visible leak(s)/damage.' },
     { id: 'protectedTemp', text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
     { id: 'tankCleaned', text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
@@ -1409,8 +1656,13 @@ function setYN(id, val, group, triggerField) {
   ynValues[id] = val;
   const item = document.getElementById('ynitem-' + id);
   item.classList.remove('yes','no','na');
-  if (val === 'Y') item.classList.add('yes');
-  else if (val === 'N') item.classList.add('no');
+
+  // Find the question to check reverseColor flag
+  const q = Object.values(ynQuestions).flat().find(q => q.id === id);
+  const reverse = q?.reverseColor || false;
+
+  if (val === 'Y') item.classList.add(reverse ? 'no' : 'yes');
+  else if (val === 'N') item.classList.add(reverse ? 'yes' : 'no');
   else if (val === 'NA') item.classList.add('na');
 
   // Update button states
@@ -1436,6 +1688,7 @@ function setYN(id, val, group, triggerField) {
   checkC2Compliance();
   updateProgress();
   updateComplianceBanner();
+  updateAuditResults();
 }
 
 function checkC2Compliance() {
@@ -1671,6 +1924,71 @@ function updateProgress() {
   document.getElementById('progressLabel').textContent = pct + '% complete';
 }
 
+// =====================================================================
+// AUDIT RESULTS SUMMARY
+// =====================================================================
+function updateAuditResults() {
+  const allQuestions = Object.entries(ynQuestions).flatMap(([section, qs]) =>
+    qs.map(q => ({ ...q, section }))
+  );
+
+  const sectionLabels = { b1:'B.1', b2:'B.2', b3:'B.3', c1:'C.1', c2:'C.2', e1:'F.1' };
+
+  let green = 0, red = 0, unanswered = 0;
+  const missed = [];
+
+  allQuestions.forEach(q => {
+    const val = ynValues[q.id];
+    if (!val) {
+      unanswered++;
+      missed.push({ section: sectionLabels[q.section] || q.section, text: q.text.replace(/<[^>]+>/g,'') });
+    } else if (val === 'NA') {
+      // N/A doesn't count for or against
+    } else {
+      const isGood = q.reverseColor ? val === 'N' : val === 'Y';
+      if (isGood) green++; else red++;
+    }
+  });
+
+  const total = green + red;
+  const pct = total === 0 ? null : Math.round((green / total) * 100);
+
+  // Update circle
+  const circle = document.getElementById('auditScoreCircle');
+  const pctEl = document.getElementById('auditScorePct');
+  if (pct === null) {
+    pctEl.textContent = '—';
+    circle.style.background = `conic-gradient(#e5e7eb 100%, #e5e7eb 0%)`;
+  } else {
+    pctEl.textContent = pct + '%';
+    const color = pct === 100 ? '#00875a' : pct >= 75 ? '#e67e22' : '#c0392b';
+    circle.style.background = `conic-gradient(${color} ${pct}%, #e5e7eb ${pct}%)`;
+  }
+
+  // Update stats
+  document.getElementById('statGreen').textContent = green;
+  document.getElementById('statRed').textContent = red;
+  document.getElementById('statUnanswered').textContent = unanswered;
+
+  // Missed questions list
+  const wrap = document.getElementById('missedQuestionsWrap');
+  const list = document.getElementById('missedQuestionsList');
+  const allDone = document.getElementById('allAnsweredMsg');
+
+  if (missed.length === 0) {
+    wrap.style.display = 'none';
+    allDone.style.display = 'block';
+  } else {
+    wrap.style.display = 'block';
+    allDone.style.display = 'none';
+    list.innerHTML = missed.map(m => `
+      <div class="missed-item">
+        <span class="missed-item-section">${m.section}</span>
+        <span>${m.text}</span>
+      </div>`).join('');
+  }
+}
+
 function updateComplianceBanner() {
   const banner = document.getElementById('complianceBanner');
   const c2 = ynQuestions['c2'];
@@ -1710,6 +2028,8 @@ function collectFormData() {
     siteContactTitle: get('siteContactTitle'),
     siteEmail: get('siteEmail'),
     siteMobile: get('siteMobile'),
+    siteNumber: get('siteNumber'),
+    siteNetwork: get('siteNetwork'),
     // B
     accessHours: get('accessHours'),
     accessOpen: get('accessOpen'),
@@ -1873,6 +2193,10 @@ function autoFillCustomer(siteNum) {
   // Store name for use in PDF/Excel
   document.getElementById('customerNameHidden').value = c.name;
 
+  // Site number & network
+  setField('siteNumber', c.siteNum);
+  setField('siteNetwork', c.network);
+
   // Section A — site details
   setField('siteAddress', c.address);
   setField('suburb', c.suburb);
@@ -1889,10 +2213,31 @@ function autoFillCustomer(siteNum) {
   }
 
   // Section C — tank details
-  setField('tankVolume', c.tankVolume);
+  const volSelect = document.getElementById('tankVolumeSelect');
+  const volOptions = ['2500','5000','10000','20000','20600','22800'];
+  if (volOptions.includes(c.tankVolume)) {
+    for (let i = 0; i < volSelect.options.length; i++) {
+      if (volSelect.options[i].value === c.tankVolume) { volSelect.selectedIndex = i; break; }
+    }
+    document.getElementById('tankVolume').style.display = 'none';
+    document.getElementById('tankVolume').value = c.tankVolume;
+  } else if (c.tankVolume) {
+    volSelect.value = 'other';
+    document.getElementById('tankVolume').style.display = 'block';
+    document.getElementById('tankVolume').value = c.tankVolume;
+  }
   setField('safeFill', c.safeFill);
   setField('tankSerial', c.tankSerial);
-  setField('tankType', c.tankType);
+
+  // Tank type dropdown
+  const tankTypeEl = document.getElementById('tankType');
+  if (tankTypeEl.tagName === 'SELECT') {
+    for (let i = 0; i < tankTypeEl.options.length; i++) {
+      if (tankTypeEl.options[i].value === c.tankType) { tankTypeEl.selectedIndex = i; break; }
+    }
+  } else {
+    setField('tankType', c.tankType);
+  }
   setField('dipSystem', c.dipSystem);
 
   // Tank owner dropdown
@@ -1920,7 +2265,8 @@ function autoFillCustomer(siteNum) {
 
 function clearCustomerFields() {
   ['siteAddress','suburb','postcode','siteContact','siteContactTitle','siteEmail',
-   'siteMobile','tankVolume','safeFill','tankSerial','tankType','dipSystem'].forEach(id => setField(id, ''));
+   'siteMobile','tankVolume','safeFill','tankSerial','tankType','dipSystem',
+   'siteNumber','siteNetwork'].forEach(id => setField(id, ''));
   document.getElementById('state').selectedIndex = 0;
   document.getElementById('tankOwner').selectedIndex = 0;
   document.getElementById('fillConnType').selectedIndex = 0;
@@ -1933,6 +2279,36 @@ function setField(id, value) {
 }
 
 // =====================================================================
+function toggleTankVolumeOther(val) {
+  const otherField = document.getElementById('tankVolume');
+  if (val === 'other') {
+    otherField.style.display = 'block';
+    otherField.value = '';
+    otherField.focus();
+  } else {
+    otherField.style.display = 'none';
+    otherField.value = val;
+  }
+}
+
+function togglePPEOther(checkbox) {
+  document.getElementById('ppeOtherField').style.display = checkbox.checked ? 'block' : 'none';
+  if (!checkbox.checked) document.getElementById('ppeOtherText').value = '';
+  updatePPE();
+}
+
+function updatePPE() {
+  const checked = Array.from(document.querySelectorAll('input[name="ppe"]:checked'))
+    .map(cb => {
+      if (cb.value === 'Other') {
+        const other = document.getElementById('ppeOtherText').value.trim();
+        return other ? `Other: ${other}` : 'Other';
+      }
+      return cb.value;
+    });
+  document.getElementById('ppeDetails').value = checked.join(', ');
+}
+
 function toggle24hrs(checkbox) {
   const timeFields = document.getElementById('timeFields');
   if (checkbox.checked) {
@@ -2183,6 +2559,7 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION A ----
   sectionHeader('A. SITE DETAILS');
   twoFieldRow('Customer / Business Name', d.customerName, 'Date of Audit', d.auditDate);
+  twoFieldRow('Site Number', d.siteNumber, 'Network', d.siteNetwork);
   fieldRow('Delivery Site Address', [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '));
   twoFieldRow('Site Contact', d.siteContact + (d.siteContactTitle ? ' – ' + d.siteContactTitle : ''), 'Mobile', d.siteMobile);
   twoFieldRow('Email', d.siteEmail, '', '');
@@ -2246,6 +2623,64 @@ async function generatePDF(returnDoc=false) {
     '3 ISO-22241 compliant cleaning procedures must be completed and documented before first-fill.',
   ], margin, y, { lineHeightFactor: 1.5 });
   y += 16;
+
+  // ---- AUDIT SCORE SUMMARY ----
+  checkPage(36);
+  const allQs = Object.entries(ynQuestions).flatMap(([,qs]) => qs);
+  let pdfGreen = 0, pdfRed = 0, pdfUnanswered = 0;
+  allQs.forEach(q => {
+    const val = d.ynValues[q.id];
+    if (!val) { pdfUnanswered++; }
+    else if (val !== 'NA') {
+      const good = q.reverseColor ? val === 'N' : val === 'Y';
+      if (good) pdfGreen++; else pdfRed++;
+    }
+  });
+  const pdfTotal = pdfGreen + pdfRed;
+  const pdfPct = pdfTotal > 0 ? Math.round((pdfGreen / pdfTotal) * 100) : 0;
+  const scoreColor = pdfPct === 100 ? [0,135,90] : pdfPct >= 75 ? [230,126,34] : [192,57,43];
+
+  // Score banner background
+  doc.setFillColor(...scoreColor);
+  doc.roundedRect(margin, y, contentW, 28, 2, 2, 'F');
+
+  // Big percentage
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica','bold');
+  doc.text(`${pdfPct}%`, margin + 6, y + 18);
+
+  // Label
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.text('AUDIT PASS RATE', margin + 6, y + 24);
+
+  // Stats on right side
+  const statX = margin + 55;
+  [
+    { label: 'PASSED', val: pdfGreen, col: [255,255,255] },
+    { label: 'FAILED', val: pdfRed, col: [255,220,220] },
+    { label: 'UNANSWERED', val: pdfUnanswered, col: [255,240,200] },
+  ].forEach((s, i) => {
+    const sx = statX + i * 50;
+    doc.setTextColor(...s.col);
+    doc.setFontSize(14);
+    doc.setFont('helvetica','bold');
+    doc.text(String(s.val), sx, y + 16);
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica','normal');
+    doc.text(s.label, sx, y + 22);
+  });
+
+  // Overall result text
+  const resultText = pdfUnanswered > 0
+    ? `${pdfUnanswered} question(s) unanswered`
+    : pdfPct === 100 ? 'All checks passed' : `${pdfRed} item(s) require attention`;
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica','italic');
+  doc.text(resultText, pageW - margin - 2, y + 14, { align: 'right' });
+  y += 33;
 
   // ---- SECTION D ----
   sectionHeader('D. CORRECTIVE ACTIONS / NOTES');
@@ -2397,12 +2832,50 @@ async function generatePDF(returnDoc=false) {
 // COMBINED SAVE & SEND
 // =====================================================================
 async function saveAndSend() {
-  const d = collectFormData();
-  if (!d.customerName || !d.siteAddress) {
-    showToast('⚠️ Please fill in Customer Name and Address first');
+  // Clear any previous error states
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+
+  // Validate required fields
+  const validationRules = [
+    { id: 'customerSelect', check: () => getCustomerName().trim() !== '', label: 'Customer / Business Name', section: 'sectionA' },
+    { id: 'siteAddress',    check: () => document.getElementById('siteAddress').value.trim() !== '', label: 'Delivery Site Address', section: 'sectionA' },
+    { id: 'auditDate',      check: () => document.getElementById('auditDate').value.trim() !== '', label: 'Date of Audit', section: 'sectionA' },
+    { id: 'auditorName',    check: () => document.getElementById('auditorName').value.trim() !== '', label: 'Auditor Name', section: 'sectionF' },
+  ];
+
+  const errors = validationRules.filter(r => !r.check());
+
+  if (errors.length > 0) {
+    errors.forEach(e => {
+      // Open section if collapsed
+      const section = document.getElementById(e.section);
+      if (section && section.style.display === 'none') {
+        section.style.display = 'block';
+        const key = e.section.replace('section','');
+        const toggle = document.getElementById('toggle' + key);
+        if (toggle) toggle.textContent = '▲';
+      }
+      const el = document.getElementById(e.id);
+      if (el) {
+        el.classList.add('field-error');
+        const msg = document.createElement('div');
+        msg.className = 'field-error-msg';
+        msg.textContent = `⚠️ ${e.label} is required`;
+        el.parentNode.insertBefore(msg, el.nextSibling);
+        ['input','change'].forEach(evt => el.addEventListener(evt, () => {
+          el.classList.remove('field-error');
+          if (msg.parentNode) msg.remove();
+        }, { once: true }));
+      }
+    });
+    const firstError = document.getElementById(errors[0].id);
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast(`⚠️ Please complete ${errors.length} required field${errors.length > 1 ? 's' : ''} highlighted in red`);
     return;
   }
 
+  const d = collectFormData();
   showToast('⏳ Generating files...');
 
   const safeName = d.customerName.replace(/\s+/g,'_');
@@ -2586,6 +3059,13 @@ function clearForm() {
   renderPhotos();
   clearSig('sigAuditor','sigAuditorLabel');
   clearSig('sigRep','sigRepLabel');
+  document.getElementById('tankVolumeSelect').selectedIndex = 0;
+  document.getElementById('tankVolume').style.display = 'none';
+  document.getElementById('tankVolume').value = '';
+  document.querySelectorAll('input[name="ppe"]').forEach(cb => cb.checked = false);
+  document.getElementById('ppeOtherField').style.display = 'none';
+  document.getElementById('ppeOtherText').value = '';
+  document.getElementById('ppeDetails').value = '';
   document.getElementById('open24hrs').checked = false;
   document.getElementById('timeFields').classList.remove('hidden');
   document.getElementById('accessOpen').value = '';
@@ -2617,8 +3097,15 @@ function showToast(msg) {
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
   renderYNGroups();
+  updateAuditResults();
   initSignaturePad('sigAuditor');
   initSignaturePad('sigRep');
+
+  // Auto-fill auditor profile
+  document.getElementById('auditorName').value = 'Michael Hodnett';
+  document.getElementById('auditorTitle').value = 'BDM';
+  document.getElementById('auditorEmail').value = 'michael.hodnett@bioblue.com.au';
+  document.getElementById('auditorMobile').value = '0427 670 726';
 
   // Set today's date
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
