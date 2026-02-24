@@ -3132,9 +3132,7 @@ async function fillTestData() {
   };
 
   Object.entries(testAnswers).forEach(([id, val]) => {
-    if (ynValues[id] !== undefined || document.getElementById('ynitem-' + id)) {
-      setYN(id, val);
-    }
+    setYN(id, val);
   });
 
   // PPE checkboxes
