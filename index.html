@@ -3077,15 +3077,11 @@ async function fillTestData() {
   clearForm();
   await new Promise(r => setTimeout(r, 100));
 
-  // Section A — select manual new customer as test
-  const sel = document.getElementById('customerSelect');
-  sel.value = 'new';
-  sel.dispatchEvent(new Event('change'));
-  await new Promise(r => setTimeout(r, 100));
-  // Set AFTER the event fires so clearCustomerFields() doesn't wipe it
+  // Section A — directly set customer fields without triggering events
+  document.getElementById('customerSelect').value = 'new';
+  document.getElementById('newCustomerField').style.display = 'block';
   document.getElementById('customerName').value = 'VIVA TEST SITE';
   document.getElementById('customerNameHidden').value = 'VIVA TEST SITE';
-  document.getElementById('newCustomerField').style.display = 'block';
 
   // Manually fill address details
   document.getElementById('siteAddress').value = '123 Test Street';
