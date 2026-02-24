@@ -1779,6 +1779,7 @@ function renderYNGroups() {
 function setYN(id, val, group, triggerField) {
   ynValues[id] = val;
   const item = document.getElementById('ynitem-' + id);
+  if (!item) return; // safety check
   item.classList.remove('yes','no','na');
 
   // Find the question to check reverseColor flag
@@ -3073,9 +3074,11 @@ async function generatePDF(returnDoc=false) {
 // TEST DATA FILL
 // =====================================================================
 async function fillTestData() {
-  // Clear first
-  clearForm();
-  await new Promise(r => setTimeout(r, 100));
+  // Reset Y/N values directly without calling clearForm
+  document.querySelectorAll('.yn-item').forEach(el => el.className = 'yn-item');
+  document.querySelectorAll('.yn-btn').forEach(el => el.className = 'yn-btn');
+  for (const k in ynValues) delete ynValues[k];
+  await new Promise(r => setTimeout(r, 50));
 
   // Section A — directly set customer fields without triggering events
   document.getElementById('customerSelect').value = 'new';
