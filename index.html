@@ -3081,9 +3081,11 @@ async function fillTestData() {
   const sel = document.getElementById('customerSelect');
   sel.value = 'new';
   sel.dispatchEvent(new Event('change'));
-  await new Promise(r => setTimeout(r, 50));
+  await new Promise(r => setTimeout(r, 100));
+  // Set AFTER the event fires so clearCustomerFields() doesn't wipe it
   document.getElementById('customerName').value = 'VIVA TEST SITE';
   document.getElementById('customerNameHidden').value = 'VIVA TEST SITE';
+  document.getElementById('newCustomerField').style.display = 'block';
 
   // Manually fill address details
   document.getElementById('siteAddress').value = '123 Test Street';
