@@ -1,0 +1,2515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BioBlue Site Audit Checklist</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  :root {
+    --blue-deep: #003466;
+    --blue-mid: #0055a5;
+    --blue-bright: #0077cc;
+    --blue-light: #e8f2fb;
+    --blue-pale: #f4f9ff;
+    --green: #00875a;
+    --green-light: #e3f5ee;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --orange: #e67e22;
+    --orange-light: #fef5e7;
+    --gray-dark: #2c3e50;
+    --gray-mid: #6b7280;
+    --gray-light: #e5e7eb;
+    --gray-pale: #f9fafb;
+    --white: #ffffff;
+    --shadow: 0 2px 12px rgba(0,52,102,0.10);
+    --shadow-lg: 0 8px 32px rgba(0,52,102,0.15);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f0f4f8;
+    color: var(--gray-dark);
+    min-height: 100vh;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- HEADER ---- */
+  .app-header {
+    background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-mid) 100%);
+    color: white;
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-lg);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-badge {
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    color: #a8d4f5;
+  }
+  .header-title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-subtitle {
+    font-size: 12px;
+    opacity: 0.7;
+    font-weight: 300;
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-primary { background: white; color: var(--blue-deep); }
+  .btn-primary:hover { background: var(--blue-light); transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.25); }
+  .btn-success { background: var(--green); color: white; }
+  .btn-success:hover { background: #006b47; transform: translateY(-1px); }
+  .btn-icon { font-size: 16px; }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    height: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #64d2ff;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 4px;
+    text-align: right;
+  }
+
+  /* ---- MAIN LAYOUT ---- */
+  .main-content {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 20px 16px 100px;
+  }
+
+  /* ---- SECTION CARDS ---- */
+  .section-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+  .section-card:hover { box-shadow: var(--shadow-lg); }
+
+  .section-header {
+    background: var(--blue-deep);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header-icon {
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-header-text { flex: 1; }
+  .section-header h2 {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .section-header p {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 1px;
+  }
+  .section-toggle {
+    font-size: 18px;
+    opacity: 0.7;
+    transition: transform 0.2s;
+  }
+  .section-body {
+    padding: 20px;
+  }
+  .section-body.collapsed { display: none; }
+
+  /* ---- SUBSECTION ---- */
+  .subsection-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--blue-mid);
+    border-bottom: 2px solid var(--blue-light);
+    padding-bottom: 6px;
+    margin: 20px 0 14px;
+  }
+  .subsection-label:first-child { margin-top: 0; }
+
+  /* ---- FORM FIELDS ---- */
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .field-row.full { grid-template-columns: 1fr; }
+  .field-row.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media(max-width: 520px) {
+    .field-row, .field-row.three { grid-template-columns: 1fr; }
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .field-label.required::after {
+    content: ' *';
+    color: var(--red);
+  }
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--gray-dark);
+    background: var(--gray-pale);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--blue-bright);
+    box-shadow: 0 0 0 3px rgba(0,119,204,0.12);
+    background: white;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* GPS Address Field */
+  .address-field-wrap {
+    position: relative;
+  }
+  .gps-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--blue-bright);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .gps-btn:hover { background: var(--blue-deep); }
+  .gps-status {
+    font-size: 11px;
+    color: var(--blue-mid);
+    margin-top: 3px;
+    min-height: 16px;
+  }
+  .gps-status.loading { color: var(--orange); }
+  .gps-status.error { color: var(--red); }
+  .gps-status.success { color: var(--green); }
+
+  /* ---- YES/NO ITEMS ---- */
+  .yn-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    background: var(--gray-pale);
+    border: 1.5px solid var(--gray-light);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .yn-item.yes { background: var(--green-light); border-color: #b7e5d3; }
+  .yn-item.no { background: var(--red-light); border-color: #f5c6c2; }
+  .yn-item.na { background: var(--orange-light); border-color: #f5ddb5; }
+
+  .yn-question {
+    flex: 1;
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--gray-dark);
+    padding-top: 2px;
+  }
+  .yn-question sup {
+    font-size: 10px;
+    color: var(--blue-mid);
+    font-weight: 700;
+  }
+  .yn-controls {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .yn-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1.5px solid var(--gray-light);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: white;
+    color: var(--gray-mid);
+    transition: all 0.15s;
+  }
+  .yn-btn:hover { border-color: var(--blue-bright); color: var(--blue-bright); }
+  .yn-btn.active-y { background: var(--green); border-color: var(--green); color: white; }
+  .yn-btn.active-n { background: var(--red); border-color: var(--red); color: white; }
+  .yn-btn.active-na { background: var(--orange); border-color: var(--orange); color: white; }
+
+  /* Non-compliance warning */
+  .nc-warning {
+    background: #fff3cd;
+    border: 1.5px solid #ffd666;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #664d03;
+    margin: 8px 0 4px;
+    display: none;
+  }
+  .nc-warning.visible { display: block; }
+
+  /* ---- PHOTO UPLOAD ---- */
+  .photo-section {
+    margin-top: 4px;
+  }
+  .photo-drop-zone {
+    border: 2px dashed var(--blue-bright);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    background: var(--blue-pale);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .photo-drop-zone:hover, .photo-drop-zone.dragover {
+    background: var(--blue-light);
+    border-color: var(--blue-deep);
+  }
+  .photo-drop-zone input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .photo-drop-icon { font-size: 36px; margin-bottom: 8px; }
+  .photo-drop-text { font-size: 14px; font-weight: 600; color: var(--blue-mid); }
+  .photo-drop-sub { font-size: 12px; color: var(--gray-mid); margin-top: 4px; }
+  .camera-btn-wrap {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .camera-btn {
+    background: var(--blue-bright);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .camera-btn:hover { background: var(--blue-deep); }
+
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .photo-thumb {
+    position: relative;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    background: var(--gray-light);
+    box-shadow: var(--shadow);
+  }
+  .photo-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo-thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.7));
+    opacity: 0;
+    transition: opacity 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 6px;
+  }
+  .photo-thumb:hover .photo-thumb-overlay { opacity: 1; }
+  .photo-caption-input {
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 11px;
+    width: 100%;
+    margin-bottom: 4px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .photo-remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255,0,0,0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .photo-count-badge {
+    background: var(--blue-bright);
+    color: white;
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+    margin-left: 6px;
+  }
+
+  /* ---- SIGNATURE PAD ---- */
+  .sig-wrap {
+    border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: white;
+    position: relative;
+  }
+  .sig-canvas {
+    display: block;
+    width: 100%;
+    touch-action: none;
+    background: white;
+    cursor: crosshair;
+  }
+  .sig-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    color: var(--gray-light);
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+  .sig-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .sig-clear-btn {
+    background: var(--gray-light);
+    color: var(--gray-mid);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .sig-clear-btn:hover { background: var(--gray-dark); color: white; }
+
+  /* ---- COMPLIANT SUMMARY BANNER ---- */
+  .compliance-banner {
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .compliance-banner.pass { background: var(--green-light); border: 1.5px solid #b7e5d3; color: #005c3b; }
+  .compliance-banner.fail { background: var(--red-light); border: 1.5px solid #f5c6c2; color: var(--red); }
+  .compliance-banner.neutral { background: var(--blue-pale); border: 1.5px solid #c3dff5; color: var(--blue-deep); }
+  .compliance-icon { font-size: 24px; }
+
+  /* ---- EMAIL FIELD ---- */
+  .email-section {
+    background: var(--blue-pale);
+    border: 1.5px solid #c3dff5;
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 20px;
+  }
+  .email-section h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--blue-deep);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ---- STICKY FOOTER ---- */
+  .sticky-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 2px solid var(--blue-light);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    z-index: 99;
+    box-shadow: 0 -4px 20px rgba(0,52,102,0.12);
+  }
+  .btn-lg {
+    padding: 12px 22px;
+    font-size: 14px;
+    border-radius: var(--radius-sm);
+  }
+  .btn-submit {
+    background: var(--blue-deep);
+    color: white;
+    border: none;
+  }
+  .btn-submit:hover { background: var(--blue-mid); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,52,102,0.3); }
+  .btn-pdf { background: var(--red); color: white; }
+  .btn-pdf:hover { background: #a52a1e; }
+  .btn-excel { background: var(--green); color: white; }
+  .btn-excel:hover { background: #006b47; }
+
+  /* ---- MODAL ---- */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-box {
+    background: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-box h3 { font-size: 16px; margin-bottom: 8px; color: var(--blue-deep); }
+  .modal-box p { font-size: 13px; color: var(--gray-mid); margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ---- TOAST ---- */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-dark);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---- FOOTNOTES ---- */
+  .footnotes {
+    font-size: 11.5px;
+    color: var(--gray-mid);
+    border-top: 1px solid var(--gray-light);
+    padding-top: 12px;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+
+  /* ---- INLINE DETAILS FIELD ---- */
+  .inline-details-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--blue-pale);
+    border: 1.5px solid var(--blue-light);
+    border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    padding: 12px 14px;
+    margin-top: -4px;
+    margin-bottom: 6px;
+    animation: slideDown 0.2s ease;
+  }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .inline-details-arrow {
+    font-size: 18px;
+    color: var(--blue-bright);
+    font-weight: 700;
+    padding-top: 18px;
+    flex-shrink: 0;
+  }
+  .inline-details-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* ---- TIME PICKER ---- */
+  .time-picker-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .open24-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    width: fit-content;
+    margin-top: 10px;
+  }
+  .open24-or {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .open24-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--green);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .open24-badge {
+    background: var(--green-light);
+    color: var(--green);
+    border: 1.5px solid #b7e5d3;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .open24-label input:checked + .open24-badge {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+  .time-fields {
+    transition: opacity 0.2s, max-height 0.3s;
+    max-height: 120px;
+    overflow: hidden;
+  }
+  .time-fields.hidden {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+  .time-field-pair {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .time-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+  }
+  .time-field-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-mid);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .time-field-group input[type="time"] {
+    padding: 8px 10px;
+    font-size: 15px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--blue-deep);
+    background: var(--blue-pale);
+    border: 1.5px solid var(--blue-light);
+    border-radius: var(--radius-sm);
+    width: 100%;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  .time-field-group input[type="time"]:focus {
+    border-color: var(--blue-bright);
+    box-shadow: 0 0 0 3px rgba(0,119,204,0.12);
+    outline: none;
+  }
+  .time-divider {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    padding-top: 16px;
+    flex-shrink: 0;
+  }
+
+  /* highlight required */
+  .yn-item.required-empty { border-color: #f5c6c2; background: #fff5f5; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="header-top">
+    <div class="header-logo">
+      <div class="logo-badge">BIOBLUE</div>
+      <div>
+        <div class="header-title">Site Audit Checklist</div>
+        <div class="header-subtitle">Bulk AdBlue® Safety &amp; QA · v2 2025</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="clearForm()">🔄 Clear</button>
+      <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
+    </div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressBar"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0% complete</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+  <!-- COMPLIANCE SUMMARY -->
+  <div class="compliance-banner neutral" id="complianceBanner">
+    <div class="compliance-icon">📋</div>
+    <div>Complete the form to see compliance status. All C.2 items must be <strong>YES</strong> for ISO-22241 compliance.</div>
+  </div>
+
+  <!-- EMAIL CONFIG -->
+  <div class="email-section">
+    <h3>📧 Email Settings</h3>
+    <div class="field-row">
+      <div class="field-group">
+        <label class="field-label">Send PDF to (your email)</label>
+        <input type="email" id="emailTo" placeholder="logistics@bioblue.com.au" value="logistics@bioblue.com.au">
+      </div>
+      <div class="field-group">
+        <label class="field-label">CC Email (optional)</label>
+        <input type="email" id="emailCc" placeholder="cc@example.com">
+      </div>
+    </div>
+    <p style="font-size:11.5px;color:var(--gray-mid);margin-top:6px;">ℹ️ The "Submit &amp; Email PDF" button will generate the PDF and open your mail client with it attached. Your email app handles sending.</p>
+  </div>
+
+  <!-- SECTION A: SITE DETAILS -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionA')">
+      <div class="section-header-icon">🏢</div>
+      <div class="section-header-text">
+        <h2>A. Site Details</h2>
+        <p>Customer and delivery location information</p>
+      </div>
+      <div class="section-toggle" id="toggleA">▼</div>
+    </div>
+    <div class="section-body" id="sectionA">
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label required">Customer / Business Name</label>
+          <input type="text" id="customerName" placeholder="e.g. Solo Energy" oninput="updateProgress()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Date of Audit</label>
+          <input type="date" id="auditDate" oninput="updateProgress()">
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-bottom:12px;">
+        <label class="field-label required">Delivery Site Address</label>
+        <div class="address-field-wrap">
+          <input type="text" id="siteAddress" placeholder="Street address" style="padding-right: 110px;" oninput="updateProgress()">
+          <button class="gps-btn" onclick="getGPSLocation()">📍 Use GPS</button>
+        </div>
+        <div class="gps-status" id="gpsStatus"></div>
+      </div>
+
+      <div class="field-row three">
+        <div class="field-group">
+          <label class="field-label">Suburb</label>
+          <input type="text" id="suburb" placeholder="e.g. Riverton">
+        </div>
+        <div class="field-group">
+          <label class="field-label">State</label>
+          <select id="state">
+            <option value="">Select...</option>
+            <option value="WA">WA</option>
+            <option value="NSW">NSW</option>
+            <option value="VIC">VIC</option>
+            <option value="QLD">QLD</option>
+            <option value="SA">SA</option>
+            <option value="TAS">TAS</option>
+            <option value="NT">NT</option>
+            <option value="ACT">ACT</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Postcode</label>
+          <input type="text" id="postcode" placeholder="6149" maxlength="4">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Delivery Site Contact</label>
+          <input type="text" id="siteContact" placeholder="Full name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Title / Role</label>
+          <input type="text" id="siteContactTitle" placeholder="e.g. Site Manager">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Email Address</label>
+          <input type="email" id="siteEmail" placeholder="contact@company.com">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Mobile</label>
+          <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION B: DELIVERY ACCESS & SAFETY -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionB')">
+      <div class="section-header-icon">🚛</div>
+      <div class="section-header-text">
+        <h2>B. Delivery Access &amp; Site Safety</h2>
+        <p>Accessibility, safety conditions, and spill containment</p>
+      </div>
+      <div class="section-toggle" id="toggleB">▼</div>
+    </div>
+    <div class="section-body" id="sectionB">
+
+      <div class="subsection-label">B.1 Site Accessibility</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Access Hours / Restrictions</label>
+          <div class="time-picker-wrap">
+            <div class="time-fields" id="timeFields">
+              <div class="time-field-pair">
+                <div class="time-field-group">
+                  <span class="time-field-label">Opens</span>
+                  <input type="time" id="accessOpen" onchange="updateAccessHours()">
+                </div>
+                <div class="time-divider">to</div>
+                <div class="time-field-group">
+                  <span class="time-field-label">Closes</span>
+                  <input type="time" id="accessClose" onchange="updateAccessHours()">
+                </div>
+              </div>
+              <input type="text" id="accessRestrictions" placeholder="Any other restrictions..." style="margin-top:8px;" oninput="updateAccessHours()">
+            </div>
+            <label class="open24-label">
+              <span class="open24-or">— Or —</span>
+              <input type="checkbox" id="open24hrs" onchange="toggle24hrs(this)">
+              <span class="open24-badge">Open 24 Hours</span>
+            </label>
+            <input type="hidden" id="accessHours">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Maximum Vehicle Size</label>
+          <select id="maxVehicle">
+            <option value="">Select...</option>
+            <option value="Rigid Truck">Rigid Truck</option>
+            <option value="Single Trailer">Single Trailer</option>
+            <option value="B-Double Trailer">B-Double Trailer</option>
+            <option value="Road Train">Road Train</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="yn-b1" class="yn-group">
+        <!-- Y/N items injected by JS -->
+      </div>
+      <!-- Gate access inline details - shown/hidden by JS -->
+      <div id="keyCodeField" style="display:none;">
+        <div class="inline-details-field">
+          <div class="inline-details-arrow">↳</div>
+          <div class="inline-details-content">
+            <label class="field-label">If Yes — provide key / code / access details</label>
+            <input type="text" id="keyCode" placeholder="e.g. Retrieve tank key from shop counter, Gate code 1234...">
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection-label">B.2 Site Safety</div>
+      <div id="yn-b2" class="yn-group"></div>
+      <div id="ppeField" style="display:none;">
+        <div class="inline-details-field">
+          <div class="inline-details-arrow">↳</div>
+          <div class="inline-details-content">
+            <label class="field-label">If Yes — provide PPE details</label>
+            <input type="text" id="ppeDetails" placeholder="e.g. Hard Hat, Hi-Vis vest required">
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection-label">B.3 Environment &amp; Spill Containment</div>
+      <div id="yn-b3" class="yn-group"></div>
+
+    </div>
+  </div>
+
+  <!-- SECTION C: BULK ADBLUE DELIVERIES -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionC')">
+      <div class="section-header-icon">🛢️</div>
+      <div class="section-header-text">
+        <h2>C. Bulk AdBlue® Deliveries</h2>
+        <p>Tank audit and quality assurance checks</p>
+      </div>
+      <div class="section-toggle" id="toggleC">▼</div>
+    </div>
+    <div class="section-body" id="sectionC">
+
+      <div class="subsection-label">C.1 On-Site Storage Tank Audit</div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Bulk Tank ID (if multiple)</label>
+          <input type="text" id="tankId" placeholder="e.g. Tank 1 / Main">
+        </div>
+        <div class="field-group">
+          <label class="field-label">BioBlue Assigned Tank Serial #</label>
+          <input type="text" id="tankSerial" placeholder="ADBT...">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Tank / Equipment Owned By</label>
+          <select id="tankOwner">
+            <option value="">Select...</option>
+            <option value="Client">Client</option>
+            <option value="BioBlue">BioBlue</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Tank Type</label>
+          <input type="text" id="tankType" placeholder="e.g. Slimline Poly, IBC">
+        </div>
+      </div>
+      <div class="field-row three">
+        <div class="field-group">
+          <label class="field-label">Tank Volume (L)</label>
+          <input type="number" id="tankVolume" placeholder="e.g. 5000">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Safe Fill Level (L)</label>
+          <input type="number" id="safeFill" placeholder="e.g. 4500">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Current Level (L)</label>
+          <input type="number" id="currentLevel" placeholder="e.g. 1200">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Fill Point Connection Type</label>
+          <select id="fillConnType">
+            <option value="">Select...</option>
+            <option value="2&quot; Camlock">2" Camlock</option>
+            <option value="2&quot; Dry Break">2" Dry Break</option>
+            <option value="3&quot; Camlock">3" Camlock</option>
+            <option value="3&quot; Dry Break">3" Dry Break</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Fill Point Connection Size</label>
+          <select id="fillConnSize">
+            <option value="">Select...</option>
+            <option value='2"'>2"</option>
+            <option value='3"'>3"</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Dip Reporting / Level Monitoring System</label>
+          <input type="text" id="dipSystem" placeholder="e.g. Trident Monitor / N/A">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Trident Monitoring Installed?</label>
+          <select id="tridentMonitor">
+            <option value="">Select...</option>
+            <option value="Y">Yes</option>
+            <option value="N">No</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="yn-c1" class="yn-group"></div>
+
+      <div class="subsection-label">C.2 Storage Tank AdBlue® Quality Assurance Checks ⚠️</div>
+      <p style="font-size:12px;color:var(--gray-mid);margin-bottom:10px;">All items must be <strong>YES</strong> for ISO-22241 compliance. Any <strong>NO</strong> answer may affect product certification.</p>
+      <div id="yn-c2" class="yn-group"></div>
+
+      <div class="nc-warning" id="ncWarning">
+        ⚠️ <strong>Non-Compliance Detected:</strong> One or more C.2 items have been answered NO. The bulk storage tank may be non-compliant and AdBlue® delivered may no longer meet ISO-22241 certification. Please consult with the customer to resolve before scheduling delivery.
+      </div>
+
+      <div class="footnotes">
+        <sup>1</sup> AdBlue®-compatible materials include stainless steel 316L or high-density polyethylene (HDPE).<br>
+        <sup>2</sup> Or any other AdBlue® non-compatible materials according to ISO-22241. See Safety Data Sheet.<br>
+        <sup>3</sup> ISO-22241 compliant cleaning procedures must be completed and documented before first-fill.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION D: CORRECTIVE ACTIONS -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionD')">
+      <div class="section-header-icon">📝</div>
+      <div class="section-header-text">
+        <h2>D. Corrective Actions / Notes</h2>
+        <p>Non-compliance actions and general notes</p>
+      </div>
+      <div class="section-toggle" id="toggleD">▼</div>
+    </div>
+    <div class="section-body" id="sectionD">
+      <div class="field-group">
+        <label class="field-label">Corrective Actions &amp; Notes</label>
+        <textarea id="correctiveActions" rows="5" placeholder="If any non-compliance identified under C.2, indicate corrective actions advised and who is responsible for implementing them..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION E: PHOTOS -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionPhotos')">
+      <div class="section-header-icon">📸</div>
+      <div class="section-header-text">
+        <h2>E. Site Photos</h2>
+        <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0</span></p>
+      </div>
+      <div class="section-toggle" id="togglePhotos">▼</div>
+    </div>
+    <div class="section-body" id="sectionPhotos">
+
+      <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <label style="font-size:12px;font-weight:600;color:var(--gray-mid);display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="photoGateDone" onchange="updateProgress()"> ✅ Taken time-stamped photo of <strong>site gate/entrance</strong>
+        </label>
+      </div>
+      <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;">
+        <label style="font-size:12px;font-weight:600;color:var(--gray-mid);display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="photoTankDone" onchange="updateProgress()"> ✅ Taken time-stamped photo of <strong>delivery zone &amp; AdBlue® tank/fill point</strong>
+        </label>
+      </div>
+
+      <div class="photo-drop-zone" id="photoDropZone"
+        ondragover="handleDragOver(event)"
+        ondrop="handleDrop(event)"
+        ondragleave="this.classList.remove('dragover')">
+        <input type="file" accept="image/*" multiple onchange="handleFileSelect(event)" id="photoFileInput">
+        <div class="photo-drop-icon">🖼️</div>
+        <div class="photo-drop-text">Drag &amp; drop photos here</div>
+        <div class="photo-drop-sub">or tap to browse from gallery</div>
+      </div>
+
+      <div class="camera-btn-wrap">
+        <button class="camera-btn" onclick="openCamera()">
+          📷 Take Photo Now
+        </button>
+        <button class="camera-btn" style="background:var(--gray-mid);" onclick="document.getElementById('photoFileInput').click()">
+          🖼️ Choose from Gallery
+        </button>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none;" onchange="handleFileSelect(event)">
+
+      <div class="photo-grid" id="photoGrid"></div>
+    </div>
+  </div>
+
+  <!-- SECTION F: AUDIT SIGN-OFF -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionF')">
+      <div class="section-header-icon">✍️</div>
+      <div class="section-header-text">
+        <h2>F. Audit Sign-Off</h2>
+        <p>BioBlue auditor &amp; site representative sign-off</p>
+      </div>
+      <div class="section-toggle" id="toggleF">▼</div>
+    </div>
+    <div class="section-body" id="sectionF">
+
+      <div class="subsection-label">F.1 BioBlue (Auditor) Sign-Off</div>
+
+      <div id="yn-e1" class="yn-group"></div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label required">Person Conducting Audit</label>
+          <input type="text" id="auditorName" placeholder="Full name" oninput="updateProgress()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Title</label>
+          <input type="text" id="auditorTitle" placeholder="e.g. BDM">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Auditor Email</label>
+          <input type="email" id="auditorEmail" placeholder="auditor@bioblue.com.au">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Auditor Mobile</label>
+          <input type="tel" id="auditorMobile" placeholder="04XX XXX XXX">
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-bottom:14px;">
+        <label class="field-label">Auditor Signature</label>
+        <div class="sig-wrap">
+          <canvas class="sig-canvas" id="sigAuditor" height="100"></canvas>
+          <div class="sig-label" id="sigAuditorLabel">Sign here</div>
+        </div>
+        <div class="sig-controls">
+          <button class="sig-clear-btn" onclick="clearSig('sigAuditor','sigAuditorLabel')">✕ Clear</button>
+        </div>
+      </div>
+
+      <div class="subsection-label">F.2 Customer (Site Representative) Sign-Off</div>
+      <p style="font-size:12px;color:var(--gray-mid);margin-bottom:12px;">The site representative confirms: information provided is true and correct; understands non-compliance may affect product integrity; has been informed of required corrective actions.</p>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Site Representative Name</label>
+          <input type="text" id="repName" placeholder="Full name">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Title / Role</label>
+          <input type="text" id="repTitle" placeholder="e.g. Site Manager">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Email</label>
+          <input type="email" id="repEmail" placeholder="rep@company.com">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Mobile</label>
+          <input type="tel" id="repMobile" placeholder="04XX XXX XXX">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Site Representative Signature</label>
+        <div class="sig-wrap">
+          <canvas class="sig-canvas" id="sigRep" height="100"></canvas>
+          <div class="sig-label" id="sigRepLabel">Sign here</div>
+        </div>
+        <div class="sig-controls">
+          <button class="sig-clear-btn" onclick="clearSig('sigRep','sigRepLabel')">✕ Clear</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end main-content -->
+
+<!-- STICKY FOOTER -->
+<div class="sticky-footer">
+  <button class="btn btn-submit btn-lg" onclick="saveAndSend()" style="min-width:260px;">
+    💾 Save to Excel &amp; Send PDF
+  </button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="submitModal">
+  <div class="modal-box">
+    <h3>✅ Form Submitted</h3>
+    <p id="modalMsg" style="white-space:pre-line;">The PDF has been generated. Your email client will open with the PDF attached. Please send to complete submission.</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================================================================
+// DATA DEFINITIONS
+// =====================================================================
+
+const ynQuestions = {
+  'b1': [
+    { id: 'truckAccess', text: 'Is truck access to/from the customer site free of obstruction?' },
+    { id: 'overheadWires', text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?' },
+    { id: 'manoeuvre', text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
+    { id: 'noReverse', text: 'Can vehicle be manoeuvred without reversing on premises?' },
+    { id: 'parkingMarked', text: 'Parking and unloading areas are clearly marked or communicated.' },
+    { id: 'gateAccess', text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true },
+  ],
+  'b2': [
+    { id: 'siteInduction', text: 'Is a site-specific induction or sign-in process required? (if YES, include details in Notes)' },
+    { id: 'pedestrianAccess', text: 'Is there safe pedestrian access to the tank fill point(s) to undertake delivery?' },
+    { id: 'hazardFree', text: 'Is the delivery area/zone free of hazards or obstacles?' },
+    { id: 'lighting', text: 'Is adequate lighting provided for early morning or evening deliveries?' },
+    { id: 'safetyCones', text: 'Safety cones or barriers are available to secure the delivery zone?' },
+    { id: 'tankVents', text: 'Are tank vents fitted, with no signs of overpressure/vacuum stress (e.g. deformation)?' },
+    { id: 'ppeRequired', text: 'Are there any site-specific Personal Protective Equipment (PPE) requirements?', triggerField: 'ppeField' },
+  ],
+  'b3': [
+    { id: 'spillContain', text: 'If a large spill in excess of 20L occurred on site would the product remain on the site?' },
+    { id: 'awayFromDrains', text: 'Is the AdBlue® delivery point located away from stormwater drains or runoff zones?' },
+    { id: 'drainCovers', text: 'Drains near delivery zone are marked and protected during delivery (e.g. drain covers)?' },
+    { id: 'spillKit', text: 'AdBlue® appropriate (hydrophilic) Spill Kit is accessible on site and clearly labelled?' },
+  ],
+  'c1': [
+    { id: 'fillCondition', text: 'Are fill connections in good condition?' },
+    { id: 'driverAccess', text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
+    { id: 'highAccess', text: 'If access point higher than 2m; is there safe raised platform/rails or secure tether point?', hasNA: true },
+    { id: 'fillLabelled', text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'safeFillMarked', text: 'Is the Safe Fill Level clearly marked/indicated on the tank?' },
+    { id: 'dipLabelled', text: 'Is tank dip point correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'levelAccurate', text: 'Is level monitoring system output accurate and marked in litres?', hasNA: true },
+  ],
+  'c2': [
+    { id: 'dedicatedTank', text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
+    { id: 'tankLabelled', text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
+    { id: 'compatMaterials', text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
+    { id: 'noIncompat', text: 'Tank/dispensing unit does NOT contain copper, brass, aluminium, or uncoated mild steel.<sup>2</sup>' },
+    { id: 'noLeak', text: 'Storage tank is free of visible leak(s)/damage.' },
+    { id: 'protectedTemp', text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
+    { id: 'tankCleaned', text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
+    { id: 'sealedEquip', text: 'AdBlue® is dispensed using clean, sealed equipment dedicated for AdBlue®.' },
+    { id: 'nozzleClean', text: 'Dispensing nozzle is clean and free from dirt, grime or foreign matter.' },
+    { id: 'lidSealed', text: 'Tank lid is closed and properly sealed (if applicable).' },
+    { id: 'ventSystem', text: 'Tank is fitted with compliant venting system (dust-proof, splashback-proof and filtered).' },
+    { id: 'ventCondition', text: 'Tank vent(s) are properly sealed, in good condition, and not blocked by foreign materials.' },
+    { id: 'fillClean', text: 'The AdBlue® fill point is clean and free from dirt, grime and foreign matter.' },
+    { id: 'dustCap', text: 'The AdBlue® fill point is fitted with a dust cap.' },
+  ],
+  'e1': [
+    { id: 'photoGate', text: 'I have taken time-stamped photos of the site front gate/entrance.' },
+    { id: 'photoTank', text: 'I have taken time-stamped photos of the delivery zone and AdBlue® tank/fill point.' },
+    { id: 'nonCompComm', text: 'Any identified non-compliances have been clearly communicated to the site representative, along with recommended corrective actions where applicable.' },
+  ],
+};
+
+const ynValues = {};
+const photos = [];
+
+// =====================================================================
+// RENDER Y/N QUESTIONS
+// =====================================================================
+function renderYNGroups() {
+  for (const [group, questions] of Object.entries(ynQuestions)) {
+    const container = document.getElementById('yn-' + group);
+    if (!container) continue;
+    container.innerHTML = '';
+    questions.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'yn-item';
+      div.id = 'ynitem-' + q.id;
+      const hasNA = q.hasNA || false;
+      div.innerHTML = `
+        <div class="yn-question">${q.text}</div>
+        <div class="yn-controls">
+          <button class="yn-btn" onclick="setYN('${q.id}','Y','${group}','${q.triggerField||''}')">Y</button>
+          <button class="yn-btn" onclick="setYN('${q.id}','N','${group}','${q.triggerField||''}')">N</button>
+          ${hasNA ? `<button class="yn-btn" onclick="setYN('${q.id}','NA','${group}','')">N/A</button>` : ''}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+}
+
+function setYN(id, val, group, triggerField) {
+  ynValues[id] = val;
+  const item = document.getElementById('ynitem-' + id);
+  item.classList.remove('yes','no','na');
+  if (val === 'Y') item.classList.add('yes');
+  else if (val === 'N') item.classList.add('no');
+  else if (val === 'NA') item.classList.add('na');
+
+  // Update button states
+  const btns = item.querySelectorAll('.yn-btn');
+  btns.forEach(b => {
+    b.classList.remove('active-y','active-n','active-na');
+    if (b.textContent === val) {
+      if (val==='Y') b.classList.add('active-y');
+      else if (val==='N') b.classList.add('active-n');
+      else if (val==='N/A') b.classList.add('active-na');
+    }
+  });
+  // NA button has text "N/A"
+  btns.forEach(b => {
+    if (b.textContent === 'N/A' && val === 'NA') b.classList.add('active-na');
+  });
+
+  if (triggerField) {
+    const tf = document.getElementById(triggerField);
+    if (tf) tf.style.display = (val === 'Y') ? 'block' : 'none';
+  }
+
+  checkC2Compliance();
+  updateProgress();
+  updateComplianceBanner();
+}
+
+function checkC2Compliance() {
+  const c2Questions = ynQuestions['c2'];
+  const hasNo = c2Questions.some(q => ynValues[q.id] === 'N');
+  document.getElementById('ncWarning').classList.toggle('visible', hasNo);
+}
+
+// =====================================================================
+// SECTION TOGGLE
+// =====================================================================
+function toggleSection(id) {
+  const body = document.getElementById(id);
+  const toggle = document.getElementById('toggle' + id.replace('section','').toUpperCase());
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  if (toggle) toggle.textContent = collapsed ? '▶' : '▼';
+}
+
+// =====================================================================
+// GPS LOCATION
+// =====================================================================
+function getGPSLocation() {
+  const status = document.getElementById('gpsStatus');
+  if (!navigator.geolocation) {
+    status.textContent = '❌ Geolocation not supported on this device.';
+    status.className = 'gps-status error';
+    return;
+  }
+  status.textContent = '📡 Getting your location...';
+  status.className = 'gps-status loading';
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude, longitude } = pos.coords;
+    status.textContent = `📍 Location found. Looking up address...`;
+
+    try {
+      // Use zoom=18 for maximum detail (street number level)
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`;
+      const resp = await fetch(url, { headers: { 'Accept-Language': 'en-AU' } });
+      const data = await resp.json();
+      const addr = data.address;
+
+      const streetNum = addr.house_number || '';
+      const street = addr.road || addr.street || addr.pedestrian || addr.path || '';
+      const suburb = addr.suburb || addr.neighbourhood || addr.town || addr.city || addr.village || '';
+      const state = addr.state || '';
+      const postcode = addr.postcode || '';
+
+      const fullStreet = streetNum ? `${streetNum} ${street}`.trim() : street.trim();
+
+      document.getElementById('siteAddress').value = fullStreet;
+      document.getElementById('suburb').value = suburb;
+      document.getElementById('postcode').value = postcode;
+
+      // Match state dropdown
+      const stateMap = {
+        'Western Australia':'WA','New South Wales':'NSW','Victoria':'VIC',
+        'Queensland':'QLD','South Australia':'SA','Tasmania':'TAS',
+        'Northern Territory':'NT','Australian Capital Territory':'ACT'
+      };
+      const stateCode = stateMap[state] || state.toUpperCase().substring(0,3);
+      const stateEl = document.getElementById('state');
+      for (let i = 0; i < stateEl.options.length; i++) {
+        if (stateEl.options[i].value === stateCode) { stateEl.selectedIndex = i; break; }
+      }
+
+      if (!streetNum) {
+        status.textContent = `⚠️ Street name found but no street number — please type the number manually. GPS accuracy: ±${Math.round(pos.coords.accuracy)}m`;
+        status.className = 'gps-status loading';
+        // Focus and place cursor at start of address field so user can type number
+        const addrField = document.getElementById('siteAddress');
+        addrField.focus();
+        addrField.setSelectionRange(0, 0);
+      } else {
+        status.textContent = `✅ Address filled from GPS (±${Math.round(pos.coords.accuracy)}m) — please verify.`;
+        status.className = 'gps-status success';
+      }
+
+    } catch(e) {
+      status.textContent = `⚠️ Could not resolve address. GPS coords: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} — please enter manually.`;
+      status.className = 'gps-status loading';
+    }
+  }, (err) => {
+    const msgs = {
+      1: '❌ Location access denied — please allow location in your browser settings.',
+      2: '❌ Could not determine location. Try moving outside or near a window.',
+      3: '❌ Location request timed out. Please try again.'
+    };
+    status.textContent = msgs[err.code] || '❌ Could not get location.';
+    status.className = 'gps-status error';
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+// =====================================================================
+// PHOTOS
+// =====================================================================
+function openCamera() {
+  document.getElementById('cameraInput').click();
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('photoDropZone').classList.add('dragover');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('photoDropZone').classList.remove('dragover');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  files.forEach(addPhoto);
+}
+
+function handleFileSelect(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(addPhoto);
+  e.target.value = '';
+}
+
+function addPhoto(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const timestamp = new Date().toLocaleString('en-AU');
+    const idx = photos.length;
+    photos.push({ dataUrl: e.target.result, caption: file.name, timestamp, file });
+    renderPhotos();
+    updateProgress();
+    showToast('📸 Photo added');
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = '';
+  photos.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = `
+      <img src="${p.dataUrl}" alt="Photo ${i+1}">
+      <div class="photo-thumb-overlay">
+        <input class="photo-caption-input" type="text" value="${p.caption}" placeholder="Add caption..." onchange="photos[${i}].caption=this.value">
+      </div>
+      <button class="photo-remove-btn" onclick="removePhoto(${i})">×</button>
+    `;
+    grid.appendChild(div);
+  });
+  document.getElementById('photoCountBadge').textContent = photos.length;
+}
+
+function removePhoto(idx) {
+  photos.splice(idx, 1);
+  renderPhotos();
+  updateProgress();
+}
+
+// =====================================================================
+// SIGNATURE PADS
+// =====================================================================
+function initSignaturePad(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  let drawing = false;
+  let lastX, lastY;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return [(src.clientX - r.left), (src.clientY - r.top)];
+  }
+
+  function start(e) {
+    e.preventDefault();
+    drawing = true;
+    [lastX, lastY] = getPos(e);
+    document.getElementById(canvasId + 'Label').style.display = 'none';
+  }
+  function draw(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const [x,y] = getPos(e);
+    ctx.strokeStyle = '#003466';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    [lastX, lastY] = [x, y];
+  }
+  function stop() { drawing = false; }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', draw, {passive:false});
+  canvas.addEventListener('touchend', stop);
+}
+
+function clearSig(canvasId, labelId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById(labelId).style.display = 'block';
+}
+
+function getSigDataUrl(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const blank = document.createElement('canvas');
+  blank.width = canvas.width; blank.height = canvas.height;
+  return canvas.toDataURL() === blank.toDataURL() ? null : canvas.toDataURL();
+}
+
+// =====================================================================
+// PROGRESS
+// =====================================================================
+function updateProgress() {
+  const required = ['customerName','siteAddress','auditorName','auditDate'];
+  const filled = required.filter(id => document.getElementById(id)?.value?.trim()).length;
+  const ynDone = Object.keys(ynValues).length;
+  const ynTotal = Object.values(ynQuestions).flat().length;
+  const photoCheck = (document.getElementById('photoGateDone')?.checked ? 1:0) + (document.getElementById('photoTankDone')?.checked ? 1:0);
+  const total = required.length + ynTotal + 2;
+  const done = filled + ynDone + photoCheck;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = pct + '% complete';
+}
+
+function updateComplianceBanner() {
+  const banner = document.getElementById('complianceBanner');
+  const c2 = ynQuestions['c2'];
+  const answeredC2 = c2.filter(q => ynValues[q.id]);
+  if (answeredC2.length === 0) {
+    banner.className = 'compliance-banner neutral';
+    banner.innerHTML = '<div class="compliance-icon">📋</div><div>Complete the form to see compliance status. All C.2 items must be <strong>YES</strong> for ISO-22241 compliance.</div>';
+    return;
+  }
+  const hasNo = c2.some(q => ynValues[q.id] === 'N');
+  if (hasNo) {
+    banner.className = 'compliance-banner fail';
+    banner.innerHTML = '<div class="compliance-icon">❌</div><div><strong>NON-COMPLIANT:</strong> One or more C.2 QA items are marked NO. Tank may not meet ISO-22241. Corrective action required before delivery.</div>';
+  } else if (answeredC2.length === c2.length) {
+    banner.className = 'compliance-banner pass';
+    banner.innerHTML = '<div class="compliance-icon">✅</div><div><strong>COMPLIANT:</strong> All C.2 QA checks passed. Tank meets ISO-22241 requirements.</div>';
+  } else {
+    banner.className = 'compliance-banner neutral';
+    banner.innerHTML = `<div class="compliance-icon">🔄</div><div>${answeredC2.length}/${c2.length} C.2 QA items answered. Complete all for final compliance status.</div>`;
+  }
+}
+
+// =====================================================================
+// COLLECT FORM DATA
+// =====================================================================
+function collectFormData() {
+  const get = id => document.getElementById(id)?.value || '';
+  return {
+    // A
+    customerName: get('customerName'),
+    auditDate: get('auditDate'),
+    siteAddress: get('siteAddress'),
+    suburb: get('suburb'),
+    state: get('state'),
+    postcode: get('postcode'),
+    siteContact: get('siteContact'),
+    siteContactTitle: get('siteContactTitle'),
+    siteEmail: get('siteEmail'),
+    siteMobile: get('siteMobile'),
+    // B
+    accessHours: get('accessHours'),
+    accessOpen: get('accessOpen'),
+    accessClose: get('accessClose'),
+    accessRestrictions: get('accessRestrictions'),
+    open24hrs: document.getElementById('open24hrs')?.checked,
+    maxVehicle: get('maxVehicle'),
+    keyCode: get('keyCode'),
+    ppeDetails: get('ppeDetails'),
+    // C
+    tankId: get('tankId'),
+    tankSerial: get('tankSerial'),
+    tankOwner: get('tankOwner'),
+    tankType: get('tankType'),
+    tankVolume: get('tankVolume'),
+    safeFill: get('safeFill'),
+    currentLevel: get('currentLevel'),
+    fillConnType: get('fillConnType'),
+    fillConnSize: get('fillConnSize'),
+    dipSystem: get('dipSystem'),
+    tridentMonitor: get('tridentMonitor'),
+    // D
+    correctiveActions: get('correctiveActions'),
+    // E/F
+    photoGateDone: document.getElementById('photoGateDone')?.checked,
+    photoTankDone: document.getElementById('photoTankDone')?.checked,
+    auditorName: get('auditorName'),
+    auditorTitle: get('auditorTitle'),
+    auditorEmail: get('auditorEmail'),
+    auditorMobile: get('auditorMobile'),
+    repName: get('repName'),
+    repTitle: get('repTitle'),
+    repEmail: get('repEmail'),
+    repMobile: get('repMobile'),
+    ynValues: { ...ynValues },
+    photoCount: photos.length,
+    emailTo: get('emailTo'),
+    emailCc: get('emailCc'),
+  };
+}
+
+// =====================================================================
+// EXCEL EXPORT
+// =====================================================================
+function exportExcel(silent=false) {
+  const d = collectFormData();
+  const rows = [
+    ['BioBlue Bulk AdBlue® Site Audit Checklist'],
+    [],
+    ['SECTION A – SITE DETAILS'],
+    ['Customer / Business Name', d.customerName],
+    ['Audit Date', d.auditDate],
+    ['Delivery Site Address', d.siteAddress],
+    ['Suburb', d.suburb],
+    ['State', d.state],
+    ['Postcode', d.postcode],
+    ['Site Contact', d.siteContact],
+    ['Contact Title', d.siteContactTitle],
+    ['Site Email', d.siteEmail],
+    ['Site Mobile', d.siteMobile],
+    [],
+    ['SECTION B – DELIVERY ACCESS & SAFETY'],
+    ['Access Hours', d.accessHours],
+    ['Max Vehicle Size', d.maxVehicle],
+    ['Key / Access Code', d.keyCode],
+    ['PPE Details', d.ppeDetails],
+    [],
+    ['B.1 Site Accessibility', 'Y/N'],
+  ];
+
+  for (const [grp, qs] of Object.entries(ynQuestions)) {
+    if (grp !== 'b1' && grp !== 'b2' && grp !== 'b3' && grp !== 'c1' && grp !== 'c2' && grp !== 'e1') continue;
+    const labels = { b1:'B.1 Site Accessibility', b2:'B.2 Site Safety', b3:'B.3 Environment & Spill', c1:'C.1 Tank Audit', c2:'C.2 QA Checks ⚠️', e1:'F. Sign-Off Checks' };
+    rows.push([], [labels[grp], 'Answer']);
+    qs.forEach(q => {
+      rows.push([q.text.replace(/<[^>]+>/g,''), d.ynValues[q.id] || '—']);
+    });
+  }
+
+  rows.push(
+    [],
+    ['SECTION C – TANK DETAILS'],
+    ['Tank ID', d.tankId],
+    ['Tank Serial #', d.tankSerial],
+    ['Tank Owner', d.tankOwner],
+    ['Tank Type', d.tankType],
+    ['Tank Volume (L)', d.tankVolume],
+    ['Safe Fill Level (L)', d.safeFill],
+    ['Current Level (L)', d.currentLevel],
+    ['Fill Connection Type', d.fillConnType],
+    ['Fill Connection Size', d.fillConnSize],
+    ['Level Monitoring System', d.dipSystem],
+    ['Trident Monitor', d.tridentMonitor],
+    [],
+    ['SECTION D – CORRECTIVE ACTIONS'],
+    ['Notes / Corrective Actions', d.correctiveActions],
+    [],
+    ['SECTION F – AUDIT SIGN-OFF'],
+    ['Auditor Name', d.auditorName],
+    ['Auditor Title', d.auditorTitle],
+    ['Auditor Email', d.auditorEmail],
+    ['Auditor Mobile', d.auditorMobile],
+    ['Site Rep Name', d.repName],
+    ['Site Rep Title', d.repTitle],
+    ['Site Rep Email', d.repEmail],
+    ['Site Rep Mobile', d.repMobile],
+    ['Photos Taken (count)', d.photoCount],
+    [],
+    ['Generated', new Date().toLocaleString('en-AU')]
+  );
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 50 }, { wch: 40 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Site Audit');
+  const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || 'undated'}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  if (!silent) showToast('📊 Excel file downloaded!');
+}
+
+// =====================================================================
+// ACCESS HOURS TIME PICKER
+// =====================================================================
+function toggle24hrs(checkbox) {
+  const timeFields = document.getElementById('timeFields');
+  if (checkbox.checked) {
+    timeFields.classList.add('hidden');
+    document.getElementById('accessHours').value = 'Open 24 Hours';
+  } else {
+    timeFields.classList.remove('hidden');
+    updateAccessHours();
+  }
+}
+
+function updateAccessHours() {
+  const open = document.getElementById('accessOpen').value;
+  const close = document.getElementById('accessClose').value;
+  const restrictions = document.getElementById('accessRestrictions').value.trim();
+
+  let result = '';
+  if (open && close) {
+    result = `${formatTime12(open)} – ${formatTime12(close)}`;
+  } else if (open) {
+    result = `Opens ${formatTime12(open)}`;
+  } else if (close) {
+    result = `Closes ${formatTime12(close)}`;
+  }
+  if (restrictions) result = result ? `${result} · ${restrictions}` : restrictions;
+  document.getElementById('accessHours').value = result;
+}
+
+function formatTime12(time24) {
+  if (!time24) return '';
+  const [h, m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2,'0')}${ampm}`;
+}
+
+// =====================================================================
+// Reads EXIF orientation from iPhone photos and rotates canvas to fix
+// =====================================================================
+async function correctImageRotation(dataUrl, targetW, targetH) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      // Read EXIF orientation
+      getExifOrientation(dataUrl, (orientation) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+
+        // For orientations 5-8, width and height are swapped
+        if (orientation >= 5 && orientation <= 8) {
+          canvas.width = h;
+          canvas.height = w;
+        } else {
+          canvas.width = w;
+          canvas.height = h;
+        }
+
+        ctx.save();
+        switch (orientation) {
+          case 2: ctx.transform(-1,0,0,1,w,0); break;
+          case 3: ctx.transform(-1,0,0,-1,w,h); break;
+          case 4: ctx.transform(1,0,0,-1,0,h); break;
+          case 5: ctx.transform(0,1,1,0,0,0); break;
+          case 6: ctx.transform(0,1,-1,0,h,0); break;
+          case 7: ctx.transform(0,-1,-1,0,h,w); break;
+          case 8: ctx.transform(0,-1,1,0,0,w); break;
+          default: break; // orientation 1 = normal
+        }
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      });
+    };
+    img.onerror = () => resolve(dataUrl); // fallback to original
+    img.src = dataUrl;
+  });
+}
+
+function getExifOrientation(dataUrl, callback) {
+  // Extract EXIF orientation byte from JPEG binary
+  try {
+    const base64 = dataUrl.split(',')[1];
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    if (bytes[0] !== 0xFF || bytes[1] !== 0xD8) { callback(1); return; }
+
+    let offset = 2;
+    while (offset < bytes.length) {
+      if (bytes[offset] !== 0xFF) break;
+      const marker = bytes[offset + 1];
+      const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+      if (marker === 0xE1) { // APP1 = EXIF
+        const exif = bytes.slice(offset + 4, offset + 4 + length);
+        const isLittleEndian = exif[6] === 0x49;
+        const read16 = (o) => isLittleEndian ? (exif[o] | exif[o+1]<<8) : (exif[o]<<8 | exif[o+1]);
+        const read32 = (o) => isLittleEndian ? (exif[o]|exif[o+1]<<8|exif[o+2]<<16|exif[o+3]<<24) : (exif[o]<<24|exif[o+1]<<16|exif[o+2]<<8|exif[o+3]);
+        const ifdOffset = read32(10) + 6;
+        const numEntries = read16(ifdOffset);
+        for (let i = 0; i < numEntries; i++) {
+          const entryOffset = ifdOffset + 2 + i * 12;
+          if (read16(entryOffset) === 0x0112) { // Orientation tag
+            callback(read16(entryOffset + 8));
+            return;
+          }
+        }
+      }
+      offset += 2 + length;
+    }
+  } catch(e) {}
+  callback(1); // default: normal orientation
+}
+
+// =====================================================================
+// PDF GENERATION
+// =====================================================================
+async function generatePDF(returnDoc=false) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const d = collectFormData();
+  const margin = 15;
+  const pageW = 210;
+  const contentW = pageW - margin*2;
+  let y = margin;
+
+  const BLUE_DEEP = [0, 52, 102];
+  const BLUE_MID = [0, 85, 165];
+  const BLUE_LIGHT = [232, 242, 251];
+  const GREEN = [0, 135, 90];
+  const RED = [192, 57, 43];
+  const ORANGE = [230, 126, 34];
+  const GRAY = [108, 117, 125];
+  const GRAY_LIGHT = [240, 242, 244];
+  const WHITE = [255,255,255];
+
+  function checkPage(needed=20) {
+    if (y + needed > 280) { doc.addPage(); y = margin; }
+  }
+
+  function sectionHeader(title) {
+    checkPage(14);
+    doc.setFillColor(...BLUE_DEEP);
+    doc.roundedRect(margin, y, contentW, 9, 1.5, 1.5, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.text(title, margin+3, y+6);
+    y += 12;
+  }
+
+  function subHeader(title) {
+    checkPage(10);
+    doc.setFillColor(...BLUE_LIGHT);
+    doc.rect(margin, y, contentW, 6.5, 'F');
+    doc.setTextColor(...BLUE_MID);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.text(title.toUpperCase(), margin+2, y+4.5);
+    y += 9;
+  }
+
+  function fieldRow(label, value, colW=contentW) {
+    checkPage(8);
+    doc.setTextColor(...GRAY);
+    doc.setFontSize(7);
+    doc.setFont('helvetica','normal');
+    doc.text(label, margin, y);
+    doc.setTextColor(30,40,50);
+    doc.setFontSize(9);
+    doc.setFont('helvetica','normal');
+    const lines = doc.splitTextToSize(value || '—', colW - 2);
+    doc.text(lines, margin, y+4);
+    y += 4 + (lines.length * 4) + 3;
+  }
+
+  function twoFieldRow(l1, v1, l2, v2) {
+    checkPage(12);
+    const hw = contentW/2 - 2;
+    const startY = y;
+    doc.setTextColor(...GRAY); doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text(l1, margin, y);
+    doc.text(l2, margin + contentW/2 + 2, y);
+    y += 4;
+    doc.setTextColor(30,40,50); doc.setFontSize(9); doc.setFont('helvetica','normal');
+    const lines1 = doc.splitTextToSize(v1||'—', hw);
+    const lines2 = doc.splitTextToSize(v2||'—', hw);
+    doc.text(lines1, margin, y);
+    doc.text(lines2, margin + contentW/2 + 2, y);
+    y += Math.max(lines1.length, lines2.length) * 4 + 4;
+  }
+
+  function ynRow(question, answer) {
+    checkPage(8);
+    const qW = contentW - 20;
+    const qLines = doc.splitTextToSize(question.replace(/<[^>]+>/g,''), qW);
+    const rowH = Math.max(7, qLines.length * 3.8 + 3);
+
+    let bg, ac;
+    if (answer === 'Y') { bg = [235,250,243]; ac = GREEN; }
+    else if (answer === 'N') { bg = [253,236,234]; ac = RED; }
+    else if (answer === 'NA') { bg = [254,247,235]; ac = ORANGE; }
+    else { bg = GRAY_LIGHT; ac = GRAY; }
+
+    doc.setFillColor(...bg);
+    doc.roundedRect(margin, y, contentW, rowH, 1, 1, 'F');
+
+    // Answer badge
+    doc.setFillColor(...ac);
+    doc.roundedRect(margin + contentW - 16, y + (rowH-6)/2, 14, 6, 1, 1, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','bold');
+    doc.text(answer || '—', margin + contentW - 9, y + (rowH-6)/2 + 4, { align: 'center' });
+
+    doc.setTextColor(40,50,60);
+    doc.setFontSize(8);
+    doc.setFont('helvetica','normal');
+    doc.text(qLines, margin + 3, y + 4.5);
+    y += rowH + 2;
+  }
+
+  // ---- COVER / HEADER ----
+  doc.setFillColor(...BLUE_DEEP);
+  doc.rect(0, 0, 210, 32, 'F');
+  doc.setFillColor(...BLUE_MID);
+  doc.rect(0, 28, 210, 4, 'F');
+
+  doc.setTextColor(...WHITE);
+  doc.setFontSize(7);
+  doc.setFont('helvetica','normal');
+  doc.text('BIOBLUE', margin, 10);
+  doc.setFontSize(15);
+  doc.setFont('helvetica','bold');
+  doc.text('Bulk AdBlue\u00ae Site Audit', margin, 18);
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.text('Site Safety and Quality Assurance Checklist \u00b7 V2 2025', margin, 24);
+
+  const auditInfo = d.auditDate ? `Date: ${d.auditDate}` : '';
+  doc.text(auditInfo, pageW - margin, 18, { align: 'right' });
+  doc.text(d.customerName || '', pageW - margin, 24, { align: 'right' });
+
+  y = 40;
+
+  // ---- SECTION A ----
+  sectionHeader('A. SITE DETAILS');
+  twoFieldRow('Customer / Business Name', d.customerName, 'Date of Audit', d.auditDate);
+  fieldRow('Delivery Site Address', [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '));
+  twoFieldRow('Site Contact', d.siteContact + (d.siteContactTitle ? ' – ' + d.siteContactTitle : ''), 'Mobile', d.siteMobile);
+  twoFieldRow('Email', d.siteEmail, '', '');
+
+  // ---- SECTION B ----
+  sectionHeader('B. DELIVERY ACCESS & SITE SAFETY');
+  subHeader('B.1 Site Accessibility');
+  twoFieldRow('Access Hours / Restrictions', d.accessHours, 'Maximum Vehicle Size', d.maxVehicle);
+  if (d.keyCode) fieldRow('Key / Access Code', d.keyCode);
+  ynQuestions['b1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+
+  subHeader('B.2 Site Safety');
+  if (d.ppeDetails) fieldRow('PPE Details', d.ppeDetails);
+  ynQuestions['b2'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+
+  subHeader('B.3 Environment & Spill Containment');
+  ynQuestions['b3'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+
+  // ---- SECTION C ----
+  checkPage(14);
+  sectionHeader('C. BULK ADBLUE\u00ae DELIVERIES');
+  subHeader('C.1 On-Site Storage Tank Audit');
+  twoFieldRow('Tank ID', d.tankId, 'BioBlue Tank Serial #', d.tankSerial);
+  twoFieldRow('Tank Owner', d.tankOwner, 'Tank Type', d.tankType);
+  twoFieldRow('Tank Volume (L)', d.tankVolume, 'Safe Fill Level (L)', d.safeFill);
+  twoFieldRow('Fill Connection Type', d.fillConnType, 'Fill Connection Size', d.fillConnSize);
+  twoFieldRow('Level Monitoring System', d.dipSystem, 'Trident Monitor', d.tridentMonitor);
+  twoFieldRow('Current Level (L)', d.currentLevel, '', '');
+  ynQuestions['c1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+
+  subHeader('C.2 Storage Tank AdBlue\u00ae Quality Assurance Checks');
+
+  // C.2 compliance notice
+  const c2Answers = ynQuestions['c2'].map(q => d.ynValues[q.id]);
+  const hasNo = c2Answers.includes('N');
+  checkPage(10);
+  doc.setFillColor(hasNo ? 255 : 235, hasNo ? 243 : 250, hasNo ? 205 : 235);
+  doc.roundedRect(margin, y, contentW, 8, 1, 1, 'F');
+  doc.setTextColor(hasNo ? 102 : 0, hasNo ? 67 : 135, hasNo ? 3 : 90);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica','bold');
+  doc.text(hasNo
+    ? '! NON-COMPLIANCE DETECTED – See corrective actions. Delivery may not meet ISO-22241.'
+    : (c2Answers.every(v => v === 'Y' || v === 'NA') ? 'COMPLIANT – All C.2 QA checks passed. ISO-22241 requirements met.' : 'C.2 QA Checks – All items must be YES for ISO-22241 compliance.'),
+    margin + 3, y + 5.5);
+  y += 11;
+
+  ynQuestions['c2'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+
+  // Footnotes
+  checkPage(14);
+  doc.setDrawColor(...GRAY_LIGHT);
+  doc.line(margin, y, margin+contentW, y);
+  y += 3;
+  doc.setTextColor(...GRAY);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica','normal');
+  doc.text([
+    '1 AdBlue®-compatible materials include stainless steel 316L or high-density polyethylene (HDPE).',
+    '2 Or any other AdBlue® non-compatible materials according to ISO-22241. See Safety Data Sheet.',
+    '3 ISO-22241 compliant cleaning procedures must be completed and documented before first-fill.',
+  ], margin, y, { lineHeightFactor: 1.5 });
+  y += 16;
+
+  // ---- SECTION D ----
+  sectionHeader('D. CORRECTIVE ACTIONS / NOTES');
+  checkPage(30);
+  doc.setFillColor(...GRAY_LIGHT);
+  const notesH = Math.max(25, doc.splitTextToSize(d.correctiveActions||'No notes.', contentW-4).length * 4 + 6);
+  doc.roundedRect(margin, y, contentW, notesH, 1, 1, 'F');
+  doc.setTextColor(40,50,60);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica','normal');
+  const notesLines = doc.splitTextToSize(d.correctiveActions || 'No corrective actions noted.', contentW-6);
+  doc.text(notesLines, margin+3, y+5);
+  y += notesH + 6;
+
+  // ---- SECTION E: PHOTOS ----
+  if (photos.length > 0) {
+    // Always start photos on a new page for clean layout
+    doc.addPage();
+    y = margin;
+    sectionHeader('E. SITE PHOTOS');
+
+    // Fixed photo dimensions: 3 per row, portrait-safe small size
+    const gap = 5;
+    const photoW = (contentW - gap * 2) / 3;  // 3 per row
+    const photoH = photoW * 0.72;              // slightly less than square
+    const captionH = 8;
+    const cellH = photoH + captionH + 3;
+
+    let col = 0;
+    let rowStartY = y;
+
+    for (let i = 0; i < photos.length; i++) {
+      // Start new row
+      if (col === 0) {
+        checkPage(cellH + 6);
+        rowStartY = y;
+      }
+
+      const px = margin + col * (photoW + gap);
+      const py = rowStartY;
+
+      // Draw photo with EXIF rotation correction
+      try {
+        const corrected = await correctImageRotation(photos[i].dataUrl, photoW, photoH);
+        doc.addImage(corrected, 'JPEG', px, py, photoW, photoH, undefined, 'MEDIUM');
+      } catch(e) {
+        // Fallback: draw placeholder box
+        doc.setFillColor(...GRAY_LIGHT);
+        doc.rect(px, py, photoW, photoH, 'F');
+        doc.setTextColor(...GRAY);
+        doc.setFontSize(7);
+        doc.text('Photo unavailable', px + photoW/2, py + photoH/2, { align: 'center' });
+      }
+
+      // Caption bar
+      doc.setFillColor(...BLUE_DEEP);
+      doc.rect(px, py + photoH, photoW, captionH, 'F');
+      doc.setTextColor(...WHITE);
+      doc.setFontSize(5.5);
+      doc.setFont('helvetica','normal');
+      const capLine1 = doc.splitTextToSize(photos[i].caption || `Photo ${i+1}`, photoW - 3);
+      const capLine2 = photos[i].timestamp || '';
+      doc.text(capLine1[0], px + 2, py + photoH + 4);
+      doc.text(capLine2, px + 2, py + photoH + 7);
+
+      col++;
+      if (col >= 3) {
+        col = 0;
+        y = rowStartY + cellH + 4;
+      }
+    }
+
+    // Finish last partial row
+    if (col > 0) {
+      y = rowStartY + cellH + 4;
+    }
+    y += 4;
+  }
+
+  // ---- SECTION F: SIGN-OFF ---- always starts on fresh page
+  doc.addPage();
+  y = margin;
+  sectionHeader('F. AUDIT SIGN-OFF');
+
+  subHeader('F.1 BioBlue (Auditor) Sign-Off');
+  ynQuestions['e1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
+  twoFieldRow('Auditor Name', d.auditorName, 'Title', d.auditorTitle);
+  twoFieldRow('Email', d.auditorEmail, 'Mobile', d.auditorMobile);
+
+  // Auditor signature
+  checkPage(30);
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.text('Auditor Signature:', margin, y); y += 4;
+  const auditorSig = getSigDataUrl('sigAuditor');
+  doc.setDrawColor(...GRAY_LIGHT);
+  doc.rect(margin, y, contentW/2 - 5, 20);
+  if (auditorSig) {
+    try { doc.addImage(auditorSig, 'PNG', margin+1, y+1, contentW/2-7, 18); } catch(e){}
+  } else {
+    doc.setTextColor(...GRAY); doc.setFontSize(7); doc.text('(not signed)', margin + 2, y + 11);
+  }
+  doc.setTextColor(30,40,50); doc.setFontSize(8); doc.text('Date: ' + (d.auditDate||'____'), margin + contentW/2 + 2, y + 11);
+  y += 25;
+
+  subHeader('F.2 Customer / Site Representative Sign-Off');
+  doc.setTextColor(40,50,60); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
+  const disclaimer = 'The site representative confirms that: information provided is true and correct to the best of their knowledge; they understand that non-compliance with AdBlue® storage/handling/transfer requirements may affect product integrity and could void warranties; they have been informed of corrective actions required.';
+  const dLines = doc.splitTextToSize(disclaimer, contentW);
+  doc.text(dLines, margin, y);
+  y += dLines.length * 3.8 + 5;
+  doc.setFont('helvetica','normal');
+
+  twoFieldRow('Site Representative', d.repName, 'Title', d.repTitle);
+  twoFieldRow('Email', d.repEmail, 'Mobile', d.repMobile);
+
+  checkPage(30);
+  doc.setTextColor(...GRAY); doc.setFontSize(7); doc.text('Site Representative Signature:', margin, y); y += 4;
+  const repSig = getSigDataUrl('sigRep');
+  doc.rect(margin, y, contentW/2 - 5, 20);
+  if (repSig) {
+    try { doc.addImage(repSig, 'PNG', margin+1, y+1, contentW/2-7, 18); } catch(e){}
+  } else {
+    doc.setTextColor(...GRAY); doc.setFontSize(7); doc.text('(not signed)', margin + 2, y + 11);
+  }
+  doc.setTextColor(30,40,50); doc.setFontSize(8); doc.text('Date: ' + (d.auditDate||'____'), margin + contentW/2 + 2, y + 11);
+  y += 25;
+
+  // ---- FOOTER on each page ----
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(...GRAY_LIGHT);
+    doc.rect(0, 287, 210, 10, 'F');
+    doc.setTextColor(...GRAY);
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica','normal');
+    doc.text('BioBlue Bulk AdBlue® Site Audit · Confidential · V2 2025', margin, 293);
+    doc.text(`Page ${p} of ${totalPages}`, pageW - margin, 293, { align: 'right' });
+    doc.text(new Date().toLocaleString('en-AU'), pageW/2, 293, { align: 'center' });
+  }
+
+  if (returnDoc) return doc;
+
+  const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || 'undated'}.pdf`;
+  doc.save(fname);
+  showToast('📄 PDF downloaded!');
+}
+
+// =====================================================================
+// COMBINED SAVE & SEND
+// =====================================================================
+async function saveAndSend() {
+  const d = collectFormData();
+  if (!d.customerName || !d.siteAddress) {
+    showToast('⚠️ Please fill in Customer Name and Address first');
+    return;
+  }
+
+  showToast('⏳ Generating files...');
+
+  const safeName = d.customerName.replace(/\s+/g,'_');
+  const safeDate = d.auditDate || new Date().toISOString().split('T')[0];
+  const baseName = `BioBlue_Site_Audit_${safeName}_${safeDate}`;
+
+  // 1. Download Excel
+  exportExcel(true);
+
+  // 2. Download PDF
+  await new Promise(r => setTimeout(r, 600)); // slight delay so both downloads register
+  const pdfDoc = await generatePDF(true);
+  pdfDoc.save(baseName + '.pdf');
+
+  // 3. Open mail client
+  await new Promise(r => setTimeout(r, 600));
+  const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
+  const body = encodeURIComponent(
+`Hi,
+
+Please find attached the completed BioBlue Bulk AdBlue® Site Audit:
+
+Customer:  ${d.customerName}
+Address:   ${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}
+Date:      ${d.auditDate || 'Today'}
+Auditor:   ${d.auditorName || '—'}
+
+Two files are attached:
+  • ${baseName}.pdf  — Full audit report
+  • ${baseName}.xlsx — Data record
+
+Regards,
+${d.auditorName || 'BioBlue Auditor'}`
+  );
+  const cc = d.emailCc ? `&cc=${encodeURIComponent(d.emailCc)}` : '';
+  window.location.href = `mailto:${d.emailTo}?subject=${subject}&body=${body}${cc}`;
+
+  // 4. Save draft to localStorage as backup
+  try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
+
+  document.getElementById('modalMsg').textContent =
+    `Two files have been downloaded to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nYour email client is opening — please attach both files before sending.`;
+  document.getElementById('submitModal').classList.add('active');
+}
+
+// =====================================================================
+async function submitAndEmail() {
+  const d = collectFormData();
+  if (!d.customerName || !d.siteAddress) {
+    showToast('⚠️ Please fill in Customer Name and Address first');
+    return;
+  }
+
+  showToast('⏳ Generating PDF...');
+  const doc = await generatePDF(true);
+
+  const pdfBytes = doc.output('arraybuffer');
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+
+  const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_')}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
+  const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${d.auditDate || 'Today'}`);
+  const body = encodeURIComponent(
+    `Hi,\n\nPlease find attached the completed BioBlue Bulk AdBlue® Site Audit for:\n\nCustomer: ${d.customerName}\nAddress: ${d.siteAddress}, ${d.suburb} ${d.state}\nDate: ${d.auditDate}\nAuditor: ${d.auditorName}\n\nRegards,\n${d.auditorName}`
+  );
+
+  const cc = d.emailCc ? `&cc=${encodeURIComponent(d.emailCc)}` : '';
+  const mailtoLink = `mailto:${d.emailTo}?subject=${subject}&body=${body}${cc}`;
+
+  // Also trigger PDF download so user has it to attach
+  doc.save(fname);
+
+  setTimeout(() => {
+    window.location.href = mailtoLink;
+  }, 800);
+
+  document.getElementById('modalMsg').textContent = `The PDF "${fname}" has been downloaded. Your email client will open – please attach the downloaded PDF and send. (Some email clients support direct attachment; if yours doesn't, attach manually.)`;
+  document.getElementById('submitModal').classList.add('active');
+  showToast('✉️ Email client opening...');
+
+  // Save to localStorage as backup
+  try {
+    const saveKey = `bioblue_audit_${Date.now()}`;
+    localStorage.setItem(saveKey, JSON.stringify(collectFormData()));
+  } catch(e){}
+}
+
+function closeModal() {
+  document.getElementById('submitModal').classList.remove('active');
+}
+
+// =====================================================================
+// SAVE / LOAD DRAFT
+// =====================================================================
+function saveDraft() {
+  try {
+    const data = collectFormData();
+    data.ynValues = { ...ynValues };
+    localStorage.setItem('bioblue_draft', JSON.stringify(data));
+    showToast('💾 Draft saved!');
+  } catch(e) {
+    showToast('❌ Could not save draft');
+  }
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem('bioblue_draft');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+
+    setVal('customerName', data.customerName);
+    setVal('auditDate', data.auditDate);
+    setVal('siteAddress', data.siteAddress);
+    setVal('suburb', data.suburb);
+    setVal('state', data.state);
+    setVal('postcode', data.postcode);
+    setVal('siteContact', data.siteContact);
+    setVal('siteContactTitle', data.siteContactTitle);
+    setVal('siteEmail', data.siteEmail);
+    setVal('siteMobile', data.siteMobile);
+    setVal('accessRestrictions', data.accessRestrictions);
+    if (data.accessOpen) { document.getElementById('accessOpen').value = data.accessOpen; }
+    if (data.accessClose) { document.getElementById('accessClose').value = data.accessClose; }
+    if (data.open24hrs) {
+      document.getElementById('open24hrs').checked = true;
+      toggle24hrs(document.getElementById('open24hrs'));
+    } else {
+      updateAccessHours();
+    }
+    setVal('maxVehicle', data.maxVehicle);
+    setVal('keyCode', data.keyCode);
+    setVal('ppeDetails', data.ppeDetails);
+    setVal('tankId', data.tankId);
+    setVal('tankSerial', data.tankSerial);
+    setVal('tankOwner', data.tankOwner);
+    setVal('tankType', data.tankType);
+    setVal('tankVolume', data.tankVolume);
+    setVal('safeFill', data.safeFill);
+    setVal('currentLevel', data.currentLevel);
+    setVal('fillConnType', data.fillConnType);
+    setVal('fillConnSize', data.fillConnSize);
+    setVal('dipSystem', data.dipSystem);
+    setVal('tridentMonitor', data.tridentMonitor);
+    setVal('correctiveActions', data.correctiveActions);
+    setVal('auditorName', data.auditorName);
+    setVal('auditorTitle', data.auditorTitle);
+    setVal('auditorEmail', data.auditorEmail);
+    setVal('auditorMobile', data.auditorMobile);
+    setVal('repName', data.repName);
+    setVal('repTitle', data.repTitle);
+    setVal('repEmail', data.repEmail);
+    setVal('repMobile', data.repMobile);
+    setVal('emailTo', data.emailTo);
+    setVal('emailCc', data.emailCc);
+
+    if (data.ynValues) {
+      for (const [id, val] of Object.entries(data.ynValues)) {
+        const q = Object.values(ynQuestions).flat().find(q => q.id === id);
+        if (q) {
+          const grp = Object.entries(ynQuestions).find(([g,qs]) => qs.includes(q))?.[0];
+          if (grp) setYN(id, val, grp, q.triggerField||'');
+        }
+      }
+    }
+
+    updateProgress();
+    showToast('📂 Draft loaded!');
+  } catch(e) {}
+}
+
+function clearForm() {
+  if (!confirm('Clear all form data? This cannot be undone.')) return;
+  document.querySelectorAll('input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],textarea,select').forEach(el => {
+    if (el.id !== 'emailTo') el.value = '';
+  });
+  document.querySelectorAll('.yn-item').forEach(el => el.className = 'yn-item');
+  document.querySelectorAll('.yn-btn').forEach(el => el.className = 'yn-btn');
+  for (const k in ynValues) delete ynValues[k];
+  photos.length = 0;
+  renderPhotos();
+  clearSig('sigAuditor','sigAuditorLabel');
+  clearSig('sigRep','sigRepLabel');
+  document.getElementById('open24hrs').checked = false;
+  document.getElementById('timeFields').classList.remove('hidden');
+  document.getElementById('accessOpen').value = '';
+  document.getElementById('accessClose').value = '';
+  document.getElementById('accessRestrictions').value = '';
+  document.getElementById('accessHours').value = '';
+  document.getElementById('photoGateDone').checked = false;
+  document.getElementById('photoTankDone').checked = false;
+  document.getElementById('keyCodeField').style.display='none';
+  document.getElementById('ppeField').style.display='none';
+  document.getElementById('ncWarning').classList.remove('visible');
+  updateProgress();
+  updateComplianceBanner();
+  showToast('🔄 Form cleared');
+}
+
+// =====================================================================
+// TOAST
+// =====================================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderYNGroups();
+  initSignaturePad('sigAuditor');
+  initSignaturePad('sigRep');
+
+  // Set today's date
+  document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
+
+  // Load draft if exists
+  if (localStorage.getItem('bioblue_draft')) {
+    setTimeout(() => {
+      if (confirm('📂 You have a saved draft. Would you like to restore it?')) {
+        loadDraft();
+      }
+    }, 500);
+  }
+
+  updateProgress();
+});
+
+// Resize signature canvases when window resizes
+window.addEventListener('resize', () => {
+  ['sigAuditor','sigRep'].forEach(id => {
+    const canvas = document.getElementById(id);
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      const imgData = canvas.toDataURL();
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      img.src = imgData;
+    }
+  });
+});
+</script>
+</body>
+</html>
