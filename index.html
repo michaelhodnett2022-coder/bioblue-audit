@@ -3081,22 +3081,13 @@ async function saveAndSend() {
       address:       [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
       auditor_name:  d.auditorName || 'Michael Hodnett',
       site_number:   d.siteNumber || '—',
+      pdf_attachment: pdfDoc.output('datauristring'),
     };
-
-    // Send PDF as a proper file attachment (not a variable)
-    const pdfBlob = pdfDoc.output('blob');
-    const pdfFile = new File([pdfBlob], baseName + '.pdf', { type: 'application/pdf' });
 
     const response = await emailjs.send(
       'service_f0s6xv5',
       'template_55pubeo',
-      templateParams,
-      {
-        publicKey: 'VOzIE82-mIbrEcuPK',
-        blockHeadless: false,
-        limitRate: { throttle: 0 },
-        attachments: [pdfFile],
-      }
+      templateParams
     );
 
     console.log('EmailJS success:', response);
