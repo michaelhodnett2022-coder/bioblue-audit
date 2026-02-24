@@ -3074,6 +3074,8 @@ async function generatePDF(returnDoc=false) {
 // TEST DATA FILL
 // =====================================================================
 async function fillTestData() {
+  showToast('⚡ Starting test fill...');
+  await new Promise(r => setTimeout(r, 100));
   // Reset Y/N values directly without calling clearForm
   document.querySelectorAll('.yn-item').forEach(el => el.className = 'yn-item');
   document.querySelectorAll('.yn-btn').forEach(el => el.className = 'yn-btn');
