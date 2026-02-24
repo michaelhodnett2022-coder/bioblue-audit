@@ -2939,22 +2939,22 @@ async function fillTestData() {
   const testAnswers = {
     // B1
     truckAccess: 'Y', overheadWires: 'N', manoeuvre: 'Y',
-    noReversing: 'Y', parkingMarked: 'Y', gateAccess: 'Y',
+    noReverse: 'Y', parkingMarked: 'Y', gateAccess: 'Y',
     // B2
-    induction: 'N', pedestrianAccess: 'Y', hazardFree: 'Y',
-    lighting: 'Y', cones: 'Y', tankVents: 'Y', ppeRequired: 'Y',
+    siteInduction: 'N', pedestrianAccess: 'Y', hazardFree: 'Y',
+    lighting: 'Y', safetyCones: 'Y', tankVents: 'Y', ppeRequired: 'Y',
     // B3
-    spillContain: 'Y', awayFromDrains: 'Y', drainsMarked: 'Y', spillKit: 'Y',
+    spillContain: 'Y', awayFromDrains: 'Y', drainCovers: 'Y', spillKit: 'Y',
     // C1
-    fillCondition: 'Y', driverAccess: 'Y', raisedPlatform: 'NA',
+    fillCondition: 'Y', driverAccess: 'Y', highAccess: 'NA',
     fillLabelled: 'Y', safeFillMarked: 'Y', dipLabelled: 'Y', levelAccurate: 'Y',
     // C2
-    dedicated: 'Y', labelledOnly: 'Y', compatMaterials: 'Y',
-    noIncompat: 'Y', noLeak: 'Y', sunProtect: 'Y', cleaned: 'NA',
+    dedicatedTank: 'Y', tankLabelled: 'Y', compatMaterials: 'Y',
+    noIncompat: 'Y', noLeak: 'Y', protectedTemp: 'Y', tankCleaned: 'NA',
     sealedEquip: 'Y', nozzleClean: 'Y', lidSealed: 'Y',
-    ventSystem: 'Y', ventSealed: 'Y', fillClean: 'Y', dustCap: 'Y',
-    // E1
-    photoGate: 'Y', photoTank: 'Y', communicated: 'Y',
+    ventSystem: 'Y', ventCondition: 'Y', fillClean: 'Y', dustCap: 'Y',
+    // F1
+    photoGate: 'Y', photoTank: 'Y', nonCompComm: 'Y',
   };
 
   Object.entries(testAnswers).forEach(([id, val]) => {
