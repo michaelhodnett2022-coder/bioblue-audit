@@ -1502,7 +1502,7 @@
       <!-- Address loader -->
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
         <input type="text" id="mudmapAddress" placeholder="Site address (auto-filled from Section A)" style="flex:1;min-width:200px;">
-        <button class="btn btn-secondary" onclick="loadMudmapSatellite()" style="white-space:nowrap;">🛰️ Load Satellite View</button>
+        <button onclick="loadMudmapSatellite()" style="font-size:13px;padding:8px 18px;border-radius:8px;border:2px solid var(--blue-mid);background:var(--blue-mid);color:white;font-weight:700;cursor:pointer;white-space:nowrap;">Add Map</button>
       </div>
 
       <!-- Tool bar -->
@@ -3736,15 +3736,20 @@ function initMudmap() {
     e.preventDefault();
     [lastX, lastY] = getPos(e);
 
-    if (mudmapTool === 'pan') {
+    const tool = mudmapTool; // read fresh each time
+
+    if (tool === 'pan') {
       panning = true;
+      drawing = false;
       panStartX = lastX;
       panStartY = lastY;
       canvas.style.cursor = 'grabbing';
       return;
     }
 
-    if (mudmapTool === 'dot') {
+    panning = false;
+
+    if (tool === 'dot') {
       saveMudmapState();
       ctx.beginPath();
       ctx.arc(lastX, lastY, 9, 0, Math.PI * 2);
@@ -3753,7 +3758,6 @@ function initMudmap() {
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 2;
       ctx.stroke();
-      // Inner highlight
       ctx.beginPath();
       ctx.arc(lastX - 2.5, lastY - 2.5, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
@@ -3761,7 +3765,7 @@ function initMudmap() {
       return;
     }
 
-    // pen tool
+    // pen tool only
     drawing = true;
     saveMudmapState();
   }
@@ -3769,7 +3773,9 @@ function initMudmap() {
   function draw(e) {
     e.preventDefault();
 
-    if (panning && mudmapTool === 'pan') {
+    const tool = mudmapTool; // read fresh each time
+
+    if (tool === 'pan' && panning) {
       const [x, y] = getPos(e);
       const dx = x - panStartX;
       const dy = y - panStartY;
@@ -3777,13 +3783,12 @@ function initMudmap() {
       tileOffsetY += dy;
       panStartX = x;
       panStartY = y;
-      // Move tile canvas via CSS transform — instant, no redraw needed
       const tc = document.getElementById('mudmapTileCanvas');
       if (tc) tc.style.transform = `translate(${tileOffsetX}px, ${tileOffsetY}px)`;
       return;
     }
 
-    if (!drawing || mudmapTool !== 'pen') return;
+    if (tool !== 'pen' || !drawing) return;
     const [x, y] = getPos(e);
     ctx.strokeStyle = '#cc0000';
     ctx.lineWidth = 3.5;
@@ -3797,9 +3802,14 @@ function initMudmap() {
   }
 
   function stop() {
+    const wasPanning = panning;
     drawing = false;
     panning = false;
     updateCursor();
+    // After pan ends, reload tiles centered on new position to fill black edges
+    if (wasPanning && mudmapCurrentLat !== null) {
+      setTimeout(() => refillMudmapTiles(), 50);
+    }
   }
 
   canvas.addEventListener('mousedown', start);
@@ -3816,17 +3826,60 @@ function initMudmap() {
 let mudmapTileData = null;
 let mudmapTileW = 0, mudmapTileH = 0;
 let tileOffsetX = 0, tileOffsetY = 0;
+let mudmapCurrentLat = null, mudmapCurrentLon = null, mudmapCurrentZoom = 18;
 
-function redrawTiles(offsetX, offsetY) {
-  if (!mudmapTileData) return;
+function refillMudmapTiles() {
+  if (mudmapCurrentLat === null) return;
+  const wrap = document.getElementById('mudmapWrap');
+  const w = wrap.offsetWidth;
+  const h = 300;
+  const zoom = mudmapCurrentZoom;
+  const tileSize = 256;
+
+  // Convert pixel offset to lat/lon delta and compute new centre
+  const tilesPerPixel = 1 / tileSize;
+  const totalTiles = Math.pow(2, zoom);
+
+  // How many tiles did we pan?
+  const dTileX = -tileOffsetX / tileSize;
+  const dTileY = -tileOffsetY / tileSize;
+
+  // Convert current lat/lon to tile float coords
+  function latLonToTileFloat(lat, lon, z) {
+    const x = (lon + 180) / 360 * Math.pow(2, z);
+    const y = (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z);
+    return { x, y };
+  }
+  function tileFloatToLatLon(tx, ty, z) {
+    const n = Math.pow(2, z);
+    const lon = tx / n * 360 - 180;
+    const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * ty / n)));
+    return { lat: latRad * 180 / Math.PI, lon };
+  }
+
+  const centre = latLonToTileFloat(mudmapCurrentLat, mudmapCurrentLon, zoom);
+  const newCentre = tileFloatToLatLon(centre.x + dTileX, centre.y + dTileY, zoom);
+
+  // Save drawing layer
+  const dc = document.getElementById('mudmapCanvas');
+  const drawingSnapshot = dc.toDataURL();
+
+  // Reset pan offset
+  tileOffsetX = 0;
+  tileOffsetY = 0;
   const tc = document.getElementById('mudmapTileCanvas');
-  const ctx = tc.getContext('2d');
-  ctx.clearRect(0, 0, tc.width, tc.height);
-  ctx.fillStyle = '#e8e0d8';
-  ctx.fillRect(0, 0, tc.width, tc.height);
-  const img = new Image();
-  img.onload = () => ctx.drawImage(img, offsetX, offsetY, mudmapTileW, mudmapTileH);
-  img.src = mudmapTileData;
+  if (tc) tc.style.transform = '';
+
+  // Reload tiles at new centre
+  renderOSMTile(newCentre.lat, newCentre.lon, zoom, w, h);
+
+  // Restore drawing layer after tiles load
+  setTimeout(() => {
+    const dctx = dc.getContext('2d');
+    const img = new Image();
+    img.onload = () => dctx.drawImage(img, 0, 0, w, h);
+    img.src = drawingSnapshot;
+  }, 800);
 }
 
 function clearMudmap() {
@@ -3871,6 +3924,10 @@ function loadMudmapSatellite() {
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
+  // Store for pan-refill
+  mudmapCurrentLat = lat;
+  mudmapCurrentLon = lon;
+  mudmapCurrentZoom = zoom;
   const wrap = document.getElementById('mudmapWrap');
   const tc = document.getElementById('mudmapTileCanvas');
   const tctx = tc.getContext('2d');
