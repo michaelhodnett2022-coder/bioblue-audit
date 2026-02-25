@@ -1161,6 +1161,12 @@
         </div>
       </div>
 
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0 14px;">
+        <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue-mid);white-space:nowrap;">Site Address</span>
+        <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
+      </div>
+
       <div class="field-group" style="margin-bottom:12px;">
         <label class="field-label required">Delivery Site Address</label>
         <div class="address-field-wrap">
@@ -1193,6 +1199,12 @@
           <label class="field-label">Postcode</label>
           <input type="text" id="postcode" placeholder="6149" maxlength="4">
         </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 14px;">
+        <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue-mid);white-space:nowrap;">Site Contact</span>
+        <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
       </div>
 
       <div class="field-row">
@@ -1462,13 +1474,70 @@
     </div>
     <div class="section-body" id="sectionD">
       <div class="field-group">
-        <label class="field-label">Corrective Actions &amp; Notes</label>
+        <label class="field-label" id="correctiveActionsLabel">Corrective Actions &amp; Notes</label>
+        <div id="correctiveActionsHint" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#856404;">
+          ⚠️ <strong>Required</strong> — One or more audit items have failed. You must document corrective actions before submitting.
+        </div>
         <textarea id="correctiveActions" rows="5" placeholder="If any non-compliance identified under C.2, indicate corrective actions advised and who is responsible for implementing them..."></textarea>
       </div>
     </div>
   </div>
 
-  <!-- SECTION E: PHOTOS -->
+  <!-- SECTION E: MUD MAP -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection('sectionMudmap')">
+      <div class="section-header-icon">🗺️</div>
+      <div class="section-header-text">
+        <h2>E. Site Mud Map</h2>
+        <p>Draw truck entry/exit route and AdBlue® tank location</p>
+      </div>
+      <div class="section-toggle" id="toggleMudmap">▼</div>
+    </div>
+    <div class="section-body" id="sectionMudmap">
+
+      <p style="font-size:12.5px;color:var(--gray-mid);margin-bottom:12px;">
+        Enter the site address below to load a satellite view, then draw the truck entry/exit route and mark the AdBlue® tank location using your finger or mouse. Drawing appears in red.
+      </p>
+
+      <!-- Address loader -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="text" id="mudmapAddress" placeholder="Site address (auto-filled from Section A)" style="flex:1;min-width:200px;">
+        <button class="btn btn-secondary" onclick="loadMudmapSatellite()" style="white-space:nowrap;">🛰️ Load Satellite View</button>
+        <button class="btn btn-secondary" onclick="clearMudmap()" style="white-space:nowrap;">✕ Clear Drawing</button>
+      </div>
+
+      <!-- Map + drawing canvas stacked -->
+      <div id="mudmapWrap" style="position:relative;width:100%;border-radius:8px;overflow:hidden;border:2px solid var(--blue-light);background:#e8e0d8;">
+        <!-- Satellite image layer -->
+        <img id="mudmapImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">
+        <!-- Placeholder when no image -->
+        <div id="mudmapPlaceholder" style="width:100%;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-mid);gap:8px;">
+          <span style="font-size:36px;">🛰️</span>
+          <span style="font-size:13px;font-weight:600;">Enter site address above and tap Load Satellite View</span>
+          <span style="font-size:11px;">Or draw directly on the blank canvas below to create a manual mud map</span>
+        </div>
+        <!-- Drawing canvas on top -->
+        <canvas id="mudmapCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;touch-action:none;"></canvas>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-mid);">
+          <div style="width:28px;height:3px;background:#cc0000;border-radius:2px;"></div> Truck route
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-mid);">
+          <div style="width:10px;height:10px;background:#0055a5;border-radius:50%;border:1.5px solid white;box-shadow:0 0 0 1px #0055a5;"></div> AdBlue® tank
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Draw Route</button>
+          <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;">📍 Mark Tank</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION F: PHOTOS (renumbered) -->
   <div class="section-card">
     <div class="section-header" onclick="toggleSection('sectionPhotos')">
       <div class="section-header-icon">📸</div>
@@ -1814,6 +1883,28 @@ function setYN(id, val, group, triggerField) {
   updateProgress();
   updateComplianceBanner();
   updateAuditResults();
+  checkCorrectiveActionsRequired();
+}
+
+function checkCorrectiveActionsRequired() {
+  const allQs = Object.values(ynQuestions).flat();
+  const hasFailure = allQs.some(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
+  const label = document.getElementById('correctiveActionsLabel');
+  const textarea = document.getElementById('correctiveActions');
+  const hint = document.getElementById('correctiveActionsHint');
+  if (hasFailure) {
+    if (label) label.classList.add('required');
+    if (hint) { hint.style.display = 'block'; }
+    if (textarea) textarea.placeholder = 'REQUIRED — One or more items failed. Describe corrective actions advised and who is responsible for implementing them...';
+  } else {
+    if (label) label.classList.remove('required');
+    if (hint) { hint.style.display = 'none'; }
+    if (textarea) textarea.placeholder = 'If any non-compliance identified under C.2, indicate corrective actions advised and who is responsible for implementing them...';
+  }
 }
 
 function checkC2Compliance() {
@@ -2451,6 +2542,7 @@ function autoFillCustomer(siteNum) {
 
   showToast(`✅ ${c.name} details loaded`);
   updateProgress();
+  syncMudmapAddress();
 
   // Scroll to show what was filled
   document.getElementById('siteAddress').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2561,8 +2653,8 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
         const drawW = Math.round(srcW * scale);
         const drawH = Math.round(srcH * scale);
 
-        // Aggressively limit size for email
-        const MAX_PX = 800;
+        // Limit size — balanced quality vs file size
+        const MAX_PX = 1200;
         const finalW = Math.min(drawW, MAX_PX);
         const finalH = Math.min(drawH, MAX_PX);
 
@@ -2592,7 +2684,7 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
         ctx.restore();
-        resolve(canvas.toDataURL('image/jpeg', 0.4));
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
       });
     };
     img.onerror = () => resolve(dataUrl);
@@ -2920,7 +3012,27 @@ async function generatePDF(returnDoc=false) {
   doc.text(notesLines, margin+3, y+5);
   y += notesH + 6;
 
-  // ---- SECTION E: PHOTOS ----
+  // ---- SECTION E: MUD MAP ----
+  const mudmapData = getMudmapDataUrl();
+  if (mudmapData) {
+    checkPage(80);
+    sectionHeader('E. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
+    const mapH = 80;
+    try {
+      doc.addImage(mudmapData, 'JPEG', margin, y, contentW, mapH);
+      doc.setDrawColor(...BLUE_LIGHT);
+      doc.setLineWidth(0.3);
+      doc.rect(margin, y, contentW, mapH);
+    } catch(e) {}
+    y += mapH + 4;
+    doc.setFontSize(7);
+    doc.setFont('helvetica','italic');
+    doc.setTextColor(...GRAY);
+    doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', margin, y);
+    y += 8;
+  }
+
+  // ---- SECTION F: PHOTOS ----
   if (photos.length > 0) {
     doc.addPage();
     y = margin;
@@ -3098,6 +3210,7 @@ async function fillTestData() {
   }
   document.getElementById('postcode').value = '6000';
   document.getElementById('siteContact').value = 'Test Contact';
+  syncMudmapAddress();
   document.getElementById('siteContactTitle').value = 'Site Manager';
   document.getElementById('siteEmail').value = 'test@vivaenergy.com.au';
   document.getElementById('siteMobile').value = '0400 000 000';
@@ -3217,11 +3330,19 @@ async function saveAndSend() {
   document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
 
   // Validate required fields
+  const allQs = Object.values(ynQuestions).flat();
+  const hasFailure = allQs.some(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
+
   const validationRules = [
     { id: 'customerSelect', check: () => getCustomerName().trim() !== '', label: 'Customer / Business Name', section: 'sectionA' },
     { id: 'siteAddress',    check: () => document.getElementById('siteAddress').value.trim() !== '', label: 'Delivery Site Address', section: 'sectionA' },
     { id: 'auditDate',      check: () => document.getElementById('auditDate').value.trim() !== '', label: 'Date of Audit', section: 'sectionA' },
     { id: 'auditorName',    check: () => document.getElementById('auditorName').value.trim() !== '', label: 'Auditor Name', section: 'sectionF' },
+    ...(hasFailure ? [{ id: 'correctiveActions', check: () => document.getElementById('correctiveActions').value.trim() !== '', label: 'Corrective Actions (required when items fail)', section: 'sectionD' }] : []),
   ];
 
   const errors = validationRules.filter(r => !r.check());
@@ -3502,6 +3623,10 @@ function clearForm() {
   document.getElementById('auditorMobile').value = '0427 670 726';
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
 
+  // Clear mud map
+  clearMudmap();
+  document.getElementById('mudmapAddress').value = '';
+
   // Clear localStorage draft
   try { localStorage.removeItem('bioblue_draft'); } catch(e) {}
 
@@ -3511,8 +3636,223 @@ function clearForm() {
 }
 
 // =====================================================================
-// TOAST
+// MUD MAP
 // =====================================================================
+let mudmapTool = 'pen';
+
+function setMudmapTool(tool) {
+  mudmapTool = tool;
+  const pen = document.getElementById('mudmapToolPen');
+  const dot = document.getElementById('mudmapToolDot');
+
+  // Draw Route button
+  pen.style.background = tool === 'pen' ? 'var(--blue-deep)' : 'white';
+  pen.style.color = tool === 'pen' ? 'white' : 'var(--blue-deep)';
+  pen.style.border = '2px solid var(--blue-deep)';
+  pen.style.opacity = tool === 'pen' ? '1' : '0.55';
+
+  // Mark Tank button
+  dot.style.background = tool === 'dot' ? 'var(--blue-mid)' : 'white';
+  dot.style.color = tool === 'dot' ? 'white' : 'var(--blue-mid)';
+  dot.style.border = '2px solid var(--blue-mid)';
+  dot.style.opacity = tool === 'dot' ? '1' : '0.55';
+}
+
+function initMudmap() {
+  const wrap = document.getElementById('mudmapWrap');
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    const h = document.getElementById('mudmapImg').style.display === 'block' ? wrap.offsetHeight : 260;
+    const imgData = canvas.toDataURL();
+    canvas.width = wrap.offsetWidth * window.devicePixelRatio;
+    canvas.height = (h || 260) * window.devicePixelRatio;
+    canvas.style.height = (h || 260) + 'px';
+    document.getElementById('mudmapWrap').style.height = (h || 260) + 'px';
+    document.getElementById('mudmapPlaceholder').style.height = (h || 260) + 'px';
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    // Restore drawing after resize
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, wrap.offsetWidth, h || 260);
+    img.src = imgData;
+  }
+  resizeCanvas();
+
+  let drawing = false, lastX, lastY;
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return [(src.clientX - r.left), (src.clientY - r.top)];
+  }
+
+  function start(e) {
+    e.preventDefault();
+    drawing = true;
+    [lastX, lastY] = getPos(e);
+    if (mudmapTool === 'dot') {
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#0055a5';
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      drawing = false;
+    }
+  }
+  function draw(e) {
+    if (!drawing || mudmapTool !== 'pen') return;
+    e.preventDefault();
+    const [x, y] = getPos(e);
+    ctx.strokeStyle = '#cc0000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    [lastX, lastY] = [x, y];
+  }
+  function stop() { drawing = false; }
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', stop);
+}
+
+function clearMudmap() {
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function loadMudmapSatellite() {
+  const addr = document.getElementById('mudmapAddress').value.trim();
+  if (!addr) { showToast('⚠️ Enter a site address first'); return; }
+
+  showToast('🛰️ Loading satellite view...');
+
+  // Use OpenStreetMap static tile via nominatim geocode + tile URL
+  // We geocode the address to get lat/lon, then load a static map image
+  const encoded = encodeURIComponent(addr + ', Australia');
+  fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || !data[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      // Use a static map image from OpenStreetMap
+      const zoom = 18;
+      const w = document.getElementById('mudmapWrap').offsetWidth;
+      const h = 300;
+      // Mapbox static (free tier) or fallback to tile
+      const mapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=${w}&height=${h}&center=lonlat:${lon},${lat}&zoom=${zoom}&apiKey=YOUR_KEY`;
+
+      // Fallback: use a tile-based approach rendered to canvas
+      renderOSMTile(lat, lon, zoom, w, h);
+    })
+    .catch(() => { showToast('⚠️ Could not load map — draw manually'); });
+}
+
+function renderOSMTile(lat, lon, zoom, w, h) {
+  const wrap = document.getElementById('mudmapWrap');
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+  const placeholder = document.getElementById('mudmapPlaceholder');
+
+  // Convert lat/lon to tile coordinates
+  function latLonToTile(lat, lon, z) {
+    const x = Math.floor((lon + 180) / 360 * Math.pow(2, z));
+    const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
+    return { x, y };
+  }
+
+  const tile = latLonToTile(lat, lon, zoom);
+  const tileSize = 256;
+  const tilesX = Math.ceil(w / tileSize) + 1;
+  const tilesY = Math.ceil(h / tileSize) + 1;
+
+  // Set canvas/wrap height
+  wrap.style.height = h + 'px';
+  placeholder.style.display = 'none';
+  canvas.width = w * window.devicePixelRatio;
+  canvas.height = h * window.devicePixelRatio;
+  canvas.style.height = h + 'px';
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  // Draw background
+  ctx.fillStyle = '#e8e0d8';
+  ctx.fillRect(0, 0, w, h);
+
+  // Load tiles
+  let loaded = 0;
+  const total = tilesX * tilesY;
+  const startX = tile.x - Math.floor(tilesX / 2);
+  const startY = tile.y - Math.floor(tilesY / 2);
+
+  // Calculate pixel offset so center tile is centered
+  const centerPixelX = w / 2;
+  const centerPixelY = h / 2;
+
+  for (let tx = 0; tx < tilesX; tx++) {
+    for (let ty = 0; ty < tilesY; ty++) {
+      const tileX = startX + tx;
+      const tileY = startY + ty;
+      const pixX = centerPixelX + (tx - Math.floor(tilesX / 2)) * tileSize;
+      const pixY = centerPixelY + (ty - Math.floor(tilesY / 2)) * tileSize;
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.drawImage(img, pixX, pixY, tileSize, tileSize);
+        loaded++;
+        if (loaded === total) showToast('🗺️ Map loaded — draw your route in red');
+      };
+      img.onerror = () => { loaded++; };
+      // Use satellite tiles from Esri
+      img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
+    }
+  }
+}
+
+function getMudmapDataUrl() {
+  const wrap = document.getElementById('mudmapWrap');
+  const mapCanvas = document.getElementById('mudmapCanvas');
+  const mapImg = document.getElementById('mudmapImg');
+
+  // Compose final image: satellite + drawing
+  const out = document.createElement('canvas');
+  out.width = mapCanvas.width;
+  out.height = mapCanvas.height;
+  const ctx = out.getContext('2d');
+
+  // Check if canvas has any content
+  const blank = document.createElement('canvas');
+  blank.width = mapCanvas.width;
+  blank.height = mapCanvas.height;
+  if (mapCanvas.toDataURL() === blank.toDataURL()) return null;
+
+  ctx.drawImage(mapCanvas, 0, 0);
+  return out.toDataURL('image/jpeg', 0.85);
+}
+
+
+function syncMudmapAddress() {
+  const addr = [
+    document.getElementById('siteAddress')?.value,
+    document.getElementById('suburb')?.value,
+    document.getElementById('postcode')?.value,
+  ].filter(Boolean).join(', ');
+  const el = document.getElementById('mudmapAddress');
+  if (el && addr) el.value = addr;
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -3532,6 +3872,13 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e) { console.warn('EmailJS not loaded:', e); }
 
   renderYNGroups();
+  initMudmap();
+  setMudmapTool('pen');
+
+  // Auto-fill mud map address from site address field
+  document.getElementById('siteAddress').addEventListener('input', syncMudmapAddress);
+  document.getElementById('suburb').addEventListener('input', syncMudmapAddress);
+  document.getElementById('postcode').addEventListener('input', syncMudmapAddress);
   updateAuditResults();
   initSignaturePad('sigAuditor');
   initSignaturePad('sigRep');
