@@ -3719,7 +3719,6 @@ function initMudmap() {
 
   let drawing = false, panning = false;
   let lastX, lastY, panStartX, panStartY;
-  let tileOffsetX = 0, tileOffsetY = 0;
 
   function getPos(e) {
     const r = canvas.getBoundingClientRect();
@@ -3778,7 +3777,9 @@ function initMudmap() {
       tileOffsetY += dy;
       panStartX = x;
       panStartY = y;
-      redrawTiles(tileOffsetX, tileOffsetY);
+      // Move tile canvas via CSS transform — instant, no redraw needed
+      const tc = document.getElementById('mudmapTileCanvas');
+      if (tc) tc.style.transform = `translate(${tileOffsetX}px, ${tileOffsetY}px)`;
       return;
     }
 
@@ -3814,6 +3815,7 @@ function initMudmap() {
 // Store loaded tiles so we can redraw them offset when panning
 let mudmapTileData = null;
 let mudmapTileW = 0, mudmapTileH = 0;
+let tileOffsetX = 0, tileOffsetY = 0;
 
 function redrawTiles(offsetX, offsetY) {
   if (!mudmapTileData) return;
@@ -3840,6 +3842,11 @@ function loadMudmapSatellite() {
   if (!addr) { showToast('⚠️ Enter a site address first'); return; }
 
   showToast('🛰️ Loading satellite view...');
+  // Reset pan offset
+  tileOffsetX = 0;
+  tileOffsetY = 0;
+  const resetTc = document.getElementById('mudmapTileCanvas');
+  if (resetTc) resetTc.style.transform = '';
 
   // Use OpenStreetMap static tile via nominatim geocode + tile URL
   // We geocode the address to get lat/lon, then load a static map image
@@ -3956,12 +3963,17 @@ function getMudmapDataUrl() {
   blank.height = drawCanvas.height;
   if (drawCanvas.toDataURL() === blank.toDataURL()) return null;
 
-  // Composite: tiles first, then drawing on top
+  // Composite: tiles (with pan offset) first, then drawing on top
   const out = document.createElement('canvas');
   out.width = drawCanvas.width;
   out.height = drawCanvas.height;
   const ctx = out.getContext('2d');
-  if (tileCanvas) ctx.drawImage(tileCanvas, 0, 0);
+  if (tileCanvas) {
+    ctx.save();
+    ctx.translate(tileOffsetX * window.devicePixelRatio, tileOffsetY * window.devicePixelRatio);
+    ctx.drawImage(tileCanvas, 0, 0);
+    ctx.restore();
+  }
   ctx.drawImage(drawCanvas, 0, 0);
   return out.toDataURL('image/jpeg', 0.85);
 }
