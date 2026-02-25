@@ -3808,14 +3808,9 @@ function initMudmap() {
   }
 
   function stop() {
-    const wasPanning = panning;
     drawing = false;
     panning = false;
     updateCursor();
-    // After pan ends, reload tiles centered on new position to fill black edges
-    if (wasPanning && mudmapCurrentLat !== null) {
-      setTimeout(() => refillMudmapTiles(), 50);
-    }
   }
 
   canvas.addEventListener('mousedown', start);
@@ -3970,10 +3965,10 @@ function loadMudmapSatellite() {
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
-  // Store for pan-refill
   mudmapCurrentLat = lat;
   mudmapCurrentLon = lon;
   mudmapCurrentZoom = zoom;
+
   const wrap = document.getElementById('mudmapWrap');
   const tc = document.getElementById('mudmapTileCanvas');
   const tctx = tc.getContext('2d');
@@ -3987,46 +3982,53 @@ function renderOSMTile(lat, lon, zoom, w, h) {
 
   const tile = latLonToTile(lat, lon, zoom);
   const tileSize = 256;
-  const tilesX = Math.ceil(w / tileSize) + 2;
-  const tilesY = Math.ceil(h / tileSize) + 2;
 
-  // Set canvas/wrap height — tile canvas draws at CSS pixel size (no DPR scaling)
-  // This ensures CSS transform pan offset matches 1:1 with tile pixel positions
-  wrap.style.height = h + 'px';
-  placeholder.style.display = 'none';
-  tc.width = w;
-  tc.height = h;
-  tc.style.width = '100%';
-  tc.style.height = h + 'px';
-
-  // Also resize drawing canvas
-  const dc = document.getElementById('mudmapCanvas');
-  const dctx = dc.getContext('2d');
-  dc.width = w * window.devicePixelRatio;
-  dc.height = h * window.devicePixelRatio;
-  dc.style.height = h + 'px';
-  dctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-  tctx.fillStyle = '#e8e0d8';
-  tctx.fillRect(0, 0, w, h);
-
-  const centerPixelX = w / 2;
-  const centerPixelY = h / 2;
-  const startX = tile.x - Math.floor(tilesX / 2);
-  const startY = tile.y - Math.floor(tilesY / 2);
-
-  // Offscreen canvas to capture all tiles for pan reference
-  const offscreen = document.createElement('canvas');
+  // Load a 7×7 tile grid — gives ~3 tiles of pan room in each direction
+  const PAD = 3;
+  const tilesX = Math.ceil(w / tileSize) + PAD * 2;
+  const tilesY = Math.ceil(h / tileSize) + PAD * 2;
   const totalW = tilesX * tileSize;
   const totalH = tilesY * tileSize;
-  offscreen.width = totalW;
-  offscreen.height = totalH;
-  const octx = offscreen.getContext('2d');
-  octx.fillStyle = '#e8e0d8';
-  octx.fillRect(0, 0, totalW, totalH);
 
-  mudmapTileW = totalW;
-  mudmapTileH = totalH;
+  // The tile canvas is larger than the viewport
+  // Centre it so the target location sits in the middle of the view
+  const offsetLeft = -Math.floor((totalW - w) / 2);
+  const offsetTop  = -Math.floor((totalH - h) / 2);
+
+  wrap.style.height = h + 'px';
+  placeholder.style.display = 'none';
+
+  // Size tile canvas to full grid
+  tc.width  = totalW;
+  tc.height = totalH;
+  tc.style.width  = totalW + 'px';
+  tc.style.height = totalH + 'px';
+  // Position it centred behind the viewport window
+  tc.style.position = 'absolute';
+  tc.style.left = offsetLeft + 'px';
+  tc.style.top  = offsetTop  + 'px';
+  // Reset any previous pan transform
+  tileOffsetX = 0;
+  tileOffsetY = 0;
+  tc.style.transform = '';
+
+  // Also reset & resize drawing canvas to viewport size
+  const dc = document.getElementById('mudmapCanvas');
+  const dctx = dc.getContext('2d');
+  dc.width  = w * window.devicePixelRatio;
+  dc.height = h * window.devicePixelRatio;
+  dc.style.width  = '100%';
+  dc.style.height = h + 'px';
+  dc.style.left = '0';
+  dc.style.top  = '0';
+  dctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  tctx.fillStyle = '#2a2a2a';
+  tctx.fillRect(0, 0, totalW, totalH);
+
+  // Which tile is at top-left of the grid
+  const startX = tile.x - Math.floor(tilesX / 2);
+  const startY = tile.y - Math.floor(tilesY / 2);
 
   let loaded = 0;
   const total = tilesX * tilesY;
@@ -4035,21 +4037,15 @@ function renderOSMTile(lat, lon, zoom, w, h) {
     for (let ty = 0; ty < tilesY; ty++) {
       const tileX = startX + tx;
       const tileY = startY + ty;
-      const pixX = centerPixelX + (tx - Math.floor(tilesX / 2)) * tileSize;
-      const pixY = centerPixelY + (ty - Math.floor(tilesY / 2)) * tileSize;
-      const offX = tx * tileSize;
-      const offY = ty * tileSize;
+      const pixX = tx * tileSize;
+      const pixY = ty * tileSize;
 
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         tctx.drawImage(img, pixX, pixY, tileSize, tileSize);
-        octx.drawImage(img, offX, offY, tileSize, tileSize);
         loaded++;
-        if (loaded === total) {
-          mudmapTileData = offscreen.toDataURL();
-          showToast('🗺️ Map loaded — draw your route in red');
-        }
+        if (loaded === total) showToast('🗺️ Satellite loaded — pan freely then draw');
       };
       img.onerror = () => { loaded++; };
       img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
@@ -4067,18 +4063,26 @@ function getMudmapDataUrl() {
   blank.height = drawCanvas.height;
   if (drawCanvas.toDataURL() === blank.toDataURL()) return null;
 
-  // Composite: tiles (with pan offset) first, then drawing on top
+  const wrap = document.getElementById('mudmapWrap');
+  const w = wrap.offsetWidth;
+  const h = 300;
+
+  // Composite: crop the visible portion of the tile canvas (accounting for pan offset and initial offset)
   const out = document.createElement('canvas');
-  out.width = drawCanvas.width;
-  out.height = drawCanvas.height;
+  out.width  = w * window.devicePixelRatio;
+  out.height = h * window.devicePixelRatio;
   const ctx = out.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
   if (tileCanvas) {
-    ctx.save();
-    ctx.translate(tileOffsetX * window.devicePixelRatio, tileOffsetY * window.devicePixelRatio);
-    ctx.drawImage(tileCanvas, 0, 0);
-    ctx.restore();
+    // tc.style.left is the initial centering offset, tileOffsetX is the user pan
+    const baseLeft = parseInt(tileCanvas.style.left) || 0;
+    const baseTop  = parseInt(tileCanvas.style.top)  || 0;
+    const totalLeft = baseLeft + tileOffsetX;
+    const totalTop  = baseTop  + tileOffsetY;
+    ctx.drawImage(tileCanvas, -totalLeft, -totalTop, tileCanvas.width, tileCanvas.height);
   }
-  ctx.drawImage(drawCanvas, 0, 0);
+  ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, 0, 0, w, h);
   return out.toDataURL('image/jpeg', 0.85);
 }
 
