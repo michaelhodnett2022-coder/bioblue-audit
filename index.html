@@ -1496,41 +1496,46 @@
     <div class="section-body" id="sectionMudmap">
 
       <p style="font-size:12.5px;color:var(--gray-mid);margin-bottom:12px;">
-        Enter the site address below to load a satellite view, then draw the truck entry/exit route and mark the AdBlue® tank location using your finger or mouse. Drawing appears in red.
+        Enter the site address below to load a satellite view, then draw the truck entry/exit route and mark the AdBlue® tank location using your finger or mouse.
       </p>
 
       <!-- Address loader -->
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
         <input type="text" id="mudmapAddress" placeholder="Site address (auto-filled from Section A)" style="flex:1;min-width:200px;">
         <button class="btn btn-secondary" onclick="loadMudmapSatellite()" style="white-space:nowrap;">🛰️ Load Satellite View</button>
-        <button class="btn btn-secondary" onclick="clearMudmap()" style="white-space:nowrap;">✕ Clear Drawing</button>
+      </div>
+
+      <!-- Tool bar -->
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+        <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Draw Route</button>
+        <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;opacity:0.55;">📍 Mark Tank</button>
+        <button onclick="setMudmapTool('pan')" id="mudmapToolPan" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;opacity:0.55;">🖐 Pan Map</button>
+        <div style="flex:1;"></div>
+        <button onclick="undoMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--amber);background:white;color:var(--amber);font-weight:700;cursor:pointer;">↩ Undo</button>
+        <button onclick="clearMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;">✕ Clear All</button>
       </div>
 
       <!-- Map + drawing canvas stacked -->
       <div id="mudmapWrap" style="position:relative;width:100%;border-radius:8px;overflow:hidden;border:2px solid var(--blue-light);background:#e8e0d8;">
-        <!-- Satellite image layer -->
-        <img id="mudmapImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">
+        <!-- Satellite tile layer canvas -->
+        <canvas id="mudmapTileCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
         <!-- Placeholder when no image -->
-        <div id="mudmapPlaceholder" style="width:100%;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-mid);gap:8px;">
+        <div id="mudmapPlaceholder" style="width:100%;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--gray-mid);gap:8px;">
           <span style="font-size:36px;">🛰️</span>
           <span style="font-size:13px;font-weight:600;">Enter site address above and tap Load Satellite View</span>
-          <span style="font-size:11px;">Or draw directly on the blank canvas below to create a manual mud map</span>
+          <span style="font-size:11px;">Or draw directly on the blank canvas to create a manual mud map</span>
         </div>
         <!-- Drawing canvas on top -->
         <canvas id="mudmapCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;touch-action:none;"></canvas>
       </div>
 
       <!-- Legend -->
-      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;">
+      <div style="display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;align-items:center;">
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-mid);">
           <div style="width:28px;height:3px;background:#cc0000;border-radius:2px;"></div> Truck route
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray-mid);">
-          <div style="width:10px;height:10px;background:#0055a5;border-radius:50%;border:1.5px solid white;box-shadow:0 0 0 1px #0055a5;"></div> AdBlue® tank
-        </div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Draw Route</button>
-          <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;">📍 Mark Tank</button>
+          <div style="width:14px;height:14px;background:#0055a5;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px #0055a5;"></div> AdBlue® tank
         </div>
       </div>
 
@@ -3644,18 +3649,47 @@ function setMudmapTool(tool) {
   mudmapTool = tool;
   const pen = document.getElementById('mudmapToolPen');
   const dot = document.getElementById('mudmapToolDot');
+  const pan = document.getElementById('mudmapToolPan');
 
-  // Draw Route button
   pen.style.background = tool === 'pen' ? 'var(--blue-deep)' : 'white';
   pen.style.color = tool === 'pen' ? 'white' : 'var(--blue-deep)';
   pen.style.border = '2px solid var(--blue-deep)';
   pen.style.opacity = tool === 'pen' ? '1' : '0.55';
 
-  // Mark Tank button
   dot.style.background = tool === 'dot' ? 'var(--blue-mid)' : 'white';
   dot.style.color = tool === 'dot' ? 'white' : 'var(--blue-mid)';
   dot.style.border = '2px solid var(--blue-mid)';
   dot.style.opacity = tool === 'dot' ? '1' : '0.55';
+
+  pan.style.background = tool === 'pan' ? 'var(--gray-mid)' : 'white';
+  pan.style.color = tool === 'pan' ? 'white' : 'var(--gray-mid)';
+  pan.style.border = '2px solid var(--gray-mid)';
+  pan.style.opacity = tool === 'pan' ? '1' : '0.55';
+
+  const canvas = document.getElementById('mudmapCanvas');
+  if (canvas) canvas.style.cursor = tool === 'pan' ? 'grab' : 'crosshair';
+}
+
+// Mudmap history for undo
+let mudmapHistory = [];
+
+function saveMudmapState() {
+  const canvas = document.getElementById('mudmapCanvas');
+  mudmapHistory.push(canvas.toDataURL());
+  if (mudmapHistory.length > 30) mudmapHistory.shift(); // cap history
+}
+
+function undoMudmap() {
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+  if (mudmapHistory.length === 0) { showToast('Nothing to undo'); return; }
+  const prev = mudmapHistory.pop();
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
+  img.src = prev;
 }
 
 function initMudmap() {
@@ -3664,22 +3698,28 @@ function initMudmap() {
   const ctx = canvas.getContext('2d');
 
   function resizeCanvas() {
-    const h = document.getElementById('mudmapImg').style.display === 'block' ? wrap.offsetHeight : 260;
+    const h = 300;
     const imgData = canvas.toDataURL();
     canvas.width = wrap.offsetWidth * window.devicePixelRatio;
-    canvas.height = (h || 260) * window.devicePixelRatio;
-    canvas.style.height = (h || 260) + 'px';
-    document.getElementById('mudmapWrap').style.height = (h || 260) + 'px';
-    document.getElementById('mudmapPlaceholder').style.height = (h || 260) + 'px';
+    canvas.height = h * window.devicePixelRatio;
+    canvas.style.height = h + 'px';
+    wrap.style.height = h + 'px';
+    document.getElementById('mudmapPlaceholder').style.height = h + 'px';
+    // Also resize tile canvas
+    const tc = document.getElementById('mudmapTileCanvas');
+    if (tc) { tc.width = wrap.offsetWidth * window.devicePixelRatio; tc.height = h * window.devicePixelRatio; tc.style.height = h + 'px'; }
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     // Restore drawing after resize
     const img = new Image();
-    img.onload = () => ctx.drawImage(img, 0, 0, wrap.offsetWidth, h || 260);
+    img.onload = () => ctx.drawImage(img, 0, 0, wrap.offsetWidth, h);
     img.src = imgData;
   }
   resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
-  let drawing = false, lastX, lastY;
+  let drawing = false, panning = false;
+  let lastX, lastY, panStartX, panStartY;
+  let tileOffsetX = 0, tileOffsetY = 0;
 
   function getPos(e) {
     const r = canvas.getBoundingClientRect();
@@ -3687,27 +3727,65 @@ function initMudmap() {
     return [(src.clientX - r.left), (src.clientY - r.top)];
   }
 
+  function updateCursor() {
+    if (mudmapTool === 'pan') canvas.style.cursor = 'grab';
+    else if (mudmapTool === 'dot') canvas.style.cursor = 'crosshair';
+    else canvas.style.cursor = 'crosshair';
+  }
+
   function start(e) {
     e.preventDefault();
-    drawing = true;
     [lastX, lastY] = getPos(e);
+
+    if (mudmapTool === 'pan') {
+      panning = true;
+      panStartX = lastX;
+      panStartY = lastY;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+
     if (mudmapTool === 'dot') {
+      saveMudmapState();
       ctx.beginPath();
-      ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      ctx.arc(lastX, lastY, 9, 0, Math.PI * 2);
       ctx.fillStyle = '#0055a5';
       ctx.fill();
       ctx.strokeStyle = 'white';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
       ctx.stroke();
-      drawing = false;
+      // Inner highlight
+      ctx.beginPath();
+      ctx.arc(lastX - 2.5, lastY - 2.5, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fill();
+      return;
     }
+
+    // pen tool
+    drawing = true;
+    saveMudmapState();
   }
+
   function draw(e) {
-    if (!drawing || mudmapTool !== 'pen') return;
     e.preventDefault();
+
+    if (panning && mudmapTool === 'pan') {
+      const [x, y] = getPos(e);
+      const dx = x - panStartX;
+      const dy = y - panStartY;
+      tileOffsetX += dx;
+      tileOffsetY += dy;
+      panStartX = x;
+      panStartY = y;
+      redrawTiles(tileOffsetX, tileOffsetY);
+      return;
+    }
+
+    if (!drawing || mudmapTool !== 'pen') return;
     const [x, y] = getPos(e);
     ctx.strokeStyle = '#cc0000';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
@@ -3716,7 +3794,12 @@ function initMudmap() {
     ctx.stroke();
     [lastX, lastY] = [x, y];
   }
-  function stop() { drawing = false; }
+
+  function stop() {
+    drawing = false;
+    panning = false;
+    updateCursor();
+  }
 
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', draw);
@@ -3724,12 +3807,32 @@ function initMudmap() {
   canvas.addEventListener('touchstart', start, { passive: false });
   canvas.addEventListener('touchmove', draw, { passive: false });
   canvas.addEventListener('touchend', stop);
+
+  updateCursor();
+}
+
+// Store loaded tiles so we can redraw them offset when panning
+let mudmapTileData = null;
+let mudmapTileW = 0, mudmapTileH = 0;
+
+function redrawTiles(offsetX, offsetY) {
+  if (!mudmapTileData) return;
+  const tc = document.getElementById('mudmapTileCanvas');
+  const ctx = tc.getContext('2d');
+  ctx.clearRect(0, 0, tc.width, tc.height);
+  ctx.fillStyle = '#e8e0d8';
+  ctx.fillRect(0, 0, tc.width, tc.height);
+  const img = new Image();
+  img.onload = () => ctx.drawImage(img, offsetX, offsetY, mudmapTileW, mudmapTileH);
+  img.src = mudmapTileData;
 }
 
 function clearMudmap() {
   const canvas = document.getElementById('mudmapCanvas');
   const ctx = canvas.getContext('2d');
+  mudmapHistory = [];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  showToast('🗺️ Drawing cleared');
 }
 
 function loadMudmapSatellite() {
@@ -3762,11 +3865,10 @@ function loadMudmapSatellite() {
 
 function renderOSMTile(lat, lon, zoom, w, h) {
   const wrap = document.getElementById('mudmapWrap');
-  const canvas = document.getElementById('mudmapCanvas');
-  const ctx = canvas.getContext('2d');
+  const tc = document.getElementById('mudmapTileCanvas');
+  const tctx = tc.getContext('2d');
   const placeholder = document.getElementById('mudmapPlaceholder');
 
-  // Convert lat/lon to tile coordinates
   function latLonToTile(lat, lon, z) {
     const x = Math.floor((lon + 180) / 360 * Math.pow(2, z));
     const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, z));
@@ -3775,30 +3877,48 @@ function renderOSMTile(lat, lon, zoom, w, h) {
 
   const tile = latLonToTile(lat, lon, zoom);
   const tileSize = 256;
-  const tilesX = Math.ceil(w / tileSize) + 1;
-  const tilesY = Math.ceil(h / tileSize) + 1;
+  const tilesX = Math.ceil(w / tileSize) + 2;
+  const tilesY = Math.ceil(h / tileSize) + 2;
 
   // Set canvas/wrap height
   wrap.style.height = h + 'px';
   placeholder.style.display = 'none';
-  canvas.width = w * window.devicePixelRatio;
-  canvas.height = h * window.devicePixelRatio;
-  canvas.style.height = h + 'px';
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  tc.width = w * window.devicePixelRatio;
+  tc.height = h * window.devicePixelRatio;
+  tc.style.height = h + 'px';
+  tctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-  // Draw background
-  ctx.fillStyle = '#e8e0d8';
-  ctx.fillRect(0, 0, w, h);
+  // Also resize drawing canvas
+  const dc = document.getElementById('mudmapCanvas');
+  const dctx = dc.getContext('2d');
+  dc.width = w * window.devicePixelRatio;
+  dc.height = h * window.devicePixelRatio;
+  dc.style.height = h + 'px';
+  dctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-  // Load tiles
-  let loaded = 0;
-  const total = tilesX * tilesY;
+  tctx.fillStyle = '#e8e0d8';
+  tctx.fillRect(0, 0, w, h);
+
+  const centerPixelX = w / 2;
+  const centerPixelY = h / 2;
   const startX = tile.x - Math.floor(tilesX / 2);
   const startY = tile.y - Math.floor(tilesY / 2);
 
-  // Calculate pixel offset so center tile is centered
-  const centerPixelX = w / 2;
-  const centerPixelY = h / 2;
+  // Offscreen canvas to capture all tiles for pan reference
+  const offscreen = document.createElement('canvas');
+  const totalW = tilesX * tileSize;
+  const totalH = tilesY * tileSize;
+  offscreen.width = totalW;
+  offscreen.height = totalH;
+  const octx = offscreen.getContext('2d');
+  octx.fillStyle = '#e8e0d8';
+  octx.fillRect(0, 0, totalW, totalH);
+
+  mudmapTileW = totalW;
+  mudmapTileH = totalH;
+
+  let loaded = 0;
+  const total = tilesX * tilesY;
 
   for (let tx = 0; tx < tilesX; tx++) {
     for (let ty = 0; ty < tilesY; ty++) {
@@ -3806,39 +3926,43 @@ function renderOSMTile(lat, lon, zoom, w, h) {
       const tileY = startY + ty;
       const pixX = centerPixelX + (tx - Math.floor(tilesX / 2)) * tileSize;
       const pixY = centerPixelY + (ty - Math.floor(tilesY / 2)) * tileSize;
+      const offX = tx * tileSize;
+      const offY = ty * tileSize;
 
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
-        ctx.drawImage(img, pixX, pixY, tileSize, tileSize);
+        tctx.drawImage(img, pixX, pixY, tileSize, tileSize);
+        octx.drawImage(img, offX, offY, tileSize, tileSize);
         loaded++;
-        if (loaded === total) showToast('🗺️ Map loaded — draw your route in red');
+        if (loaded === total) {
+          mudmapTileData = offscreen.toDataURL();
+          showToast('🗺️ Map loaded — draw your route in red');
+        }
       };
       img.onerror = () => { loaded++; };
-      // Use satellite tiles from Esri
       img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
     }
   }
 }
 
 function getMudmapDataUrl() {
-  const wrap = document.getElementById('mudmapWrap');
-  const mapCanvas = document.getElementById('mudmapCanvas');
-  const mapImg = document.getElementById('mudmapImg');
+  const drawCanvas = document.getElementById('mudmapCanvas');
+  const tileCanvas = document.getElementById('mudmapTileCanvas');
 
-  // Compose final image: satellite + drawing
-  const out = document.createElement('canvas');
-  out.width = mapCanvas.width;
-  out.height = mapCanvas.height;
-  const ctx = out.getContext('2d');
-
-  // Check if canvas has any content
+  // Check if drawing canvas has anything on it
   const blank = document.createElement('canvas');
-  blank.width = mapCanvas.width;
-  blank.height = mapCanvas.height;
-  if (mapCanvas.toDataURL() === blank.toDataURL()) return null;
+  blank.width = drawCanvas.width;
+  blank.height = drawCanvas.height;
+  if (drawCanvas.toDataURL() === blank.toDataURL()) return null;
 
-  ctx.drawImage(mapCanvas, 0, 0);
+  // Composite: tiles first, then drawing on top
+  const out = document.createElement('canvas');
+  out.width = drawCanvas.width;
+  out.height = drawCanvas.height;
+  const ctx = out.getContext('2d');
+  if (tileCanvas) ctx.drawImage(tileCanvas, 0, 0);
+  ctx.drawImage(drawCanvas, 0, 0);
   return out.toDataURL('image/jpeg', 0.85);
 }
 
