@@ -1919,7 +1919,7 @@ function checkCorrectiveActionsRequired() {
   });
 
   // solidColor neutral Y answers (gate/induction/PPE) that need noting
-  const solidYItems = allQs.filter(q => q.solidColor && q.reverseColor && ynValues[q.id] === 'Y');
+  const solidYItems = allQs.filter(q => q.solidColor && ynValues[q.id] === 'Y');
   const solidYLabels = solidYItems.map(q => {
     if (q.id === 'gateAccess')   return 'Gate codes / swipe access / key arrangements required';
     if (q.id === 'siteInduction') return 'Site-specific induction or sign-in process required';
@@ -3277,7 +3277,7 @@ async function fillTestData() {
     truckAccess: 'Y', overheadWires: 'N', manoeuvre: 'Y',
     noReverse: 'Y', parkingMarked: 'Y', gateAccess: 'Y',
     // B2
-    siteInduction: 'N', pedestrianAccess: 'Y', hazardFree: 'Y',
+    siteInduction: 'Y', pedestrianAccess: 'Y', hazardFree: 'Y',
     lighting: 'Y', safetyCones: 'Y', tankVents: 'Y', ppeRequired: 'Y',
     // B3
     spillContain: 'Y', awayFromDrains: 'Y', drainCovers: 'Y', spillKit: 'Y',
