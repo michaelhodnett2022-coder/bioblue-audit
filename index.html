@@ -317,6 +317,21 @@
   .yn-item.na      { background: var(--orange-light); border-color: #f5ddb5; }
   .yn-item.yes-soft { background: #f0faf5; border-color: #cceedd; }
   .yn-item.no-soft  { background: #fef6f5; border-color: #f5d8d6; }
+  .yn-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    background: var(--blue-mid);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
 
   .yn-question {
     flex: 1;
@@ -1775,57 +1790,57 @@ function getCustomerName() {
 
 const ynQuestions = {
   'b1': [
-    { id: 'truckAccess', text: 'Is truck access to/from the customer site free of obstruction?' },
-    { id: 'overheadWires', text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
-    { id: 'manoeuvre', text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
-    { id: 'noReverse', text: 'Can vehicle be manoeuvred without reversing on premises?' },
-    { id: 'parkingMarked', text: 'Parking and unloading areas are clearly marked or communicated.' },
-    { id: 'gateAccess', text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
+    { id: 'truckAccess',   num: 1,  text: 'Is truck access to/from the customer site free of obstruction?' },
+    { id: 'overheadWires', num: 2,  text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
+    { id: 'manoeuvre',     num: 3,  text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
+    { id: 'noReverse',     num: 4,  text: 'Can vehicle be manoeuvred without reversing on premises?' },
+    { id: 'parkingMarked', num: 5,  text: 'Parking and unloading areas are clearly marked or communicated.' },
+    { id: 'gateAccess',    num: 6,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
   ],
   'b2': [
-    { id: 'siteInduction', text: 'Is a site-specific induction or sign-in process required? (if YES, include details in Notes)', scoreNeutral: true, reverseColor: true, solidColor: true },
-    { id: 'pedestrianAccess', text: 'Is there safe pedestrian access to the tank fill point(s) to undertake delivery?' },
-    { id: 'hazardFree', text: 'Is the delivery area/zone free of hazards or obstacles?' },
-    { id: 'lighting', text: 'Is adequate lighting provided for early morning or evening deliveries?' },
-    { id: 'safetyCones', text: 'Safety cones or barriers are available to secure the delivery zone?' },
-    { id: 'tankVents', text: 'Are tank vents fitted, with no signs of overpressure/vacuum stress (e.g. deformation)?' },
-    { id: 'ppeRequired', text: 'Are there any site-specific Personal Protective Equipment (PPE) requirements?', triggerField: 'ppeField', scoreNeutral: true, reverseColor: true, solidColor: true },
+    { id: 'siteInduction',    num: 7,  text: 'Is a site-specific induction or sign-in process required? (if YES, include details in Notes)', scoreNeutral: true, reverseColor: true, solidColor: true },
+    { id: 'pedestrianAccess', num: 8,  text: 'Is there safe pedestrian access to the tank fill point(s) to undertake delivery?' },
+    { id: 'hazardFree',       num: 9,  text: 'Is the delivery area/zone free of hazards or obstacles?' },
+    { id: 'lighting',         num: 10, text: 'Is adequate lighting provided for early morning or evening deliveries?' },
+    { id: 'safetyCones',      num: 11, text: 'Safety cones or barriers are available to secure the delivery zone?' },
+    { id: 'tankVents',        num: 12, text: 'Are tank vents fitted, with no signs of overpressure/vacuum stress (e.g. deformation)?' },
+    { id: 'ppeRequired',      num: 13, text: 'Are there any site-specific Personal Protective Equipment (PPE) requirements?', triggerField: 'ppeField', scoreNeutral: true, reverseColor: true, solidColor: true },
   ],
   'b3': [
-    { id: 'spillContain', text: 'If a large spill in excess of 20L occurred on site would the product remain on the site?' },
-    { id: 'awayFromDrains', text: 'Is the AdBlue® delivery point located away from stormwater drains or runoff zones?' },
-    { id: 'drainCovers', text: 'Drains near delivery zone are marked and protected during delivery (e.g. drain covers)?' },
-    { id: 'spillKit', text: 'AdBlue® appropriate (hydrophilic) Spill Kit is accessible on site and clearly labelled?' },
+    { id: 'spillContain',    num: 14, text: 'If a large spill in excess of 20L occurred on site would the product remain on the site?' },
+    { id: 'awayFromDrains',  num: 15, text: 'Is the AdBlue® delivery point located away from stormwater drains or runoff zones?' },
+    { id: 'drainCovers',     num: 16, text: 'Drains near delivery zone are marked and protected during delivery (e.g. drain covers)?' },
+    { id: 'spillKit',        num: 17, text: 'AdBlue® appropriate (hydrophilic) Spill Kit is accessible on site and clearly labelled?' },
   ],
   'c1': [
-    { id: 'fillCondition', text: 'Are fill connections in good condition?' },
-    { id: 'driverAccess', text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
-    { id: 'highAccess', text: 'If access point higher than 2m; is there safe raised platform/rails or secure tether point?', hasNA: true },
-    { id: 'fillLabelled', text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
-    { id: 'safeFillMarked', text: 'Is the Safe Fill Level clearly marked/indicated on the tank?' },
-    { id: 'dipLabelled', text: 'Is tank dip point correctly labelled for AdBlue® and with tank number (if applicable)?' },
-    { id: 'levelAccurate', text: 'Is level monitoring system output accurate and marked in litres?', hasNA: true },
+    { id: 'fillCondition',  num: 18, text: 'Are fill connections in good condition?' },
+    { id: 'driverAccess',   num: 19, text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
+    { id: 'highAccess',     num: 20, text: 'If access point higher than 2m; is there safe raised platform/rails or secure tether point?', hasNA: true },
+    { id: 'fillLabelled',   num: 21, text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'safeFillMarked', num: 22, text: 'Is the Safe Fill Level clearly marked/indicated on the tank?' },
+    { id: 'dipLabelled',    num: 23, text: 'Is tank dip point correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'levelAccurate',  num: 24, text: 'Is level monitoring system output accurate and marked in litres?', hasNA: true },
   ],
   'c2': [
-    { id: 'dedicatedTank', text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
-    { id: 'tankLabelled', text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
-    { id: 'compatMaterials', text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
-    { id: 'noIncompat', text: 'Does the Tank/dispensing unit contain copper, brass, aluminium, or uncoated mild steel?<sup>2</sup>', reverseColor: true },
-    { id: 'noLeak', text: 'Storage tank is free of visible leak(s)/damage.' },
-    { id: 'protectedTemp', text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
-    { id: 'tankCleaned', text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
-    { id: 'sealedEquip', text: 'AdBlue® is dispensed using clean, sealed equipment dedicated for AdBlue®.' },
-    { id: 'nozzleClean', text: 'Dispensing nozzle is clean and free from dirt, grime or foreign matter.' },
-    { id: 'lidSealed', text: 'Tank lid is closed and properly sealed (if applicable).' },
-    { id: 'ventSystem', text: 'Tank is fitted with compliant venting system (dust-proof, splashback-proof and filtered).' },
-    { id: 'ventCondition', text: 'Tank vent(s) are properly sealed, in good condition, and not blocked by foreign materials.' },
-    { id: 'fillClean', text: 'The AdBlue® fill point is clean and free from dirt, grime and foreign matter.' },
-    { id: 'dustCap', text: 'The AdBlue® fill point is fitted with a dust cap.' },
+    { id: 'dedicatedTank',   num: 25, text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
+    { id: 'tankLabelled',    num: 26, text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
+    { id: 'compatMaterials', num: 27, text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
+    { id: 'noIncompat',      num: 28, text: 'Does the Tank/dispensing unit contain copper, brass, aluminium, or uncoated mild steel?<sup>2</sup>', reverseColor: true },
+    { id: 'noLeak',          num: 29, text: 'Storage tank is free of visible leak(s)/damage.' },
+    { id: 'protectedTemp',   num: 30, text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
+    { id: 'tankCleaned',     num: 31, text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
+    { id: 'sealedEquip',     num: 32, text: 'AdBlue® is dispensed using clean, sealed equipment dedicated for AdBlue®.' },
+    { id: 'nozzleClean',     num: 33, text: 'Dispensing nozzle is clean and free from dirt, grime or foreign matter.' },
+    { id: 'lidSealed',       num: 34, text: 'Tank lid is closed and properly sealed (if applicable).' },
+    { id: 'ventSystem',      num: 35, text: 'Tank is fitted with compliant venting system (dust-proof, splashback-proof and filtered).' },
+    { id: 'ventCondition',   num: 36, text: 'Tank vent(s) are properly sealed, in good condition, and not blocked by foreign materials.' },
+    { id: 'fillClean',       num: 37, text: 'The AdBlue® fill point is clean and free from dirt, grime and foreign matter.' },
+    { id: 'dustCap',         num: 38, text: 'The AdBlue® fill point is fitted with a dust cap.' },
   ],
   'e1': [
-    { id: 'photoGate', text: 'I have taken time-stamped photos of the site front gate/entrance.', scoreNeutral: true },
-    { id: 'photoTank', text: 'I have taken time-stamped photos of the delivery zone and AdBlue® tank/fill point.', scoreNeutral: true },
-    { id: 'nonCompComm', text: 'Any identified non-compliances have been clearly communicated to the site representative, along with recommended corrective actions where applicable.', scoreNeutral: true },
+    { id: 'photoGate',   num: 39, text: 'I have taken time-stamped photos of the site front gate/entrance.', scoreNeutral: true },
+    { id: 'photoTank',   num: 40, text: 'I have taken time-stamped photos of the delivery zone and AdBlue® tank/fill point.', scoreNeutral: true },
+    { id: 'nonCompComm', num: 41, text: 'Any identified non-compliances have been clearly communicated to the site representative, along with recommended corrective actions where applicable.', scoreNeutral: true },
   ],
 };
 
@@ -1846,7 +1861,7 @@ function renderYNGroups() {
       div.id = 'ynitem-' + q.id;
       const hasNA = q.hasNA || false;
       div.innerHTML = `
-        <div class="yn-question">${q.text}</div>
+        <div class="yn-question"><span class="yn-num">${q.num}</span>${q.text}</div>
         <div class="yn-controls">
           <button class="yn-btn" onclick="setYN('${q.id}','Y','${group}','${q.triggerField||''}')">Y</button>
           <button class="yn-btn" onclick="setYN('${q.id}','N','${group}','${q.triggerField||''}')">N</button>
@@ -1921,10 +1936,10 @@ function checkCorrectiveActionsRequired() {
   // solidColor neutral Y answers (gate/induction/PPE) that need noting
   const solidYItems = allQs.filter(q => q.solidColor && ynValues[q.id] === 'Y');
   const solidYLabels = solidYItems.map(q => {
-    if (q.id === 'gateAccess')   return 'Gate codes / swipe access / key arrangements required';
-    if (q.id === 'siteInduction') return 'Site-specific induction or sign-in process required';
-    if (q.id === 'ppeRequired')  return 'Site-specific PPE requirements apply';
-    return q.text.replace(/<[^>]+>/g,'');
+    if (q.id === 'gateAccess')    return `Q${q.num} — Gate codes / swipe access / key arrangements required`;
+    if (q.id === 'siteInduction') return `Q${q.num} — Site-specific induction or sign-in process required`;
+    if (q.id === 'ppeRequired')   return `Q${q.num} — Site-specific PPE requirements apply`;
+    return `Q${q.num} — ` + q.text.replace(/<[^>]+>/g,'');
   });
 
   const label    = document.getElementById('correctiveActionsLabel');
@@ -1936,10 +1951,12 @@ function checkCorrectiveActionsRequired() {
     if (hint)  hint.style.display = 'block';
 
     let hintMsg = '';
-    if (hasFailure)           hintMsg += '⚠️ <strong>Required</strong> — One or more audit items have failed. You must document corrective actions before submitting.';
+    if (hasFailure) hintMsg += '⚠️ <strong>Required</strong> — One or more audit items have failed. You must document corrective actions before submitting.';
     if (solidYItems.length > 0) {
-      if (hintMsg) hintMsg += '<br>';
-      hintMsg += '📋 <strong>Please note in Corrective Actions:</strong> ' + solidYLabels.join(' · ');
+      if (hintMsg) hintMsg += '<br><br>';
+      hintMsg += '📋 <strong>Please note in Corrective Actions:</strong><ul style="margin:6px 0 0 18px;padding:0;">' +
+        solidYLabels.map(l => `<li style="margin-bottom:3px;">${l}</li>`).join('') +
+        '</ul>';
     }
     if (hint) hint.innerHTML = hintMsg;
     if (textarea && !textarea.value) textarea.placeholder = 'REQUIRED — Document corrective actions and/or site-specific requirements (gate codes, induction, PPE) below...';
