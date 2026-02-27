@@ -1985,7 +1985,11 @@ function checkCorrectiveActionsRequired() {
 
 function checkC2Compliance() {
   const c2Questions = ynQuestions['c2'];
-  const hasNo = c2Questions.some(q => ynValues[q.id] === 'N');
+  const hasNo = c2Questions.some(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
   document.getElementById('ncWarning').classList.toggle('visible', hasNo);
 }
 
