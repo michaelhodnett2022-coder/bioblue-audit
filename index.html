@@ -1091,6 +1091,7 @@
     </div>
     <div class="header-actions">
       <button class="btn btn-secondary" onclick="clearForm()">🔄 Clear</button>
+      <button class="btn btn-secondary" onclick="loadDraftManual()" id="loadDraftBtn" style="display:none;">📂 Load Draft</button>
       <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
     </div>
   </div>
@@ -1098,7 +1099,19 @@
     <div class="progress-bar-fill" id="progressBar"></div>
   </div>
   <div class="progress-label" id="progressLabel">0% complete</div>
-</div>
+
+  <!-- Draft restore banner -->
+  <div id="draftBanner" style="display:none;background:#fffbe6;border:2px solid #f0c040;border-radius:10px;margin:12px 16px 0;padding:14px 16px;display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span style="font-size:20px;">📂</span>
+    <div style="flex:1;min-width:180px;">
+      <div style="font-weight:700;font-size:13.5px;color:#7a5c00;">Saved draft found</div>
+      <div style="font-size:12px;color:#9a7a20;">You have a previously saved audit draft. Would you like to restore it?</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="loadDraft();hideDraftBanner();" style="padding:8px 18px;border-radius:8px;background:#f0c040;border:none;font-weight:700;font-size:13px;cursor:pointer;color:#5a3e00;">✅ Restore Draft</button>
+      <button onclick="hideDraftBanner();" style="padding:8px 14px;border-radius:8px;background:white;border:2px solid #ccc;font-weight:600;font-size:13px;cursor:pointer;color:#666;">Dismiss</button>
+    </div>
+  </div>
 
 <!-- MAIN CONTENT -->
 <div class="main-content">
@@ -1753,7 +1766,8 @@
 <!-- STICKY FOOTER -->
 <div class="sticky-footer">
   <button class="btn btn-clear btn-lg" onclick="confirmClearForm()">🗑️ Clear Form</button>
-  <button class="btn btn-submit btn-lg" onclick="saveAndSend()" style="min-width:260px;">
+  <button class="btn btn-secondary btn-lg" onclick="downloadPDFOnly()" style="white-space:nowrap;">⬇️ Download PDF</button>
+  <button class="btn btn-submit btn-lg" onclick="saveAndSend()" style="min-width:220px;">
     📧 Complete &amp; Send Audit
   </button>
 </div>
@@ -1927,9 +1941,11 @@ function checkCorrectiveActionsRequired() {
   const allQs = Object.values(ynQuestions).flat();
 
   // Scored failures
-  const hasFailure = allQs.some(q => {
+  // Only C2 failures make corrective actions mandatory
+  const c2Qs = ynQuestions['c2'] || [];
+  const hasC2Failure = c2Qs.some(q => {
     const val = ynValues[q.id];
-    if (!val || val === 'NA' || q.scoreNeutral) return false;
+    if (!val || val === 'NA') return false;
     return q.reverseColor ? val === 'Y' : val === 'N';
   });
 
@@ -1946,12 +1962,12 @@ function checkCorrectiveActionsRequired() {
   const textarea = document.getElementById('correctiveActions');
   const hint     = document.getElementById('correctiveActionsHint');
 
-  if (hasFailure || solidYItems.length > 0) {
+  if (hasC2Failure || solidYItems.length > 0) {
     if (label) label.classList.add('required');
     if (hint)  hint.style.display = 'block';
 
     let hintMsg = '';
-    if (hasFailure) hintMsg += '⚠️ <strong>Required</strong> — One or more audit items have failed. You must document corrective actions before submitting.';
+    if (hasC2Failure) hintMsg += '⚠️ <strong>Required</strong> — One or more ISO-22241 C.2 items have failed. Corrective actions must be documented before submitting.';
     if (solidYItems.length > 0) {
       if (hintMsg) hintMsg += '<br><br>';
       hintMsg += '📋 <strong>Please note in Corrective Actions:</strong><ul style="margin:6px 0 0 18px;padding:0;">' +
@@ -1959,7 +1975,7 @@ function checkCorrectiveActionsRequired() {
         '</ul>';
     }
     if (hint) hint.innerHTML = hintMsg;
-    if (textarea && !textarea.value) textarea.placeholder = 'REQUIRED — Document corrective actions and/or site-specific requirements (gate codes, induction, PPE) below...';
+    if (textarea && !textarea.value) textarea.placeholder = hasC2Failure ? 'REQUIRED — Document C.2 corrective actions before submitting...' : 'Optional — note any site-specific requirements (gate codes, induction, PPE) here...';
   } else {
     if (label) label.classList.remove('required');
     if (hint)  hint.style.display = 'none';
@@ -2084,11 +2100,11 @@ function handleFileSelect(e) {
   e.target.value = '';
 }
 
-const MAX_PHOTOS = 8;
+const MAX_PHOTOS = 4;
 
 function addPhoto(file) {
   if (photos.length >= MAX_PHOTOS) {
-    showToast(`⚠️ Maximum ${MAX_PHOTOS} photos allowed for email delivery`);
+    showToast(`⚠️ Maximum ${MAX_PHOTOS} photos allowed`);
     return;
   }
   const reader = new FileReader();
@@ -2714,7 +2730,7 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
         const drawH = Math.round(srcH * scale);
 
         // Limit size — balanced quality vs file size
-        const MAX_PX = 1200;
+        const MAX_PX = 1920;
         const finalW = Math.min(drawW, MAX_PX);
         const finalH = Math.min(drawH, MAX_PX);
 
@@ -2744,7 +2760,7 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         }
         ctx.restore();
-        resolve(canvas.toDataURL('image/jpeg', 0.72));
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
       });
     };
     img.onerror = () => resolve(dataUrl);
@@ -3393,6 +3409,49 @@ async function fillTestData() {
 // =====================================================================
 // COMBINED SAVE & SEND
 // =====================================================================
+async function downloadPDFOnly() {
+  showToast('⏳ Generating PDF...');
+  try {
+    const doc = await generatePDF(true);
+    const d = collectFormData();
+    const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
+
+    // Use blob URL — most reliable method across iOS Safari, Chrome, desktop
+    const pdfBlob = doc.output('blob');
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    a.target = '_blank'; // iOS fallback — opens in new tab if download not supported
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    showToast('✅ PDF downloaded — check your Files app');
+  } catch(e) {
+    showToast('❌ Could not generate PDF: ' + e.message);
+  }
+}
+
+// Draw arrowhead at end of route line
+function drawArrowhead(ctx, fromX, fromY, toX, toY) {
+  if (fromX === undefined || fromX === toX && fromY === toY) return;
+  const headLen = 18;
+  const angle = Math.atan2(toY - fromY, toX - fromX);
+  ctx.save();
+  ctx.strokeStyle = '#cc0000';
+  ctx.fillStyle = '#cc0000';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 7), toY - headLen * Math.sin(angle - Math.PI / 7));
+  ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 7), toY - headLen * Math.sin(angle + Math.PI / 7));
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 async function saveAndSend() {
   // Clear any previous error states
   document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
@@ -3400,9 +3459,11 @@ async function saveAndSend() {
 
   // Validate required fields
   const allQs = Object.values(ynQuestions).flat();
-  const hasFailure = allQs.some(q => {
+  // Only C2 failures make corrective actions mandatory
+  const c2Qs = ynQuestions['c2'] || [];
+  const hasC2Failure = c2Qs.some(q => {
     const val = ynValues[q.id];
-    if (!val || val === 'NA' || q.scoreNeutral) return false;
+    if (!val || val === 'NA') return false;
     return q.reverseColor ? val === 'Y' : val === 'N';
   });
 
@@ -3411,7 +3472,7 @@ async function saveAndSend() {
     { id: 'siteAddress',    check: () => document.getElementById('siteAddress').value.trim() !== '', label: 'Delivery Site Address', section: 'sectionA' },
     { id: 'auditDate',      check: () => document.getElementById('auditDate').value.trim() !== '', label: 'Date of Audit', section: 'sectionA' },
     { id: 'auditorName',    check: () => document.getElementById('auditorName').value.trim() !== '', label: 'Auditor Name', section: 'sectionF' },
-    ...(hasFailure ? [{ id: 'correctiveActions', check: () => document.getElementById('correctiveActions').value.trim() !== '', label: 'Corrective Actions (required when items fail)', section: 'sectionD' }] : []),
+    ...(hasC2Failure ? [{ id: 'correctiveActions', check: () => document.getElementById('correctiveActions').value.trim() !== '', label: 'Corrective Actions (required for C.2 failures)', section: 'sectionD' }] : []),
   ];
 
   const errors = validationRules.filter(r => !r.check());
@@ -3459,19 +3520,36 @@ async function saveAndSend() {
   exportExcel(true);
   await new Promise(r => setTimeout(r, 500));
 
-  // 4. Send via EmailJS
-  showToast('📧 Sending email...');
+  // 4. Send via EmailJS — text notification only (PDF saved to device separately)
+  // Sending PDF as base64 via EmailJS exceeds size limits when photos are included
+  showToast('📧 Sending email notification...');
   try {
     if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
+
+    // Build a text summary of audit results
+    const allQs = Object.entries(ynQuestions).flatMap(([s,qs]) => qs.map(q=>({...q,section:s})));
+    const failures = allQs.filter(q => {
+      const val = ynValues[q.id];
+      if (!val || val === 'NA' || q.scoreNeutral) return false;
+      return q.reverseColor ? val === 'Y' : val === 'N';
+    });
+    const failureList = failures.length > 0
+      ? failures.map(q => `  • Q${q.num}: ${q.text.replace(/<[^>]+>/g,'')}`).join('\n')
+      : '  None — all items passed.';
+
     const templateParams = {
-      to_email:      d.emailTo || 'michael.hodnett@bioblue.com.au',
-      reply_to:      'michaelhodnett2022@gmail.com',
-      customer_name: d.customerName,
-      audit_date:    d.auditDate,
-      address:       [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
-      auditor_name:  d.auditorName || 'Michael Hodnett',
-      site_number:   d.siteNumber || '—',
-      pdf_attachment: pdfDoc.output('datauristring'),
+      to_email:       d.emailTo || 'michael.hodnett@bioblue.com.au',
+      reply_to:       'michaelhodnett2022@gmail.com',
+      customer_name:  d.customerName,
+      audit_date:     d.auditDate,
+      address:        [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
+      auditor_name:   d.auditorName || 'Michael Hodnett',
+      site_number:    d.siteNumber || '—',
+      audit_score:    `${auditScore || '—'}%`,
+      photo_count:    `${photos.length} photo(s) attached to saved PDF`,
+      failures:       failureList,
+      corrective_actions: d.correctiveActions || 'None noted.',
+      message:        `A BioBlue Site Audit has been completed. The PDF report has been saved to the auditor's device and will be forwarded separately.`,
     };
 
     const response = await emailjs.send(
@@ -3484,7 +3562,7 @@ async function saveAndSend() {
     try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
 
     document.getElementById('modalMsg').textContent =
-      `✅ Email sent successfully to ${d.emailTo}!\n\nPDF and Excel also saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx`;
+      `✅ Email notification sent to ${d.emailTo}!\n\nPDF and Excel saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease forward the PDF to the office.`;
     document.getElementById('submitModal').classList.add('active');
     showToast('✅ Email sent!');
 
@@ -3527,8 +3605,17 @@ async function submitAndEmail() {
   const cc = d.emailCc ? `&cc=${encodeURIComponent(d.emailCc)}` : '';
   const mailtoLink = `mailto:${d.emailTo}?subject=${subject}&body=${body}${cc}`;
 
-  // Also trigger PDF download so user has it to attach
-  doc.save(fname);
+  // Download PDF immediately — blob URL works reliably on iOS Safari
+  const pdfBlob = doc.output('blob');
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  const dlLink = document.createElement('a');
+  dlLink.href = pdfUrl;
+  dlLink.download = fname;
+  dlLink.target = '_blank';
+  document.body.appendChild(dlLink);
+  dlLink.click();
+  document.body.removeChild(dlLink);
+  setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
 
   setTimeout(() => {
     window.location.href = mailtoLink;
@@ -3552,6 +3639,23 @@ function closeModal() {
 // =====================================================================
 // SAVE / LOAD DRAFT
 // =====================================================================
+function showDraftBanner() {
+  const banner = document.getElementById('draftBanner');
+  const btn = document.getElementById('loadDraftBtn');
+  if (banner) banner.style.display = 'flex';
+  if (btn) btn.style.display = 'inline-flex';
+}
+
+function hideDraftBanner() {
+  const banner = document.getElementById('draftBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+function loadDraftManual() {
+  loadDraft();
+  hideDraftBanner();
+}
+
 function saveDraft() {
   try {
     const data = collectFormData();
@@ -3782,7 +3886,7 @@ function initMudmap() {
   window.addEventListener('resize', resizeCanvas);
 
   let drawing = false, panning = false;
-  let lastX, lastY, panStartX, panStartY;
+  let lastX, lastY, prevX, prevY, panStartX, panStartY;
 
   function getPos(e) {
     const r = canvas.getBoundingClientRect();
@@ -3831,6 +3935,8 @@ function initMudmap() {
 
     // pen tool only
     drawing = true;
+    prevX = lastX;
+    prevY = lastY;
     saveMudmapState();
   }
 
@@ -3855,17 +3961,22 @@ function initMudmap() {
     if (tool !== 'pen' || !drawing) return;
     const [x, y] = getPos(e);
     ctx.strokeStyle = '#cc0000';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 6;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(x, y);
     ctx.stroke();
+    [prevX, prevY] = [lastX, lastY];
     [lastX, lastY] = [x, y];
   }
 
   function stop() {
+    // Draw arrowhead at end of pen stroke
+    if (drawing && mudmapTool === 'pen' && lastX !== undefined) {
+      drawArrowhead(ctx, prevX, prevY, lastX, lastY);
+    }
     drawing = false;
     panning = false;
     updateCursor();
@@ -4125,23 +4236,29 @@ function getMudmapDataUrl() {
   const w = wrap.offsetWidth;
   const h = 300;
 
-  // Composite: crop the visible portion of the tile canvas (accounting for pan offset and initial offset)
   const out = document.createElement('canvas');
-  out.width  = w * window.devicePixelRatio;
-  out.height = h * window.devicePixelRatio;
+  out.width  = w;
+  out.height = h;
   const ctx = out.getContext('2d');
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-  if (tileCanvas) {
-    // tc.style.left is the initial centering offset, tileOffsetX is the user pan
+  // Fill with dark map background colour as fallback
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, w, h);
+
+  // Composite tile canvas — account for its CSS position (left/top) and user pan offset
+  if (tileCanvas && tileCanvas.width > 0) {
     const baseLeft = parseInt(tileCanvas.style.left) || 0;
     const baseTop  = parseInt(tileCanvas.style.top)  || 0;
     const totalLeft = baseLeft + tileOffsetX;
     const totalTop  = baseTop  + tileOffsetY;
-    ctx.drawImage(tileCanvas, -totalLeft, -totalTop, tileCanvas.width, tileCanvas.height);
+    // Draw tile canvas at its current visual position
+    ctx.drawImage(tileCanvas, totalLeft, totalTop, tileCanvas.width, tileCanvas.height);
   }
+
+  // Draw annotations — scale DPR canvas down to output size
+  const dpr = window.devicePixelRatio || 1;
   ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, 0, 0, w, h);
-  return out.toDataURL('image/jpeg', 0.85);
+  return out.toDataURL('image/jpeg', 0.9);
 }
 
 
@@ -4194,13 +4311,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Set today's date
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
 
-  // Load draft if exists
+  // Load draft if exists — use in-page banner instead of confirm() (blocked by Safari)
   if (localStorage.getItem('bioblue_draft')) {
-    setTimeout(() => {
-      if (confirm('📂 You have a saved draft. Would you like to restore it?')) {
-        loadDraft();
-      }
-    }, 500);
+    setTimeout(() => showDraftBanner(), 600);
   }
 
   updateProgress();
