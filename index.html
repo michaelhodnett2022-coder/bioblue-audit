@@ -1553,7 +1553,8 @@
         </div>
         <div style="flex:1;"></div>
         <button onclick="undoMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--amber);background:white;color:var(--amber);font-weight:700;cursor:pointer;">↩ Undo</button>
-        <button onclick="clearMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;">✕ Clear All</button>
+        <button onclick="clearMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;">✕ Clear Drawing</button>
+        <button onclick="resetMudmapFull()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;">🔄 Reset Map</button>
       </div>
 
       <!-- Map + drawing canvas stacked -->
@@ -3852,8 +3853,8 @@ function clearForm() {
   document.getElementById('auditorMobile').value = '0427 670 726';
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
 
-  // Clear mud map
-  clearMudmap();
+  // Clear mud map fully
+  resetMudmapFull();
   document.getElementById('mudmapAddress').value = '';
 
   // Clear localStorage draft
@@ -4213,11 +4214,43 @@ function mudmapZoom(direction) {
 }
 
 function clearMudmap() {
+  // Clear drawing canvas only
   const canvas = document.getElementById('mudmapCanvas');
   const ctx = canvas.getContext('2d');
   mudmapHistory = [];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  arrowFirstTap = null;
   showToast('🗺️ Drawing cleared');
+}
+
+function resetMudmapFull() {
+  // Clear drawing
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+  mudmapHistory = [];
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  arrowFirstTap = null;
+
+  // Clear tile layer
+  const tc = document.getElementById('mudmapTileCanvas');
+  if (tc) {
+    const tctx = tc.getContext('2d');
+    tctx.clearRect(0, 0, tc.width, tc.height);
+    tc.style.transform = '';
+    tc.style.left = '0px';
+    tc.style.top = '0px';
+  }
+
+  // Reset pan offsets and zoom
+  tileOffsetX = 0;
+  tileOffsetY = 0;
+  mudmapCurrentZoom = 17;
+
+  // Show placeholder
+  const placeholder = document.getElementById('mudmapPlaceholder');
+  if (placeholder) placeholder.style.display = 'flex';
+
+  showToast('🗺️ Map reset');
 }
 
 function loadMudmapSatellite() {
