@@ -3641,17 +3641,11 @@ async function saveAndSend() {
     console.error('EmailJS error:', err);
     const errMsg = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
     console.error('EmailJS error detail:', errMsg);
-    showToast(`⚠️ Auto-send failed: ${errMsg.slice(0,60)} — opening mail client`);
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Fallback to mailto
-    const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
-    const body = encodeURIComponent(`Hi,\n\nPlease find attached the completed BioBlue Site Audit.\n\nCustomer: ${d.customerName}\nAddress: ${d.siteAddress}, ${d.suburb} ${d.state} ${d.postcode}\nDate: ${d.auditDate}\nAuditor: ${d.auditorName}\n\nRegards,\n${d.auditorName}`);
-    window.location.href = `mailto:${d.emailTo}?subject=${subject}&body=${body}`;
 
     document.getElementById('modalMsg').textContent =
-      `Email auto-send failed:\n${errMsg}\n\nYour mail client has opened instead.\n\nFiles saved to device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease attach both files manually.`;
+      `⚠️ Auto-email failed: ${errMsg}\n\nDon't worry — your files have been saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease email the PDF manually to the office.`;
     document.getElementById('submitModal').classList.add('active');
+    showToast('⚠️ Email failed — PDF saved to device');
   }
 }
 
