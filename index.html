@@ -2367,7 +2367,11 @@ function updateComplianceBanner() {
     banner.innerHTML = '<div class="compliance-icon">📋</div><div>Complete the form to see compliance status. All C.2 items must be <strong>YES</strong> for ISO-22241 compliance.</div>';
     return;
   }
-  const hasNo = c2.some(q => ynValues[q.id] === 'N');
+  const hasNo = c2.some(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
   if (hasNo) {
     banner.className = 'compliance-banner fail';
     banner.innerHTML = '<div class="compliance-icon">❌</div><div><strong>NON-COMPLIANT:</strong> One or more C.2 QA items are marked NO. Tank may not meet ISO-22241. Corrective action required before delivery.</div>';
@@ -2982,7 +2986,12 @@ async function generatePDF(returnDoc=false) {
 
   // C.2 compliance notice
   const c2Answers = ynQuestions['c2'].map(q => d.ynValues[q.id]);
-  const hasNo = c2Answers.includes('N');
+  const c2Qs_pdf = ynQuestions['c2'] || [];
+  const hasNo = c2Qs_pdf.some((q,i) => {
+    const val = c2Answers[i];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
   checkPage(10);
   doc.setFillColor(hasNo ? 255 : 235, hasNo ? 243 : 250, hasNo ? 205 : 235);
   doc.roundedRect(margin, y, contentW, 8, 1, 1, 'F');
@@ -3102,9 +3111,9 @@ async function generatePDF(returnDoc=false) {
   if (mudmapData) {
     checkPage(80);
     sectionHeader('E. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
-    const mapH = 80;
+    const mapH = contentW; // square — same as width
     try {
-      doc.addImage(mudmapData, 'JPEG', margin, y, contentW, mapH);
+      doc.addImage(mudmapData, 'JPEG', margin, y, contentW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
       doc.setLineWidth(0.3);
       doc.rect(margin, y, contentW, mapH);
@@ -3144,17 +3153,10 @@ async function generatePDF(returnDoc=false) {
       });
 
       let photoW, photoH, photosPerRow;
-      if (isPortrait) {
-        // Portrait: 2 per row, taller cells
-        photosPerRow = 2;
-        photoW = (contentW - gap) / 2;
-        photoH = photoW * 1.3;
-      } else {
-        // Landscape: 3 per row, wider cells
-        photosPerRow = 3;
-        photoW = (contentW - gap * 2) / 3;
-        photoH = photoW * 0.72;
-      }
+      // Always 2 per row max for best quality and readability
+      photosPerRow = 2;
+      photoW = (contentW - gap) / 2;
+      photoH = isPortrait ? photoW * 1.35 : photoW * 0.72;
 
       const cellH = photoH + captionH + 3;
 
@@ -3172,7 +3174,7 @@ async function generatePDF(returnDoc=false) {
 
       try {
         const corrected = await correctImageRotation(photos[i].dataUrl, photoW, photoH);
-        doc.addImage(corrected, 'JPEG', px, py, photoW, photoH, undefined, 'MEDIUM');
+        doc.addImage(corrected, 'JPEG', px, py, photoW, photoH, undefined, 'FAST');
       } catch(e) {
         doc.setFillColor(...GRAY_LIGHT);
         doc.rect(px, py, photoW, photoH, 'F');
@@ -3578,8 +3580,13 @@ async function saveAndSend() {
   showToast('⏳ Generating PDF...');
   const pdfDoc = await generatePDF(true);
 
-  // 3. Download PDF and Excel to device as backup
-  pdfDoc.save(baseName + '.pdf');
+  // 2. Download PDF and Excel to device as backup using blob URL (iOS safe)
+  const pdfBlob2 = pdfDoc.output('blob');
+  const pdfUrl2  = URL.createObjectURL(pdfBlob2);
+  const dlA = document.createElement('a');
+  dlA.href = pdfUrl2; dlA.download = baseName + '.pdf'; dlA.target = '_blank';
+  document.body.appendChild(dlA); dlA.click(); document.body.removeChild(dlA);
+  setTimeout(() => URL.revokeObjectURL(pdfUrl2), 5000);
   await new Promise(r => setTimeout(r, 500));
   exportExcel(true);
   await new Promise(r => setTimeout(r, 500));
@@ -3609,7 +3616,7 @@ async function saveAndSend() {
       address:        [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
       auditor_name:   d.auditorName || 'Michael Hodnett',
       site_number:    d.siteNumber || '—',
-      audit_score:    `${auditScore || '—'}%`,
+      audit_score:    `${document.getElementById('auditScorePct')?.textContent || '—'}`,
       photo_count:    `${photos.length} photo(s) attached to saved PDF`,
       failures:       failureList,
       corrective_actions: d.correctiveActions || 'None noted.',
@@ -3634,6 +3641,8 @@ async function saveAndSend() {
     console.error('EmailJS error:', err);
     const errMsg = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
     console.error('EmailJS error detail:', errMsg);
+    showToast(`⚠️ Auto-send failed: ${errMsg.slice(0,60)} — opening mail client`);
+    await new Promise(r => setTimeout(r, 1500));
 
     // Fallback to mailto
     const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${safeDate}`);
@@ -4365,9 +4374,10 @@ function getMudmapDataUrl() {
   const h = document.getElementById('mudmapWrap')?.offsetWidth || 400;
 
   const out = document.createElement('canvas');
-  out.width  = w;
-  out.height = h;
+  out.width  = w * 2;
+  out.height = h * 2;
   const ctx = out.getContext('2d');
+  ctx.scale(2, 2);
 
   // Fill with dark map background colour as fallback
   ctx.fillStyle = '#1a1a2e';
@@ -4379,11 +4389,10 @@ function getMudmapDataUrl() {
     const baseTop  = parseInt(tileCanvas.style.top)  || 0;
     const totalLeft = baseLeft + tileOffsetX;
     const totalTop  = baseTop  + tileOffsetY;
-    // Draw tile canvas at its current visual position
     ctx.drawImage(tileCanvas, totalLeft, totalTop, tileCanvas.width, tileCanvas.height);
   }
 
-  // Draw annotations — scale DPR canvas down to output size
+  // Draw annotations scaled down from DPR canvas to CSS pixel space
   const dpr = window.devicePixelRatio || 1;
   ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, 0, 0, w, h);
   return out.toDataURL('image/jpeg', 0.9);
