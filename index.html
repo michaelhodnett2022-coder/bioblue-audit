@@ -1201,7 +1201,10 @@
       <div class="field-group" style="margin-bottom:12px;">
         <label class="field-label required">Delivery Site Address</label>
         <div class="address-field-wrap">
-          <input type="text" id="siteAddress" placeholder="Street address" style="padding-right: 110px;" oninput="updateProgress()">
+          <div style="position:relative;">
+          <input type="text" id="siteAddress" placeholder="Street address" style="padding-right:110px;width:100%;box-sizing:border-box;" oninput="updateProgress();osmAutocomplete(this,'siteAddrSuggestions')" autocomplete="off">
+          <div id="siteAddrSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ccc;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:999;max-height:220px;overflow-y:auto;"></div>
+          </div>
           <button class="gps-btn" onclick="getGPSLocation()">📍 Use GPS</button>
         </div>
         <div class="gps-status" id="gpsStatus"></div>
@@ -1538,9 +1541,11 @@
 
       <!-- Tool bar -->
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-        <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Draw Route</button>
-        <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;opacity:0.55;">📍 Mark Tank</button>
-        <button onclick="setMudmapTool('pan')" id="mudmapToolPan" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;opacity:0.55;">🖐 Pan Map</button>
+        <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Freehand</button>
+        <button onclick="setMudmapTool('entry')" id="mudmapToolEntry" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid #00875a;background:white;color:#00875a;font-weight:700;cursor:pointer;opacity:0.55;">🟢 Entry</button>
+        <button onclick="setMudmapTool('exit')" id="mudmapToolExit" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;opacity:0.55;">🔴 Exit</button>
+        <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;opacity:0.55;">📍 Tank</button>
+        <button onclick="setMudmapTool('pan')" id="mudmapToolPan" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;opacity:0.55;">🖐 Pan</button>
         <div style="display:flex;gap:4px;align-items:center;border:2px solid var(--gray-mid);border-radius:8px;overflow:hidden;">
           <button onclick="mudmapZoom(1)" title="Zoom in" style="font-size:16px;padding:5px 13px;border:none;background:white;color:var(--blue-deep);font-weight:700;cursor:pointer;line-height:1;">+</button>
           <div style="width:1px;background:var(--gray-mid);align-self:stretch;"></div>
@@ -3438,7 +3443,62 @@ async function downloadPDFOnly() {
   }
 }
 
-// Draw arrowhead at end of route line
+// =====================================================================
+// OSM NOMINATIM ADDRESS AUTOCOMPLETE
+// =====================================================================
+let osmTimer = null;
+function osmAutocomplete(input, dropdownId) {
+  const q = input.value.trim();
+  const dropdown = document.getElementById(dropdownId);
+  if (q.length < 4) { dropdown.style.display = 'none'; return; }
+  clearTimeout(osmTimer);
+  osmTimer = setTimeout(async () => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=au&format=json&addressdetails=1&limit=6`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+      const data = await res.json();
+      if (!data.length) { dropdown.style.display = 'none'; return; }
+      dropdown.innerHTML = data.map((r, i) => `
+        <div onclick="osmSelect(${i},'${dropdownId}')" data-idx="${i}"
+          style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333;"
+          onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
+          📍 ${r.display_name}
+        </div>
+      `).join('');
+      dropdown._results = data;
+      dropdown.style.display = 'block';
+    } catch(e) { dropdown.style.display = 'none'; }
+  }, 350);
+}
+
+function osmSelect(idx, dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const r = dropdown._results[idx];
+  if (!r) return;
+  const a = r.address || {};
+  // Fill siteAddress
+  const street = [a.house_number, a.road].filter(Boolean).join(' ');
+  document.getElementById('siteAddress').value = street || r.display_name.split(',')[0];
+  // Fill suburb/state/postcode if available
+  if (a.suburb || a.city || a.town || a.village)
+    document.getElementById('suburb').value = a.suburb || a.city || a.town || a.village || '';
+  if (a.state) document.getElementById('state').value = a.state;
+  if (a.postcode) document.getElementById('postcode').value = a.postcode;
+  dropdown.style.display = 'none';
+  updateProgress();
+  // Auto-fill mud map address field too
+  const mapField = document.getElementById('mudmapAddress');
+  if (mapField && !mapField.value) mapField.value = r.display_name.split(',').slice(0,3).join(',');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  ['siteAddrSuggestions'].forEach(id => {
+    const d = document.getElementById(id);
+    if (d && !d.contains(e.target) && e.target.id !== 'siteAddress') d.style.display = 'none';
+  });
+});
+
 function drawArrowhead(ctx, fromX, fromY, toX, toY) {
   if (fromX === undefined || fromX === toX && fromY === toY) return;
   const headLen = 18;
@@ -3816,27 +3876,29 @@ function clearForm() {
 // MUD MAP
 // =====================================================================
 let mudmapTool = 'pen';
+let arrowFirstTap = null; // for tap-to-place arrow tools
 
 function setMudmapTool(tool) {
   mudmapTool = tool;
-  const pen = document.getElementById('mudmapToolPen');
-  const dot = document.getElementById('mudmapToolDot');
-  const pan = document.getElementById('mudmapToolPan');
+  arrowFirstTap = null; // reset pending tap on tool switch
 
-  pen.style.background = tool === 'pen' ? 'var(--blue-deep)' : 'white';
-  pen.style.color = tool === 'pen' ? 'white' : 'var(--blue-deep)';
-  pen.style.border = '2px solid var(--blue-deep)';
-  pen.style.opacity = tool === 'pen' ? '1' : '0.55';
+  const tools = {
+    pen:   { el: 'mudmapToolPen',   active: 'var(--blue-deep)', border: 'var(--blue-deep)' },
+    entry: { el: 'mudmapToolEntry', active: '#00875a',           border: '#00875a' },
+    exit:  { el: 'mudmapToolExit',  active: 'var(--red)',        border: 'var(--red)' },
+    dot:   { el: 'mudmapToolDot',   active: 'var(--blue-mid)',   border: 'var(--blue-mid)' },
+    pan:   { el: 'mudmapToolPan',   active: 'var(--gray-mid)',   border: 'var(--gray-mid)' },
+  };
 
-  dot.style.background = tool === 'dot' ? 'var(--blue-mid)' : 'white';
-  dot.style.color = tool === 'dot' ? 'white' : 'var(--blue-mid)';
-  dot.style.border = '2px solid var(--blue-mid)';
-  dot.style.opacity = tool === 'dot' ? '1' : '0.55';
-
-  pan.style.background = tool === 'pan' ? 'var(--gray-mid)' : 'white';
-  pan.style.color = tool === 'pan' ? 'white' : 'var(--gray-mid)';
-  pan.style.border = '2px solid var(--gray-mid)';
-  pan.style.opacity = tool === 'pan' ? '1' : '0.55';
+  Object.entries(tools).forEach(([t, cfg]) => {
+    const el = document.getElementById(cfg.el);
+    if (!el) return;
+    const active = t === tool;
+    el.style.background = active ? cfg.active : 'white';
+    el.style.color       = active ? 'white' : cfg.active;
+    el.style.border      = `2px solid ${cfg.border}`;
+    el.style.opacity     = active ? '1' : '0.55';
+  });
 
   const canvas = document.getElementById('mudmapCanvas');
   if (canvas) canvas.style.cursor = tool === 'pan' ? 'grab' : 'crosshair';
@@ -3934,6 +3996,68 @@ function initMudmap() {
       ctx.arc(lastX - 2.5, lastY - 2.5, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.fill();
+      return;
+    }
+
+    // Tap-to-place entry/exit arrow tools
+    if (tool === 'entry' || tool === 'exit') {
+      const color = tool === 'entry' ? '#00875a' : '#cc0000';
+      const label = tool === 'entry' ? 'IN' : 'OUT';
+      if (!arrowFirstTap) {
+        // First tap — mark start point with small circle
+        arrowFirstTap = { x: lastX, y: lastY };
+        saveMudmapState();
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        showToast(`Tap end point to complete ${label} arrow`);
+      } else {
+        // Second tap — draw arrow from first to second tap
+        const fx = arrowFirstTap.x, fy = arrowFirstTap.y;
+        const tx = lastX, ty = lastY;
+        arrowFirstTap = null;
+
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+
+        // Shaft
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+
+        // Arrowhead
+        const angle = Math.atan2(ty - fy, tx - fx);
+        const headLen = 22;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tx - headLen * Math.cos(angle - Math.PI / 6), ty - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(tx - headLen * Math.cos(angle + Math.PI / 6), ty - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+
+        // Label badge at midpoint
+        const mx = (fx + tx) / 2, my = (fy + ty) / 2;
+        ctx.font = 'bold 13px Arial';
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect ? ctx.roundRect(mx - tw/2 - 6, my - 10, tw + 12, 20, 4)
+                      : ctx.rect(mx - tw/2 - 6, my - 10, tw + 12, 20);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.fillText(label, mx - tw/2, my + 4);
+        ctx.restore();
+
+        showToast(`${label} arrow placed`);
+      }
       return;
     }
 
