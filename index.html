@@ -2730,30 +2730,19 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Determine if we need to swap dimensions (rotated 90 or 270)
         const swap = orientation >= 5 && orientation <= 8;
 
-        // Use target dimensions to scale correctly
-        const srcW = swap ? img.naturalHeight : img.naturalWidth;
-        const srcH = swap ? img.naturalWidth : img.naturalHeight;
+        // Use FULL original resolution — let jsPDF handle display scaling
+        // Clamp to 2400px max to keep PDF size reasonable
+        const MAX_PX = 2400;
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        const scale = Math.min(1, MAX_PX / Math.max(nw, nh));
+        const fw = Math.round(nw * scale);
+        const fh = Math.round(nh * scale);
 
-        // Scale to fit target box maintaining aspect ratio
-        const scale = Math.min(targetW / srcW, targetH / srcH);
-        const drawW = Math.round(srcW * scale);
-        const drawH = Math.round(srcH * scale);
-
-        // Limit size — balanced quality vs file size
-        const MAX_PX = 1920;
-        const finalW = Math.min(drawW, MAX_PX);
-        const finalH = Math.min(drawH, MAX_PX);
-
-        if (swap) {
-          canvas.width = finalH;
-          canvas.height = finalW;
-        } else {
-          canvas.width = finalW;
-          canvas.height = finalH;
-        }
+        canvas.width  = swap ? fh : fw;
+        canvas.height = swap ? fw : fh;
 
         ctx.save();
         switch (orientation) {
