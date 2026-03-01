@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
   :root {
@@ -1539,22 +1540,21 @@
         <button onclick="loadMudmapSatellite()" style="font-size:13px;padding:8px 18px;border-radius:8px;border:2px solid var(--blue-mid);background:var(--blue-mid);color:white;font-weight:700;cursor:pointer;white-space:nowrap;">Add Map</button>
       </div>
 
-      <!-- Tool bar -->
-      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-        <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;">✏️ Freehand</button>
-        <button onclick="setMudmapTool('entry')" id="mudmapToolEntry" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid #00875a;background:white;color:#00875a;font-weight:700;cursor:pointer;opacity:0.55;">🟢 Entry</button>
-        <button onclick="setMudmapTool('exit')" id="mudmapToolExit" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;opacity:0.55;">🔴 Exit</button>
-        <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;opacity:0.55;">📍 Tank</button>
-        <button onclick="setMudmapTool('pan')" id="mudmapToolPan" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;opacity:0.55;">🖐 Pan</button>
-        <div style="display:flex;gap:4px;align-items:center;border:2px solid var(--gray-mid);border-radius:8px;overflow:hidden;">
-          <button onclick="mudmapZoom(1)" title="Zoom in" style="font-size:16px;padding:5px 13px;border:none;background:white;color:var(--blue-deep);font-weight:700;cursor:pointer;line-height:1;">+</button>
-          <div style="width:1px;background:var(--gray-mid);align-self:stretch;"></div>
-          <button onclick="mudmapZoom(-1)" title="Zoom out" style="font-size:16px;padding:5px 13px;border:none;background:white;color:var(--blue-deep);font-weight:700;cursor:pointer;line-height:1;">−</button>
-        </div>
-        <div style="flex:1;"></div>
-        <button onclick="undoMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--amber);background:white;color:var(--amber);font-weight:700;cursor:pointer;">↩ Undo</button>
-        <button onclick="clearMudmap()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;">✕ Clear Drawing</button>
-        <button onclick="resetMudmapFull()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;">🔄 Reset Map</button>
+      <!-- Tool bar — Row 1: Draw tools + zoom -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:6px;">
+        <button onclick="setMudmapTool('pen')" id="mudmapToolPen" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--blue-deep);background:var(--blue-deep);color:white;font-weight:700;cursor:pointer;text-align:center;">✏️<br>Freehand</button>
+        <button onclick="setMudmapTool('entry')" id="mudmapToolEntry" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid #00875a;background:white;color:#00875a;font-weight:700;cursor:pointer;opacity:0.55;text-align:center;">🟢<br>Entry</button>
+        <button onclick="setMudmapTool('exit')" id="mudmapToolExit" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;opacity:0.55;text-align:center;">🔴<br>Exit</button>
+        <button onclick="setMudmapTool('dot')" id="mudmapToolDot" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--blue-mid);background:white;color:var(--blue-mid);font-weight:700;cursor:pointer;opacity:0.55;text-align:center;">📍<br>Tank</button>
+        <button onclick="setMudmapTool('pan')" id="mudmapToolPan" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;opacity:0.55;text-align:center;">🖐<br>Pan</button>
+      </div>
+      <!-- Row 2: Zoom + actions -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+        <button onclick="mudmapZoom(1)" style="font-size:18px;padding:7px 4px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--blue-deep);font-weight:700;cursor:pointer;text-align:center;">+</button>
+        <button onclick="mudmapZoom(-1)" style="font-size:18px;padding:7px 4px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--blue-deep);font-weight:700;cursor:pointer;text-align:center;">−</button>
+        <button onclick="undoMudmap()" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--amber);background:white;color:var(--amber);font-weight:700;cursor:pointer;text-align:center;">↩<br>Undo</button>
+        <button onclick="clearMudmap()" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--red);background:white;color:var(--red);font-weight:700;cursor:pointer;text-align:center;">✕<br>Clear</button>
+        <button onclick="resetMudmapFull()" style="font-size:11px;padding:8px 4px;border-radius:8px;border:2px solid var(--gray-mid);background:white;color:var(--gray-mid);font-weight:700;cursor:pointer;text-align:center;">🔄<br>Reset</button>
       </div>
 
       <!-- Map + drawing canvas stacked -->
@@ -1771,10 +1771,13 @@
 
 <!-- STICKY FOOTER -->
 <div class="sticky-footer">
-  <button class="btn btn-clear btn-lg" onclick="confirmClearForm()">🗑️ Clear Form</button>
-  <button class="btn btn-secondary btn-lg" onclick="downloadPDFOnly()" style="white-space:nowrap;">⬇️ Download PDF</button>
-  <button class="btn btn-submit btn-lg" onclick="saveAndSend()" style="min-width:220px;">
-    📧 Complete &amp; Send Audit
+  <button class="btn btn-clear btn-lg" onclick="confirmClearForm()">🗑️ Clear</button>
+  <button class="btn btn-secondary btn-lg" onclick="downloadPDFOnly()">⬇️ PDF</button>
+  <button class="btn btn-drive btn-lg" onclick="uploadToDrive()" id="driveBtn" style="background:#fff;border:2px solid #4285f4;color:#4285f4;font-weight:700;">
+    <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="height:18px;vertical-align:middle;margin-right:4px;">Drive
+  </button>
+  <button class="btn btn-submit btn-lg" onclick="saveAndSend()">
+    📧 Send Audit
   </button>
 </div>
 
@@ -3417,19 +3420,26 @@ async function downloadPDFOnly() {
     const d = collectFormData();
     const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
 
-    // Use blob URL — most reliable method across iOS Safari, Chrome, desktop
     const pdfBlob = doc.output('blob');
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fname;
-    a.target = '_blank'; // iOS fallback — opens in new tab if download not supported
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-    showToast('✅ PDF downloaded — check your Files app');
+    // iOS Safari: window.open with blob URL is most reliable
+    const url = URL.createObjectURL(pdfBlob);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      // On iOS open in new tab — user taps Share → Save to Files
+      window.open(url, '_blank');
+      showToast('✅ PDF opened — tap Share → Save to Files');
+    } else {
+      // Desktop/Android: use anchor download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('✅ PDF downloaded');
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   } catch(e) {
     showToast('❌ Could not generate PDF: ' + e.message);
   }
@@ -3506,6 +3516,93 @@ function drawArrowhead(ctx, fromX, fromY, toX, toY) {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+}
+
+// =====================================================================
+// GOOGLE DRIVE UPLOAD
+// =====================================================================
+const GDRIVE_CLIENT_ID   = '85699556100-38g0iakg68n1if7vm4q5bhk2ehbl1ms8.apps.googleusercontent.com';
+const GDRIVE_FOLDER_NAME = 'BioBlue Audits';
+let gdriveToken = null;
+
+function uploadToDrive() {
+  if (gdriveToken) {
+    doUploadToDrive();
+  } else {
+    // Trigger Google Sign-In
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GDRIVE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: (response) => {
+        if (response.access_token) {
+          gdriveToken = response.access_token;
+          doUploadToDrive();
+        } else {
+          showToast('❌ Google sign-in failed');
+        }
+      },
+    });
+    client.requestAccessToken();
+  }
+}
+
+async function doUploadToDrive() {
+  showToast('⏳ Generating PDF for Drive...');
+  try {
+    const doc = await generatePDF(true);
+    const d = collectFormData();
+    const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
+    const pdfBlob = doc.output('blob');
+
+    showToast('☁️ Uploading to Google Drive...');
+
+    // Find or create BioBlue Audits folder
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const folderData = await folderRes.json();
+    let folderId;
+
+    if (folderData.files && folderData.files.length > 0) {
+      folderId = folderData.files[0].id;
+    } else {
+      // Create the folder
+      const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+      });
+      const created = await createRes.json();
+      folderId = created.id;
+    }
+
+    // Upload PDF to folder
+    const metadata = { name: fname, parents: [folderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', pdfBlob, fname);
+
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
+    );
+    const uploaded = await uploadRes.json();
+
+    if (uploaded.id) {
+      showToast('✅ PDF saved to Google Drive!');
+      document.getElementById('modalMsg').textContent =
+        `✅ PDF uploaded to Google Drive!\n\nFolder: ${GDRIVE_FOLDER_NAME}\nFile: ${fname}\n\nView it at:\n${uploaded.webViewLink || 'Google Drive → BioBlue Audits'}`;
+      document.getElementById('submitModal').classList.add('active');
+    } else {
+      throw new Error(JSON.stringify(uploaded));
+    }
+  } catch(e) {
+    showToast('❌ Drive upload failed: ' + e.message);
+    console.error('Drive upload error:', e);
+    // Token may have expired — reset so next click re-auths
+    if (e.message.includes('401') || e.message.includes('auth')) gdriveToken = null;
+  }
 }
 
 async function saveAndSend() {
