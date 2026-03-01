@@ -585,42 +585,54 @@
   }
 
   /* ---- STICKY FOOTER ---- */
-  .btn-clear {
-    background: white;
-    color: var(--red);
-    border: 2px solid var(--red);
-  }
-  .btn-clear:hover { background: var(--red-light); }
-
+  .sticky-footer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: white;
     border-top: 2px solid var(--blue-light);
-    padding: 12px 16px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
     z-index: 99;
     box-shadow: 0 -4px 20px rgba(0,52,102,0.12);
   }
-  .btn-lg {
-    padding: 12px 22px;
-    font-size: 14px;
+  .sticky-footer .btn {
+    padding: 12px 8px;
+    font-size: 13px;
+    font-weight: 700;
     border-radius: var(--radius-sm);
+    text-align: center;
+    white-space: nowrap;
+    width: 100%;
+    box-sizing: border-box;
   }
+  .btn-clear {
+    background: white;
+    color: var(--red);
+    border: 2px solid var(--red);
+  }
+  .btn-clear:hover { background: var(--red-light); }
+  .btn-pdf-dl {
+    background: white;
+    color: var(--blue-deep);
+    border: 2px solid var(--blue-deep);
+  }
+  .btn-pdf-dl:hover { background: var(--blue-light); }
+  .btn-drive {
+    background: white;
+    color: #4285f4;
+    border: 2px solid #4285f4;
+  }
+  .btn-drive:hover { background: #e8f0fe; }
   .btn-submit {
     background: var(--blue-deep);
     color: white;
     border: none;
   }
   .btn-submit:hover { background: var(--blue-mid); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,52,102,0.3); }
-  .btn-pdf { background: var(--red); color: white; }
-  .btn-pdf:hover { background: #a52a1e; }
-  .btn-excel { background: var(--green); color: white; }
-  .btn-excel:hover { background: #006b47; }
 
   /* ---- MODAL ---- */
   .modal-overlay {
@@ -1771,14 +1783,9 @@
 
 <!-- STICKY FOOTER -->
 <div class="sticky-footer">
-  <button class="btn btn-clear btn-lg" onclick="confirmClearForm()">🗑️ Clear</button>
-  <button class="btn btn-secondary btn-lg" onclick="downloadPDFOnly()">⬇️ PDF</button>
-  <button class="btn btn-drive btn-lg" onclick="uploadToDrive()" id="driveBtn" style="background:#fff;border:2px solid #4285f4;color:#4285f4;font-weight:700;">
-    <img src="https://www.gstatic.com/images/branding/product/1x/drive_2020q4_32dp.png" style="height:18px;vertical-align:middle;margin-right:4px;">Drive
-  </button>
-  <button class="btn btn-submit btn-lg" onclick="saveAndSend()">
-    📧 Send Audit
-  </button>
+  <button class="btn btn-clear" onclick="confirmClearForm()">🗑️ Clear Form</button>
+  <button class="btn btn-pdf-dl" onclick="downloadToDevice()">⬇️ Download</button>
+  <button class="btn btn-submit" onclick="uploadAndSend()">☁️ Upload & Send</button>
 </div>
 
 <!-- MODAL -->
@@ -2453,78 +2460,10 @@ function collectFormData() {
 // =====================================================================
 function exportExcel(silent=false) {
   const d = collectFormData();
-  const rows = [
-    ['BioBlue Bulk AdBlue® Site Audit Checklist'],
-    [],
-    ['SECTION A – SITE DETAILS'],
-    ['Customer / Business Name', d.customerName],
-    ['Audit Date', d.auditDate],
-    ['Delivery Site Address', d.siteAddress],
-    ['Suburb', d.suburb],
-    ['State', d.state],
-    ['Postcode', d.postcode],
-    ['Site Contact', d.siteContact],
-    ['Contact Title', d.siteContactTitle],
-    ['Site Email', d.siteEmail],
-    ['Site Mobile', d.siteMobile],
-    [],
-    ['SECTION B – DELIVERY ACCESS & SAFETY'],
-    ['Access Hours', d.accessHours],
-    ['Max Vehicle Size', d.maxVehicle],
-    ['Key / Access Code', d.keyCode],
-    ['PPE Details', d.ppeDetails],
-    [],
-    ['B.1 Site Accessibility', 'Y/N'],
-  ];
-
-  for (const [grp, qs] of Object.entries(ynQuestions)) {
-    if (grp !== 'b1' && grp !== 'b2' && grp !== 'b3' && grp !== 'c1' && grp !== 'c2' && grp !== 'e1') continue;
-    const labels = { b1:'B.1 Site Accessibility', b2:'B.2 Site Safety', b3:'B.3 Environment & Spill', c1:'C.1 Tank Audit', c2:'C.2 QA Checks ⚠️', e1:'F. Sign-Off Checks' };
-    rows.push([], [labels[grp], 'Answer']);
-    qs.forEach(q => {
-      rows.push([q.text.replace(/<[^>]+>/g,''), d.ynValues[q.id] || '—']);
-    });
-  }
-
-  rows.push(
-    [],
-    ['SECTION C – TANK DETAILS'],
-    ['Tank ID', d.tankId],
-    ['Tank Serial #', d.tankSerial],
-    ['Tank Owner', d.tankOwner],
-    ['Tank Type', d.tankType],
-    ['Tank Volume (L)', d.tankVolume],
-    ['Safe Fill Level (L)', d.safeFill],
-    ['Current Level (L)', d.currentLevel],
-    ['Fill Connection Type', d.fillConnType],
-    ['Fill Connection Size', d.fillConnSize],
-    ['Level Monitoring System', d.dipSystem],
-    ['Trident Monitor', d.tridentMonitor],
-    [],
-    ['SECTION D – CORRECTIVE ACTIONS'],
-    ['Notes / Corrective Actions', d.correctiveActions],
-    [],
-    ['SECTION F – AUDIT SIGN-OFF'],
-    ['Auditor Name', d.auditorName],
-    ['Auditor Title', d.auditorTitle],
-    ['Auditor Email', d.auditorEmail],
-    ['Auditor Mobile', d.auditorMobile],
-    ['Site Rep Name', d.repName],
-    ['Site Rep Title', d.repTitle],
-    ['Site Rep Email', d.repEmail],
-    ['Site Rep Mobile', d.repMobile],
-    ['Photos Taken (count)', d.photoCount],
-    [],
-    ['Generated', new Date().toLocaleString('en-AU')]
-  );
-
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 50 }, { wch: 40 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Site Audit');
+  const wb = buildExcelWorkbook(d);
   const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || 'undated'}.xlsx`;
   XLSX.writeFile(wb, fname);
-  if (!silent) showToast('📊 Excel file downloaded!');
+  if (!silent) showToast('📊 Excel downloaded!');
 }
 
 // =====================================================================
@@ -3519,8 +3458,382 @@ function drawArrowhead(ctx, fromX, fromY, toX, toY) {
 }
 
 // =====================================================================
-// GOOGLE DRIVE UPLOAD
+// DOWNLOAD TO DEVICE — PDF + Excel locally, no Drive, no email
 // =====================================================================
+async function downloadToDevice() {
+  showToast('⏳ Generating PDF...');
+  try {
+    const doc = await generatePDF(true);
+    const d = collectFormData();
+    const baseName = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}`;
+
+    // PDF
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      window.open(pdfUrl, '_blank');
+      showToast('✅ PDF opened — tap Share → Save to Files');
+    } else {
+      const a = document.createElement('a');
+      a.href = pdfUrl; a.download = baseName + '.pdf';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast('✅ PDF downloaded');
+    }
+    setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
+
+    // Excel
+    await new Promise(r => setTimeout(r, 500));
+    exportExcel(true);
+    showToast('✅ PDF + Excel downloaded to device');
+  } catch(e) {
+    showToast('❌ Download failed: ' + e.message);
+  }
+}
+
+// =====================================================================
+// UPLOAD & SEND — Drive (PDF + Excel) + email notification
+// =====================================================================
+async function uploadAndSend() {
+  // Validation
+  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
+  document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+
+  const c2Qs = ynQuestions['c2'] || [];
+  const hasC2Failure = c2Qs.some(q => {
+    const val = ynValues[q.id];
+    if (!val || val === 'NA') return false;
+    return q.reverseColor ? val === 'Y' : val === 'N';
+  });
+
+  const validationRules = [
+    { id: 'customerSelect', check: () => getCustomerName().trim() !== '', label: 'Customer / Business Name', section: 'sectionA' },
+    { id: 'siteAddress',    check: () => document.getElementById('siteAddress').value.trim() !== '', label: 'Delivery Site Address', section: 'sectionA' },
+    { id: 'auditDate',      check: () => document.getElementById('auditDate').value.trim() !== '', label: 'Date of Audit', section: 'sectionA' },
+    { id: 'auditorName',    check: () => document.getElementById('auditorName').value.trim() !== '', label: 'Auditor Name', section: 'sectionF' },
+    ...(hasC2Failure ? [{ id: 'correctiveActions', check: () => document.getElementById('correctiveActions').value.trim() !== '', label: 'Corrective Actions (required for C.2 failures)', section: 'sectionD' }] : []),
+  ];
+
+  const errors = validationRules.filter(r => !r.check());
+  if (errors.length > 0) {
+    errors.forEach(e => {
+      const section = document.getElementById(e.section);
+      if (section && section.style.display === 'none') { section.style.display = 'block'; }
+      const el = document.getElementById(e.id);
+      if (el) {
+        el.classList.add('field-error');
+        const msg = document.createElement('div');
+        msg.className = 'field-error-msg';
+        msg.textContent = `⚠️ ${e.label} is required`;
+        el.parentNode.insertBefore(msg, el.nextSibling);
+        ['input','change'].forEach(evt => el.addEventListener(evt, () => { el.classList.remove('field-error'); if (msg.parentNode) msg.remove(); }, { once: true }));
+      }
+    });
+    const firstError = document.getElementById(errors[0].id);
+    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showToast(`⚠️ Please complete ${errors.length} required field${errors.length > 1 ? 's' : ''}`);
+    return;
+  }
+
+  const d = collectFormData();
+  const baseName = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}`;
+
+  // 1. Generate PDF
+  showToast('⏳ Generating PDF...');
+  const pdfDoc = await generatePDF(true);
+  const pdfBlob = pdfDoc.output('blob');
+
+  // 2. Generate Excel blob
+  const xlsxBlob = exportExcelAsBlob(d);
+
+  // 3. Download both to device
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const pdfUrl = URL.createObjectURL(pdfBlob);
+  if (isIOS) {
+    window.open(pdfUrl, '_blank');
+  } else {
+    const a = document.createElement('a'); a.href = pdfUrl; a.download = baseName + '.pdf';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
+  await new Promise(r => setTimeout(r, 500));
+  const xlsxUrl = URL.createObjectURL(xlsxBlob);
+  const xa = document.createElement('a'); xa.href = xlsxUrl; xa.download = baseName + '.xlsx';
+  document.body.appendChild(xa); xa.click(); document.body.removeChild(xa);
+  setTimeout(() => URL.revokeObjectURL(xlsxUrl), 5000);
+  await new Promise(r => setTimeout(r, 500));
+
+  // 4. Google Drive upload
+  let driveLink = null;
+  try {
+    showToast('☁️ Uploading to Google Drive...');
+    if (!gdriveToken) {
+      await new Promise((resolve, reject) => {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: GDRIVE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (response) => {
+            if (response.access_token) { gdriveToken = response.access_token; resolve(); }
+            else reject(new Error('Sign-in cancelled'));
+          },
+        });
+        client.requestAccessToken();
+      });
+    }
+
+    // Find/create BioBlue Audits folder
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const folderData = await folderRes.json();
+    let folderId;
+    if (folderData.files && folderData.files.length > 0) {
+      folderId = folderData.files[0].id;
+    } else {
+      const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+      });
+      folderId = (await cr.json()).id;
+    }
+
+    // Find/create Excel subfolder
+    const xlFolderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='Excel' and '${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const xlFolderData = await xlFolderRes.json();
+    let xlFolderId;
+    if (xlFolderData.files && xlFolderData.files.length > 0) {
+      xlFolderId = xlFolderData.files[0].id;
+    } else {
+      const xr = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Excel', mimeType: 'application/vnd.google-apps.folder', parents: [folderId] })
+      });
+      xlFolderId = (await xr.json()).id;
+    }
+
+    // Upload PDF
+    const pdfForm = new FormData();
+    pdfForm.append('metadata', new Blob([JSON.stringify({ name: baseName + '.pdf', parents: [folderId] })], { type: 'application/json' }));
+    pdfForm.append('file', pdfBlob, baseName + '.pdf');
+    const upRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: pdfForm });
+    const uploaded = await upRes.json();
+    if (uploaded.id) driveLink = uploaded.webViewLink;
+
+    // Append to master audit log in Excel subfolder
+    showToast('📊 Updating audit log...');
+    await appendToAuditLog(xlFolderId, d);
+
+    showToast('✅ PDF uploaded + audit log updated!');
+  } catch(driveErr) {
+    console.warn('Drive upload failed:', driveErr.message);
+    showToast('⚠️ Drive upload failed — continuing with email...');
+    if (driveErr.message.includes('401')) gdriveToken = null;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  // 5. Email notification
+  showToast('📧 Sending email...');
+  try {
+    if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
+    const allQs = Object.entries(ynQuestions).flatMap(([s,qs]) => qs.map(q=>({...q,section:s})));
+    const failures = allQs.filter(q => {
+      const val = ynValues[q.id];
+      if (!val || val === 'NA' || q.scoreNeutral) return false;
+      return q.reverseColor ? val === 'Y' : val === 'N';
+    });
+    const failureList = failures.length > 0
+      ? failures.map(q => `  • Q${q.num}: ${q.text.replace(/<[^>]+>/g,'')}`).join('\n')
+      : '  None — all items passed.';
+
+    await emailjs.send('service_f0s6xv5', 'template_9wr2vra', {
+      to_email:           d.emailTo || 'michael.hodnett@bioblue.com.au',
+      reply_to:           'michaelhodnett2022@gmail.com',
+      customer_name:      d.customerName,
+      audit_date:         d.auditDate,
+      address:            [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
+      auditor_name:       d.auditorName || 'Michael Hodnett',
+      site_number:        d.siteNumber || '—',
+      audit_score:        `${document.getElementById('auditScorePct')?.textContent || '—'}`,
+      photo_count:        `${photos.length} photo(s)`,
+      failures:           failureList,
+      corrective_actions: d.correctiveActions || 'None noted.',
+      message:            driveLink ? `PDF on Google Drive: ${driveLink}` : 'PDF saved to device only.',
+    });
+
+    try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
+    document.getElementById('modalMsg').textContent =
+      `✅ Audit submitted!\n\n📄 PDF + Excel saved to device\n☁️ Files uploaded to Google Drive\n📧 Email notification sent\n${driveLink ? '\nDrive link:\n' + driveLink : ''}`;
+    document.getElementById('submitModal').classList.add('active');
+    showToast('✅ Audit complete!');
+
+  } catch(err) {
+    const errMsg = err?.text || err?.message || 'Unknown error';
+    document.getElementById('modalMsg').textContent =
+      `⚠️ Email failed: ${errMsg}\n\nFiles saved:\n• PDF + Excel on device\n${driveLink ? '• Files on Google Drive\n' : ''}`;
+    document.getElementById('submitModal').classList.add('active');
+    showToast('⚠️ Email failed — files saved to Drive & device');
+  }
+}
+
+// =====================================================================
+// MASTER AUDIT LOG — append one row per audit to Drive Excel file
+// =====================================================================
+const AUDIT_LOG_NAME = 'BioBlue_Audit_Log.xlsx';
+
+async function appendToAuditLog(xlFolderId, d) {
+  // Build all Q headers and values in order
+  const allQs = Object.values(ynQuestions).flat();
+  const qHeaders = allQs.map(q => `Q${q.num}: ${q.text.replace(/<[^>]+>/g,'').slice(0,40)}`);
+  const qValues  = allQs.map(q => d.ynValues[q.id] || '—');
+
+  const headers = [
+    'Audit Date','Customer Name','Site Address','Suburb','State','Postcode',
+    'Site Number','Auditor','Audit Score','Photos','Corrective Actions',
+    'Tank ID','Tank Volume (L)','Safe Fill (L)','Current Level (L)',
+    'Fill Connection','ISO Compliant',
+    ...qHeaders
+  ];
+
+  const newRow = [
+    d.auditDate, d.customerName,
+    d.siteAddress, d.suburb, d.state, d.postcode,
+    d.siteNumber, d.auditorName,
+    document.getElementById('auditScorePct')?.textContent || '—',
+    d.photoCount, d.correctiveActions,
+    d.tankId, d.tankVolume, d.safeFill, d.currentLevel,
+    `${d.fillConnType || ''} ${d.fillConnSize || ''}`.trim(),
+    document.getElementById('isoComplianceTitle')?.textContent || '—',
+    ...qValues
+  ];
+
+  // Check if log file already exists
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${AUDIT_LOG_NAME}' and '${xlFolderId}' in parents and trashed=false&fields=files(id)`,
+    { headers: { Authorization: `Bearer ${gdriveToken}` } }
+  );
+  const searchData = await searchRes.json();
+
+  let wb;
+  let existingFileId = null;
+
+  if (searchData.files && searchData.files.length > 0) {
+    // File exists — download and parse it
+    existingFileId = searchData.files[0].id;
+    const dlRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${existingFileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const arrayBuffer = await dlRes.arrayBuffer();
+    wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    rows.push(newRow);
+    const newWs = XLSX.utils.aoa_to_sheet(rows);
+    newWs['!cols'] = headers.map(() => ({ wch: 20 }));
+    wb.Sheets[wb.SheetNames[0]] = newWs;
+  } else {
+    // Create new file with headers + first row
+    wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, newRow]);
+    ws['!cols'] = headers.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit Log');
+  }
+
+  // Write to blob
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const logBlob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  if (existingFileId) {
+    // Update existing file
+    const updateForm = new FormData();
+    updateForm.append('metadata', new Blob([JSON.stringify({})], { type: 'application/json' }));
+    updateForm.append('file', logBlob, AUDIT_LOG_NAME);
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart`,
+      { method: 'PATCH', headers: { Authorization: `Bearer ${gdriveToken}` }, body: updateForm }
+    );
+  } else {
+    // Create new file
+    const createForm = new FormData();
+    createForm.append('metadata', new Blob([JSON.stringify({ name: AUDIT_LOG_NAME, parents: [xlFolderId] })], { type: 'application/json' }));
+    createForm.append('file', logBlob, AUDIT_LOG_NAME);
+    await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: createForm }
+    );
+  }
+}
+
+// Generate Excel as Blob for Drive upload
+function exportExcelAsBlob(d) {
+  const wb = buildExcelWorkbook(d);
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+function buildExcelWorkbook(d) {
+  if (!d) d = collectFormData();
+  const rows = [
+    ['BioBlue Bulk AdBlue® Site Audit Checklist'],
+    [],
+    ['SECTION A – SITE DETAILS'],
+    ['Customer / Business Name', d.customerName],
+    ['Audit Date', d.auditDate],
+    ['Delivery Site Address', d.siteAddress],
+    ['Suburb', d.suburb],
+    ['State', d.state],
+    ['Postcode', d.postcode],
+    ['Site Contact', d.siteContact],
+    ['Contact Title', d.siteContactTitle],
+    ['Site Email', d.siteEmail],
+    ['Site Mobile', d.siteMobile],
+    [],
+    ['SECTION B – DELIVERY ACCESS & SAFETY'],
+    ['Access Hours', d.accessHours],
+    ['Max Vehicle Size', d.maxVehicle],
+    ['Key / Access Code', d.keyCode],
+    ['PPE Details', d.ppeDetails],
+  ];
+
+  for (const [grp, qs] of Object.entries(ynQuestions)) {
+    if (!['b1','b2','b3','c1','c2','e1'].includes(grp)) continue;
+    const labels = { b1:'B.1 Site Accessibility', b2:'B.2 Site Safety', b3:'B.3 Environment & Spill', c1:'C.1 Tank Audit', c2:'C.2 QA Checks', e1:'Sign-Off Checks' };
+    rows.push([], [labels[grp], 'Answer']);
+    qs.forEach(q => rows.push([q.text.replace(/<[^>]+>/g,''), d.ynValues[q.id] || '—']));
+  }
+
+  rows.push(
+    [], ['SECTION C – TANK DETAILS'],
+    ['Tank ID', d.tankId], ['Tank Serial #', d.tankSerial], ['Tank Owner', d.tankOwner],
+    ['Tank Type', d.tankType], ['Tank Volume (L)', d.tankVolume], ['Safe Fill Level (L)', d.safeFill],
+    ['Current Level (L)', d.currentLevel], ['Fill Connection Type', d.fillConnType],
+    ['Fill Connection Size', d.fillConnSize], ['Level Monitoring System', d.dipSystem],
+    ['Trident Monitor', d.tridentMonitor],
+    [], ['SECTION D – CORRECTIVE ACTIONS'],
+    ['Notes / Corrective Actions', d.correctiveActions],
+    [], ['SECTION F – AUDIT SIGN-OFF'],
+    ['Auditor Name', d.auditorName], ['Auditor Title', d.auditorTitle],
+    ['Auditor Email', d.auditorEmail], ['Auditor Mobile', d.auditorMobile],
+    ['Site Rep Name', d.repName], ['Site Rep Title', d.repTitle],
+    ['Site Rep Email', d.repEmail], ['Site Rep Mobile', d.repMobile],
+    ['Photos Taken', d.photoCount],
+    [], ['Generated', new Date().toLocaleString('en-AU')]
+  );
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 50 }, { wch: 40 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Site Audit');
+  return wb;
+}
+
+async function saveAndSend() { return uploadAndSend(); } // alias for backwards compat
+
 const GDRIVE_CLIENT_ID   = '85699556100-38g0iakg68n1if7vm4q5bhk2ehbl1ms8.apps.googleusercontent.com';
 const GDRIVE_FOLDER_NAME = 'BioBlue Audits';
 let gdriveToken = null;
@@ -3666,10 +3979,10 @@ async function saveAndSend() {
   // 1. Generate PDF
   showToast('⏳ Generating PDF...');
   const pdfDoc = await generatePDF(true);
+  const pdfBlobMain = pdfDoc.output('blob');
 
   // 2. Download PDF and Excel to device as backup using blob URL (iOS safe)
-  const pdfBlob2 = pdfDoc.output('blob');
-  const pdfUrl2  = URL.createObjectURL(pdfBlob2);
+  const pdfUrl2  = URL.createObjectURL(pdfBlobMain);
   const dlA = document.createElement('a');
   dlA.href = pdfUrl2; dlA.download = baseName + '.pdf'; dlA.target = '_blank';
   document.body.appendChild(dlA); dlA.click(); document.body.removeChild(dlA);
@@ -3678,13 +3991,68 @@ async function saveAndSend() {
   exportExcel(true);
   await new Promise(r => setTimeout(r, 500));
 
-  // 4. Send via EmailJS — text notification only (PDF saved to device separately)
-  // Sending PDF as base64 via EmailJS exceeds size limits when photos are included
+  // 3. Upload to Google Drive automatically
+  let driveLink = null;
+  try {
+    showToast('☁️ Uploading to Google Drive...');
+
+    // Auth — request token if not already signed in
+    if (!gdriveToken) {
+      await new Promise((resolve, reject) => {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: GDRIVE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (response) => {
+            if (response.access_token) { gdriveToken = response.access_token; resolve(); }
+            else reject(new Error('Google sign-in cancelled'));
+          },
+        });
+        client.requestAccessToken();
+      });
+    }
+
+    // Find or create BioBlue Audits folder
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const folderData = await folderRes.json();
+    let folderId;
+    if (folderData.files && folderData.files.length > 0) {
+      folderId = folderData.files[0].id;
+    } else {
+      const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
+      });
+      folderId = (await cr.json()).id;
+    }
+
+    // Upload PDF
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({ name: baseName + '.pdf', parents: [folderId] })], { type: 'application/json' }));
+    form.append('file', pdfBlobMain, baseName + '.pdf');
+    const upRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
+    );
+    const uploaded = await upRes.json();
+    if (uploaded.id) {
+      driveLink = uploaded.webViewLink;
+      showToast('✅ PDF saved to Google Drive!');
+    }
+  } catch(driveErr) {
+    console.warn('Drive upload skipped:', driveErr.message);
+    showToast('⚠️ Drive upload skipped — continuing...');
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  // 4. Send via EmailJS — text notification
   showToast('📧 Sending email notification...');
   try {
     if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
 
-    // Build a text summary of audit results
     const allQs = Object.entries(ynQuestions).flatMap(([s,qs]) => qs.map(q=>({...q,section:s})));
     const failures = allQs.filter(q => {
       const val = ynValues[q.id];
@@ -3704,35 +4072,30 @@ async function saveAndSend() {
       auditor_name:   d.auditorName || 'Michael Hodnett',
       site_number:    d.siteNumber || '—',
       audit_score:    `${document.getElementById('auditScorePct')?.textContent || '—'}`,
-      photo_count:    `${photos.length} photo(s) attached to saved PDF`,
+      photo_count:    `${photos.length} photo(s) attached to PDF`,
       failures:       failureList,
       corrective_actions: d.correctiveActions || 'None noted.',
-      message:        `A BioBlue Site Audit has been completed. The PDF report has been saved to the auditor's device and will be forwarded separately.`,
+      message:        driveLink
+        ? `PDF uploaded to Google Drive: ${driveLink}`
+        : `PDF saved to auditor device. No Drive link available.`,
     };
 
-    const response = await emailjs.send(
-      'service_f0s6xv5',
-      'template_9wr2vra',
-      templateParams
-    );
-
+    const response = await emailjs.send('service_f0s6xv5', 'template_9wr2vra', templateParams);
     console.log('EmailJS success:', response);
     try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
 
     document.getElementById('modalMsg').textContent =
-      `✅ Email notification sent to ${d.emailTo}!\n\nPDF and Excel saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease forward the PDF to the office.`;
+      `✅ Audit submitted successfully!\n\n📄 PDF saved to device\n☁️ PDF uploaded to Google Drive\n📧 Email notification sent\n\n${driveLink ? 'Drive: ' + driveLink : ''}`;
     document.getElementById('submitModal').classList.add('active');
-    showToast('✅ Email sent!');
+    showToast('✅ Audit complete!');
 
   } catch(err) {
     console.error('EmailJS error:', err);
     const errMsg = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
-    console.error('EmailJS error detail:', errMsg);
-
     document.getElementById('modalMsg').textContent =
-      `⚠️ Auto-email failed: ${errMsg}\n\nDon't worry — your files have been saved to your device:\n• ${baseName}.pdf\n• ${baseName}.xlsx\n\nPlease email the PDF manually to the office.`;
+      `⚠️ Email notification failed: ${errMsg}\n\nBut your audit is saved:\n• PDF on device\n${driveLink ? '• PDF on Google Drive\n' : ''}• Excel on device`;
     document.getElementById('submitModal').classList.add('active');
-    showToast('⚠️ Email failed — PDF saved to device');
+    showToast('⚠️ Email failed — PDF saved to Drive & device');
   }
 }
 
