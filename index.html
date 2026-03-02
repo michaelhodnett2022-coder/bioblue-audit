@@ -1602,7 +1602,7 @@
       <div class="section-header-icon">📸</div>
       <div class="section-header-text">
         <h2>E. Site Photos</h2>
-        <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0/8</span></p>
+        <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0/20</span></p>
       </div>
       <div class="section-toggle" id="togglePhotos">▼</div>
     </div>
@@ -2120,7 +2120,7 @@ function handleFileSelect(e) {
   e.target.value = '';
 }
 
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = 20;
 
 function addPhoto(file) {
   if (photos.length >= MAX_PHOTOS) {
