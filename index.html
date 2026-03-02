@@ -3461,31 +3461,26 @@ function drawArrowhead(ctx, fromX, fromY, toX, toY) {
 // DOWNLOAD TO DEVICE — PDF + Excel locally, no Drive, no email
 // =====================================================================
 async function downloadToDevice() {
+  // PDF only — form stays live until Upload & Send or Clear Form
   showToast('⏳ Generating PDF...');
   try {
     const doc = await generatePDF(true);
     const d = collectFormData();
     const baseName = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}`;
 
-    // PDF
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS) {
       window.open(pdfUrl, '_blank');
-      showToast('✅ PDF opened — tap Share → Save to Files');
+      showToast('✅ PDF saved — form still live. Tap ☁️ Upload & Send when ready.');
     } else {
       const a = document.createElement('a');
       a.href = pdfUrl; a.download = baseName + '.pdf';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      showToast('✅ PDF downloaded');
+      showToast('✅ PDF downloaded — form still live. Tap ☁️ Upload & Send when ready.');
     }
     setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
-
-    // Excel
-    await new Promise(r => setTimeout(r, 500));
-    exportExcel(true);
-    showToast('✅ PDF + Excel downloaded to device');
   } catch(e) {
     showToast('❌ Download failed: ' + e.message);
   }
