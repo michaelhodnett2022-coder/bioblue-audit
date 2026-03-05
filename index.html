@@ -1129,37 +1129,139 @@
 <!-- MAIN CONTENT -->
 <div class="main-content">
 
+  <!-- ══ START HERE HERO ══════════════════════════════════════ -->
+  <div id="startHero" style="
+    background: linear-gradient(135deg, var(--blue-dark) 0%, #0066cc 100%);
+    border-radius: 16px;
+    padding: 20px 18px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 18px rgba(0,52,102,0.18);
+    position: relative;
+    overflow: hidden;
+  ">
+    <!-- decorative circle -->
+    <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-20px;right:30px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,0.04);pointer-events:none;"></div>
+
+    <!-- Step label -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <div style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;display:inline-flex;align-items:center;gap:6px;">
+        <span style="color:#7AADDA;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">START HERE</span>
+      </div>
+      <span style="color:rgba(255,255,255,0.4);font-size:11px;">Select state then customer to begin</span>
+    </div>
+
+    <!-- Step 1: State -->
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:#0055A5;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;font-weight:700;">1</span>
+        </div>
+        <label style="color:white;font-size:13px;font-weight:600;margin:0;">Select State / Territory</label>
+      </div>
+      <select id="stateFilter" onchange="filterCustomersByState(this.value)" style="
+        width:100%;padding:12px 14px;border-radius:10px;
+        border:2px solid rgba(255,255,255,0.3);
+        background:rgba(255,255,255,0.92);
+        color:#1a1a2e;font-size:15px;font-weight:500;
+        -webkit-appearance:none;appearance:none;
+        background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23333%22 stroke-width=%222%22 fill=%22none%22/></svg>');
+        background-repeat:no-repeat;background-position:right 14px center;
+      ">
+        <option value="" style="color:#333;background:white;">— Select your state —</option>
+        <option value="WA" style="color:#333;background:white;">WA — Western Australia</option>
+        <option value="NT" style="color:#333;background:white;">NT — Northern Territory</option>
+        <option value="QLD" style="color:#333;background:white;">QLD — Queensland</option>
+        <option value="NSW" style="color:#333;background:white;">NSW — New South Wales</option>
+        <option value="VIC" style="color:#333;background:white;">VIC — Victoria</option>
+        <option value="SA" style="color:#333;background:white;">SA — South Australia</option>
+        <option value="TAS" style="color:#333;background:white;">TAS — Tasmania</option>
+        <option value="ACT" style="color:#333;background:white;">ACT — Australian Capital Territory</option>
+      </select>
+    </div>
+
+    <!-- Step 2: Customer -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:#0055A5;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;font-weight:700;">2</span>
+        </div>
+        <label style="color:white;font-size:13px;font-weight:600;margin:0;">Select Customer Site</label>
+      </div>
+      <select id="customerSelect" onchange="autoFillCustomer(this.value); updateProgress();" style="
+        width:100%;padding:12px 14px;border-radius:10px;
+        border:2px solid rgba(255,255,255,0.3);
+        background:rgba(255,255,255,0.92);
+        color:#1a1a2e;font-size:15px;font-weight:500;
+        -webkit-appearance:none;appearance:none;
+        background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23333%22 stroke-width=%222%22 fill=%22none%22/></svg>');
+        background-repeat:no-repeat;background-position:right 14px center;
+      " disabled>
+        <option value="" style="color:#333;background:white;">— Select state first —</option>
+        <option value="new" style="color:#333;background:white;">✏️ New / Unlisted Customer...</option>
+      </select>
+      <div id="newCustomerField" style="display:none;margin-top:8px;">
+        <input type="text" id="customerName" placeholder="Enter customer / business name" oninput="updateProgress()" style="
+          width:100%;padding:12px 14px;border-radius:10px;
+          border:2px solid rgba(255,255,255,0.3);
+          background:rgba(255,255,255,0.92);
+          color:#1a1a2e;font-size:15px;
+          box-sizing:border-box;
+        ">
+      </div>
+      <input type="hidden" id="customerNameHidden">
+    </div>
+
+    <!-- Customer confirmed banner (hidden until selected) -->
+    <div id="customerConfirmed" style="display:none;margin-top:12px;background:rgba(0,200,100,0.15);border:1px solid rgba(0,200,100,0.3);border-radius:10px;padding:10px 14px;display:none;align-items:center;gap:8px;">
+      <span style="font-size:18px;">✅</span>
+      <span id="customerConfirmedText" style="color:#a0ffcc;font-size:13px;font-weight:600;"></span>
+    </div>
+  </div>
+
   <!-- COMPLIANCE SUMMARY -->
   <div class="compliance-banner neutral" id="complianceBanner">
     <div class="compliance-icon">📋</div>
     <div>Complete the form to see compliance status. All C.2 items must be <strong>YES</strong> for ISO-22241 compliance.</div>
   </div>
 
-  <!-- EMAIL CONFIG -->
-  <div class="email-section">
-    <h3>📧 Email Settings</h3>
-    <div class="field-row">
-      <div class="field-group">
-        <label class="field-label">Send PDF to (your email)</label>
-        <input type="email" id="emailTo" placeholder="michael.hodnett@bioblue.com.au" value="michael.hodnett@bioblue.com.au">
+  <!-- ⚙️ SETTINGS (collapsed by default) -->
+  <div style="margin-bottom:14px;">
+    <button onclick="toggleSettings()" style="
+      width:100%;padding:10px 16px;border-radius:10px;
+      background:white;border:1px solid #DDE3ED;
+      display:flex;align-items:center;justify-content:space-between;
+      cursor:pointer;font-size:13px;font-weight:600;color:#555;
+      box-shadow:0 1px 4px rgba(0,0,0,0.06);
+    ">
+      <span>⚙️ Email Settings &amp; Test Mode</span>
+      <span id="settingsChevron" style="font-size:11px;color:#999;">▼ show</span>
+    </button>
+    <div id="settingsPanel" style="display:none;background:white;border:1px solid #DDE3ED;border-top:none;border-radius:0 0 10px 10px;padding:16px;">
+      <!-- EMAIL CONFIG -->
+      <h3 style="margin:0 0 10px;font-size:14px;color:var(--blue-dark);">📧 Email Settings</h3>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Send PDF to (your email)</label>
+          <input type="email" id="emailTo" placeholder="michael.hodnett@bioblue.com.au" value="michael.hodnett@bioblue.com.au">
+        </div>
+        <div class="field-group">
+          <label class="field-label">CC Email (optional)</label>
+          <input type="email" id="emailCc" placeholder="cc@example.com">
+        </div>
       </div>
-      <div class="field-group">
-        <label class="field-label">CC Email (optional)</label>
-        <input type="email" id="emailCc" placeholder="cc@example.com">
+      <p style="font-size:11.5px;color:var(--gray-mid);margin:6px 0 14px;">ℹ️ The Upload &amp; Send button will generate and email the PDF automatically.</p>
+      <!-- TEST MODE -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #eee;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="background:#1a1a2e;color:#0ff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;letter-spacing:1px;">🧪 TEST MODE</span>
+          <span style="font-size:12px;color:#888;">Fills all fields with sample data</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="test-btn" onclick="fillTestData()">⚡ Fill Test Data</button>
+          <button class="test-btn" style="background:white;color:var(--red);border:2px solid var(--red);" onclick="confirmClearForm()">🗑️ Clear Form</button>
+        </div>
       </div>
-    </div>
-    <p style="font-size:11.5px;color:var(--gray-mid);margin-top:6px;">ℹ️ The "Complete &amp; Send Audit" button will generate and email the PDF automatically.</p>
-  </div>
-
-  <!-- TEST DATA BANNER -->
-  <div class="test-banner">
-    <div class="test-banner-left">
-      <span class="test-badge">🧪 TEST MODE</span>
-      <span class="test-desc">Fills all fields with sample data for testing</span>
-    </div>
-    <div style="display:flex;gap:8px;flex-shrink:0;">
-      <button class="test-btn" onclick="fillTestData()">⚡ Fill Test Data</button>
-      <button class="test-btn" style="background:white;color:var(--red);border:2px solid var(--red);" onclick="confirmClearForm()">🗑️ Clear Form</button>
     </div>
   </div>
 
@@ -1178,25 +1280,10 @@
         <div class="field-group">
           <label class="field-label required">Customer / Business Name</label>
           <div class="customer-select-wrap">
-            <select id="customerSelect" onchange="autoFillCustomer(this.value); updateProgress();" style="width:100%">
-              <option value="">— Select existing customer —</option>
-              <optgroup label="── Express Network ──">
-                <option value="2722">VIVA BAYSWATER (WA) — 2722</option>
-                <option value="2723">VIVA BIBRA LAKE — 2723</option>
-                <option value="6936">VIVA CANNING VALE — 6936</option>
-                <option value="2140">VIVA KARRATHA TRAVEL &amp; TRUCK (NEW) — 2140</option>
-                <option value="6932">VIVA KEWDALE — 6932</option>
-                <option value="2120">VIVA KWINANA BEACH — 2120</option>
-                <option value="6942">VIVA TOM PRICE — 6942</option>
-                <option value="6933">VIVA UPPER SWAN ROADHOUSE — 6933</option>
-                <option value="2123">VIVA WANGARA — 2123</option>
-              </optgroup>
-              <option value="new">✏️ New / Unlisted Customer...</option>
-            </select>
-            <div id="newCustomerField" style="display:none; margin-top:8px;">
-              <input type="text" id="customerName" placeholder="Enter customer / business name" oninput="updateProgress()">
-            </div>
             <input type="hidden" id="customerNameHidden">
+            <div id="newCustomerField2" style="display:none;">
+              <input type="text" id="customerNameInline" placeholder="Enter customer / business name" oninput="document.getElementById('customerName').value=this.value;updateProgress()">
+            </div>
           </div>
         </div>
         <div class="field-group">
@@ -2470,16 +2557,180 @@ function exportExcel(silent=false) {
 // CUSTOMER DATABASE & AUTOFILL
 // =====================================================================
 const CUSTOMERS = {
-  '2722': { name:'VIVA BAYSWATER (WA)', siteNum:'2722', network:'Express', address:'CNR JACKSON ST AND COLLIER RD', suburb:'BAYSWATER', state:'WA', postcode:'6053', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2723': { name:'VIVA BIBRA LAKE', siteNum:'2723', network:'Express', address:'1 TIMBERYARD WAY', suburb:'BIBRA LAKE', state:'WA', postcode:'6163', tankVolume:'22800', safeFill:'18906', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6936': { name:'VIVA CANNING VALE', siteNum:'6936', network:'Express', address:'280 BANNISTER RD', suburb:'CANNING VALE', state:'WA', postcode:'6155', tankVolume:'20000', safeFill:'17000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2140': { name:'VIVA KARRATHA TRAVEL & TRUCK (NEW)', siteNum:'2140', network:'Express', address:'NORTH WEST COASTAL HIGHWAY', suburb:'KARRATHA', state:'WA', postcode:'6714', tankVolume:'20000', safeFill:'21264', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6932': { name:'VIVA KEWDALE', siteNum:'6932', network:'Express', address:'KEWDALE RD & ABERNETHY RD', suburb:'KEWDALE', state:'WA', postcode:'6105', tankVolume:'20600', safeFill:'20000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2120': { name:'VIVA KWINANA BEACH', siteNum:'2120', network:'Express', address:'4 BEACH STREET', suburb:'KWINANA BEACH', state:'WA', postcode:'6167', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6942': { name:'VIVA TOM PRICE', siteNum:'6942', network:'Express', address:'1 MINE RD (CNR PARABURDOO-TOM PRICE RD)', suburb:'TOM PRICE', state:'WA', postcode:'6751', tankVolume:'20000', safeFill:'19500', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '6933': { name:'VIVA UPPER SWAN ROADHOUSE', siteNum:'6933', network:'Express', address:'1333 GREAT NORTHERN HWY', suburb:'UPPER SWAN', state:'WA', postcode:'6069', tankVolume:'20000', safeFill:'19400', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
-  '2123': { name:'VIVA WANGARA', siteNum:'2123', network:'Express', address:'LOT 311 1 NICHE PARADE', suburb:'WANGARA', state:'WA', postcode:'6065', tankVolume:'20000', safeFill:'19886', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── WA ──
+  '2722': { name:'VIVA BAYSWATER',          siteNum:'2722', network:'VIVA-RDX', address:'CNR JACKSON STREET AND COLLIER ROAD', suburb:'BAYSWATER',      state:'WA', postcode:'6053', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2723': { name:'VIVA BIBRA LAKE',          siteNum:'2723', network:'VIVA-RDX', address:'1 TIMBERYARD WAY',                   suburb:'BIBRA LAKE',      state:'WA', postcode:'6163', tankVolume:'22800', safeFill:'18906', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6936': { name:'VIVA BUSSELTON',           siteNum:'6936', network:'VIVA-LIB', address:'84 & 180 STRELLY STREET (CNR FAIRLARN RD)', suburb:'BUSSELTON', state:'WA', postcode:'6280', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6937': { name:'VIVA CANNING VALE',        siteNum:'6937', network:'VIVA-RDX', address:'280 BANNISTER ROAD',                 suburb:'CANNING VALE',    state:'WA', postcode:'6155', tankVolume:'20000', safeFill:'17000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2140': { name:'VIVA KARRATHA TRAVEL & TRUCK', siteNum:'2140', network:'VIVA-RDX', address:'NORTH WEST COASTAL HIGHWAY',    suburb:'KARRATHA',        state:'WA', postcode:'6714', tankVolume:'20000', safeFill:'21264', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6932': { name:'VIVA KEWDALE',             siteNum:'6932', network:'VIVA-RDX', address:'KEWDALE RD & ABERNETHY ROAD',        suburb:'KEWDALE',         state:'WA', postcode:'6105', tankVolume:'20600', safeFill:'20000', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2120': { name:'VIVA KWINANA BEACH',       siteNum:'2120', network:'VIVA-RDX', address:'4 BEACH STREET',                    suburb:'KWINANA BEACH',   state:'WA', postcode:'6167', tankVolume:'22800', safeFill:'18800', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6938': { name:'VIVA MARGARET RIVER',      siteNum:'6938', network:'VIVA-LIB', address:'12 AUGER WAY',                      suburb:'MARGARET RIVER',  state:'WA', postcode:'6285', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6942': { name:'VIVA TOM PRICE',           siteNum:'6942', network:'VIVA-RDX', address:'1 MINE RD (CNR PARABURDOO-TOM PRICE RD)', suburb:'TOM PRICE', state:'WA', postcode:'6751', tankVolume:'20000', safeFill:'19500', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '6933': { name:'VIVA UPPER SWAN ROADHOUSE', siteNum:'6933', network:'VIVA-RDX', address:'1333 GREAT NORTHERN HWY',          suburb:'UPPER SWAN',      state:'WA', postcode:'6069', tankVolume:'20000', safeFill:'19400', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  '2123': { name:'VIVA WANGARA',             siteNum:'2123', network:'VIVA-RDX', address:'LOT 311 1 NICHE PARADE',            suburb:'WANGARA',         state:'WA', postcode:'6065', tankVolume:'20000', safeFill:'19886', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'ARW01': { name:'ARROW TRANSPORT FREMANTLE', siteNum:'ARW01', network:'VIVA-COM', address:'40 RUDDERHAM DRIVE',             suburb:'NORTH FREMANTLE', state:'WA', postcode:'6160', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── NT ──
+  'NT001': { name:'VIVA ALICE SPRINGS',      siteNum:'NT001', network:'VIVA-RDX', address:'CNR DALGETY & LILBILI ST',         suburb:'ALICE SPRINGS',   state:'NT', postcode:'0870', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NT002': { name:'VIVA BERRIMAH TRUCK CITY', siteNum:'NT002', network:'VIVA-OTR', address:'3921 BERRIMAH ROAD',              suburb:'BERRIMAH',        state:'NT', postcode:'0820', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NT003': { name:'VIVA BERRIMAH WISHART RD', siteNum:'NT003', network:'VIVA-OTR', address:'5 WISHART ROAD',                  suburb:'BERRIMAH',        state:'NT', postcode:'0820', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NT004': { name:'VIVA KATHERINE',          siteNum:'NT004', network:'VIVA-OTR', address:'85 BICENTENNIAL ROAD',             suburb:'KATHERINE',       state:'NT', postcode:'0850', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── QLD ──
+  'ARW02': { name:'ARROW TRANSPORT BRISBANE PORT', siteNum:'ARW02', network:'VIVA-COM', address:'8 BISHOP DRIVE',             suburb:'PORT OF BRISBANE', state:'QLD', postcode:'4178', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD01': { name:'BARRO GROUP MOUNT COTTON',      siteNum:'QLD01', network:'VIVA-COM', address:'1513 MOUNT COTTON ROAD',     suburb:'MOUNT COTTON',     state:'QLD', postcode:'4165', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD02': { name:'VIVA NUDGEE',                   siteNum:'QLD02', network:'VIVA-RDX', address:'1097 NUDGEE ROAD',           suburb:'BANYO',            state:'QLD', postcode:'4014', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD03': { name:'VIVA BRENDALE',                 siteNum:'QLD03', network:'VIVA-RDX', address:'2 LINKFIELD ROAD',           suburb:'BRENDALE',         state:'QLD', postcode:'4500', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD04': { name:'VIVA COOMERA PACIFIC HWY',      siteNum:'QLD04', network:'VIVA-RDX', address:'EXIT 54 487 OLD PACIFIC HWY', suburb:'COOMERA',         state:'QLD', postcode:'4209', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD05': { name:'VIVA CURRUMBIN WATERS',         siteNum:'QLD05', network:'VIVA-RDX', address:'3A STEWART ROAD',            suburb:'CURRUMBIN WATERS', state:'QLD', postcode:'4223', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD06': { name:'VIVA GLASS HOUSE MOUNTAIN',     siteNum:'QLD06', network:'VIVA-RDX', address:'4249 BRUCE HWY (NORTHBOUND)', suburb:'GLASS HOUSE MOUNTAIN', state:'QLD', postcode:'4518', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD07': { name:'VIVA JIMBOOMBA',                siteNum:'QLD07', network:'VIVA-RDX', address:'2-4 TAMBORINE ST (CNR MT LINDESAY HWY)', suburb:'JIMBOOMBA', state:'QLD', postcode:'4280', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD08': { name:'VIVA MOUNT ISA TRUCKPORT',      siteNum:'QLD08', network:'VIVA-RDX', address:'221-239 BARKLY HIGHWAY',     suburb:'MOUNT ISA',        state:'QLD', postcode:'4825', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD09': { name:'VIVA ROCKLEA',                  siteNum:'QLD09', network:'VIVA-RDX', address:'1728 IPSWICH RD (CNR SHETTLETON ST)', suburb:'ROCKLEA',  state:'QLD', postcode:'4106', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD10': { name:'VIVA YATALA',                   siteNum:'QLD10', network:'VIVA-RDX', address:'CNR HENRY HESTER & MACPHERSON ROAD', suburb:'YATALA',    state:'QLD', postcode:'4207', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD11': { name:'VIVA CALLIOPE',                 siteNum:'QLD11', network:'VIVA-OTR', address:'1906 DAWSON HWY',            suburb:'CALLIOPE',         state:'QLD', postcode:'4680', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD12': { name:'VIVA MT LARCOM',                siteNum:'QLD12', network:'VIVA-OTR', address:'57017 BRUCE HWY',            suburb:'MT LARCOM',        state:'QLD', postcode:'4695', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD13': { name:'VIVA SWANBANK',                 siteNum:'QLD13', network:'VIVA-OTR', address:'28 WESLEY WAY',              suburb:'SWANBANK',         state:'QLD', postcode:'4306', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD14': { name:'AUTO CARE LYTTON',              siteNum:'QLD14', network:'VIVA-COM', address:'42 RADAR STREET',            suburb:'LYTTON',           state:'QLD', postcode:'4178', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD15': { name:'MEDLOG OCEANIA PORT BNE',       siteNum:'QLD15', network:'VIVA-COM', address:'10 PEREGRINE DRIVE',         suburb:'PORT BNE',         state:'QLD', postcode:'4178', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'QLD16': { name:'ARROW BNE PORT',                siteNum:'QLD16', network:'VIVA-COM', address:'8 BISHOP DRIVE',             suburb:'PORT OF BNE',      state:'QLD', postcode:'4178', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── NSW ──
+  'NSW01': { name:'VIVA BERESFIELD',               siteNum:'NSW01', network:'VIVA-RDX', address:'93 WEAKLEYS DRIVE',          suburb:'BERESFIELD',       state:'NSW', postcode:'2322', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW02': { name:'VIVA BOGGABILLA',               siteNum:'NSW02', network:'VIVA-RDX', address:'33351 NEWELL HIGHWAY',       suburb:'BOGGABILLA',       state:'NSW', postcode:'2409', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW03': { name:'VIVA BOMADERRY',                siteNum:'NSW03', network:'VIVA-RDX', address:'271 PRINCES HIGHWAY',        suburb:'BOMADERRY',        state:'NSW', postcode:'2541', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW04': { name:'VIVA EASTERN CREEK',            siteNum:'NSW04', network:'VIVA-RDX', address:'611 GREAT WESTERN HWY (CNR BRABHAM DRV)', suburb:'EASTERN CREEK', state:'NSW', postcode:'2766', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW05': { name:'VIVA GUNDAGAI TUCKERBOX',       siteNum:'NSW05', network:'VIVA-RDX', address:'CNR HUME HIGHWAY & SHEAHAN DRIVE', suburb:'GUNDAGAI',   state:'NSW', postcode:'2722', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW06': { name:'VIVA HALFWAY CREEK',            siteNum:'NSW06', network:'VIVA-RDX', address:'4974 PACIFIC HIGHWAY (CNR LEMON TREE RD)', suburb:'HALFWAY CREEK', state:'NSW', postcode:'2460', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW07': { name:'VIVA HEXHAM',                   siteNum:'NSW07', network:'VIVA-RDX', address:'21 MAITLAND ROAD',           suburb:'HEXHAM',           state:'NSW', postcode:'2322', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW08': { name:'VIVA ALBURY NORTH',             siteNum:'NSW08', network:'VIVA-RDX', address:'575 WAGGA ROAD',             suburb:'LAVINGTON',        state:'NSW', postcode:'2641', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW09': { name:'VIVA SOUTH GUNDAGAI',           siteNum:'NSW09', network:'VIVA-RDX', address:'115 MOUNT ST & MIDDLE STREET', suburb:'SOUTH GUNDAGAI', state:'NSW', postcode:'2722', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW10': { name:'VIVA SUTTON FOREST EAST',       siteNum:'NSW10', network:'VIVA-RDX', address:'13125 HUME HIGHWAY (CNR SALLY CORNER RD)', suburb:'SUTTON FOREST', state:'NSW', postcode:'2577', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW11': { name:'VIVA SUTTON FOREST WEST',       siteNum:'NSW11', network:'VIVA-RDX', address:'13124 HUME HIGHWAY',         suburb:'SUTTON FOREST',    state:'NSW', postcode:'2577', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW12': { name:'VIVA WETHERILL PARK EAST',      siteNum:'NSW12', network:'VIVA-RDX', address:'37 ELIZABETH ST (CNR VICTORIA ST)', suburb:'WETHERILL PARK', state:'NSW', postcode:'2164', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW13': { name:'VIVA WYALONG',                  siteNum:'NSW13', network:'VIVA-RDX', address:'MID WESTERN HIGHWAY & NICHOLSON LANE', suburb:'WYALONG',  state:'NSW', postcode:'2671', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW14': { name:'VIVA OBERON',                   siteNum:'NSW14', network:'VIVA-RDX', address:'1 HOARCE STREET',            suburb:'OBERON',           state:'NSW', postcode:'2787', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW15': { name:'VIVA MARSDEN PARK',             siteNum:'NSW15', network:'VIVA-OTR', address:'365 GARFIELD ROAD',          suburb:'MARSDEN PARK',     state:'NSW', postcode:'2765', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW16': { name:'VIVA BLACKTOWN',                siteNum:'NSW16', network:'VIVA-OTR', address:'132-136 SUNNYHOLT ROAD',     suburb:'BLACKTOWN',        state:'NSW', postcode:'2148', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW17': { name:'VIVA BOOLAROO',                 siteNum:'NSW17', network:'VIVA-OTR', address:'106 MUNIBUNG ROAD',          suburb:'BOOLAROO',         state:'NSW', postcode:'2284', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW18': { name:'VIVA GREENACRE WEST',           siteNum:'NSW18', network:'VIVA-OTR', address:'74 ROBERTS ROAD',            suburb:'GREENACRE',        state:'NSW', postcode:'2190', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW19': { name:'VIVA KARIONG',                  siteNum:'NSW19', network:'VIVA-OTR', address:'6-8 CENTRAL COAST HIGHWAY', suburb:'KARIONG',          state:'NSW', postcode:'2250', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW20': { name:'VIVA KIRRAWEE (GYMEA)',         siteNum:'NSW20', network:'VIVA-OTR', address:'470 PRINCES HIGHWAY',        suburb:'GYMEA',            state:'NSW', postcode:'2227', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW21': { name:'VIVA KOORAGANG ISLAND',         siteNum:'NSW21', network:'VIVA-OTR', address:'130 CORMORANT RD',           suburb:'KOORAGANG',        state:'NSW', postcode:'2304', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW22': { name:'VIVA PRESTONS',                 siteNum:'NSW22', network:'VIVA-OTR', address:'1-5 YATO ROAD',              suburb:'PRESTONS',         state:'NSW', postcode:'2170', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW23': { name:'VIVA WATERLOO',                 siteNum:'NSW23', network:'VIVA-OTR', address:'867-869 SOUTH DOWLING STREET', suburb:'WATERLOO',       state:'NSW', postcode:'2017', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'NSW24': { name:'ARROW CHULLORA',                siteNum:'NSW24', network:'VIVA-COM', address:'10 BRUNKER ROAD',             suburb:'CHULLORA',         state:'NSW', postcode:'2190', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── VIC ──
+  'VIC01': { name:'VIVA ALTONA',                   siteNum:'VIC01', network:'VIVA-RDX', address:'300-302 GRIEVE PARADE',      suburb:'ALTONA',           state:'VIC', postcode:'3025', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC02': { name:'VIVA CAMPBELLFIELD',            siteNum:'VIC02', network:'VIVA-RDX', address:'1805-1825 SYDNEY ROAD',      suburb:'CAMPBELLFIELD',    state:'VIC', postcode:'3061', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC03': { name:'VIVA CLAYTON',                  siteNum:'VIC03', network:'VIVA-RDX', address:'DANDENONG ROAD & RENVER ROAD', suburb:'CLAYTON',        state:'VIC', postcode:'3168', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC04': { name:'VIVA DANDENONG',                siteNum:'VIC04', network:'VIVA-RDX', address:'61-65 CHELTENHAM ROAD',      suburb:'DANDENONG',        state:'VIC', postcode:'3175', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC05': { name:'VIVA DANDENONG SOUTH',          siteNum:'VIC05', network:'VIVA-RDX', address:'215-221 GREENS ROAD',        suburb:'DANDENONG SOUTH',  state:'VIC', postcode:'3175', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC06': { name:'VIVA LAVERTON NORTH (FITZGERALD)', siteNum:'VIC06', network:'VIVA-RDX', address:'285 FITZGERALD ROAD',    suburb:'DERRIMUT',         state:'VIC', postcode:'3030', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC07': { name:'VIVA EUROA',                    siteNum:'VIC07', network:'VIVA-RDX', address:'167 TARCOMBE STREET',        suburb:'EUROA',            state:'VIC', postcode:'3666', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC08': { name:'VIVA KEILOR EAST',              siteNum:'VIC08', network:'VIVA-RDX', address:'26 CEMETERY ROAD',          suburb:'KEILOR EAST',      state:'VIC', postcode:'3033', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC09': { name:'VIVA LAVERTON NORTH (LITTLE BOUNDARY)', siteNum:'VIC09', network:'VIVA-RDX', address:'2 LITTLE BOUNDARY RD (CNR PRINCES HWY)', suburb:'LAVERTON NORTH', state:'VIC', postcode:'3026', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC10': { name:'VIVA BUNKER HILL (MICKLEHAM)',  siteNum:'VIC10', network:'VIVA-RDX', address:'1175 HUME HIGHWAY',          suburb:'MICKLEHAM',        state:'VIC', postcode:'3064', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC11': { name:'VIVA PORT MELBOURNE WESTGATE', siteNum:'VIC11', network:'VIVA-RDX', address:'46-62 COOK STREET',           suburb:'PORT MELBOURNE',   state:'VIC', postcode:'3207', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC12': { name:'VIVA PORTLAND (PORT ALEXANDER)', siteNum:'VIC12', network:'VIVA-RDX', address:'615 HENTY HIGHWAY',        suburb:'PORTLAND',         state:'VIC', postcode:'3305', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC13': { name:'VIVA TRUGANINA',                siteNum:'VIC13', network:'VIVA-RDX', address:'307 PALMERS ROAD',           suburb:'TRUGANINA',        state:'VIC', postcode:'3029', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC14': { name:'VIVA KEILOR PARK (TULLAMARINE)', siteNum:'VIC14', network:'VIVA-RDX', address:'69 KEILOR PARK DRIVE',     suburb:'TULLAMARINE',      state:'VIC', postcode:'3043', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC15': { name:'VIVA WARRENHEIP',               siteNum:'VIC15', network:'VIVA-RDX', address:'(LOT 1) 9389 WESTERN HIGHWAY', suburb:'WARRENHEIP',    state:'VIC', postcode:'3352', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC16': { name:'VIVA STAWELL',                  siteNum:'VIC16', network:'VIVA-OTR', address:'34 ARARAT ROAD',             suburb:'STAWELL',          state:'VIC', postcode:'3380', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC17': { name:'VIVA CORIO HYDROGEN HUB',       siteNum:'VIC17', network:'VIVA-RDX', address:'90 REFINERY ROAD',           suburb:'CORIO',            state:'VIC', postcode:'3214', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC18': { name:'ARROW WORLD WIDE ALTONA NORTH', siteNum:'VIC18', network:'VIVA-COM', address:'96 TOLL DRIVE',              suburb:'ALTONA NORTH',     state:'VIC', postcode:'3025', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC19': { name:'ACM BEVERIDGE',                 siteNum:'VIC19', network:'VIVA-COM', address:'61 MINTON STREET',           suburb:'BEVERIDGE',        state:'VIC', postcode:'3753', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC20': { name:'ACM CLYDE',                     siteNum:'VIC20', network:'VIVA-COM', address:'1470 BALLARTO ROAD',         suburb:'CLYDE',            state:'VIC', postcode:'3978', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC21': { name:'ACM EPPING',                    siteNum:'VIC21', network:'VIVA-COM', address:"335 O'HERNS ROAD",           suburb:'EPPING',           state:'VIC', postcode:'3076', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC22': { name:'ACM ROCKBANK',                  siteNum:'VIC22', network:'VIVA-COM', address:'2-50 MESKOS ROAD',           suburb:'ROCKBANK',         state:'VIC', postcode:'3029', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC23': { name:'BUTLER DOCKLINK W MELB',        siteNum:'VIC23', network:'VIVA-COM', address:'CNR DOCKLINK ROAD & PROVISIONING WAY', suburb:'W MELB',  state:'VIC', postcode:'3003', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC24': { name:'BUTLER SIMS W MELB',            siteNum:'VIC24', network:'VIVA-COM', address:'93-111 SIMS STREET',         suburb:'W MELB',           state:'VIC', postcode:'3003', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC25': { name:'BUTLER DANDENONG',              siteNum:'VIC25', network:'VIVA-COM', address:'47-53 HALLAM VALLEY ROAD',   suburb:'DANDENONG',        state:'VIC', postcode:'3175', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC26': { name:'CROWN COACH DANDENONG SOUTH',   siteNum:'VIC26', network:'VIVA-COM', address:'52 REMINGTON DRIVE',         suburb:'DANDENONG SOUTH',  state:'VIC', postcode:'3175', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC27': { name:'CROWN COACH NUNAWADING',        siteNum:'VIC27', network:'VIVA-COM', address:'79 NORCAL ROAD',             suburb:'NUNAWADING',       state:'VIC', postcode:'3131', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC28': { name:'WINSLOW CONSTRUCTORS CAMPBELLFIELD', siteNum:'VIC28', network:'VIVA-COM', address:'22 MERRI CONCOURSE',   suburb:'CAMPBELLFIELD',    state:'VIC', postcode:'3061', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC29': { name:'FULTON HOGAN TYLDEN',           siteNum:'VIC29', network:'VIVA-COM', address:'1122 WOODEND ROAD',          suburb:'TYLDEN',           state:'VIC', postcode:'3444', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC30': { name:'FULTON HOGAN TYNONG',           siteNum:'VIC30', network:'VIVA-COM', address:'TYNONG ROAD',                suburb:'TYNONG',           state:'VIC', postcode:'3813', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC31': { name:'FONTERRA COBDEN',               siteNum:'VIC31', network:'VIVA-COM', address:'129 CURDIE STREET',          suburb:'COBDEN',           state:'VIC', postcode:'3266', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC32': { name:'FONTERRA STANHOPE',             siteNum:'VIC32', network:'VIVA-COM', address:'20 MIDLAND HIGHWAY',         suburb:'STANHOPE',         state:'VIC', postcode:'3623', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC33': { name:'FONTERRA DARNUM',               siteNum:'VIC33', network:'VIVA-COM', address:'DARNUM PARK ROAD',           suburb:'DARNUM',           state:'VIC', postcode:'3822', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC34': { name:'SYMAL SYCLE SUNSHINE NORTH',    siteNum:'VIC34', network:'VIVA-COM', address:'2 TUBE STREET',              suburb:'SUNSHINE N',       state:'VIC', postcode:'3020', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'VIC35': { name:'SYMAL DFOA AVALON',             siteNum:'VIC35', network:'VIVA-COM', address:'45 BEACH ROAD',              suburb:'AVALON',           state:'VIC', postcode:'3212', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── SA ──
+  'SA001': { name:'VIVA PORT AUGUSTA MOTOR REGISTRY', siteNum:'SA001', network:'VIVA-RDX', address:'20271 AUGUSTA HIGHWAY', suburb:'PORT AUGUSTA',     state:'SA', postcode:'5700', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA002': { name:'VIVA TAILEM BEND',              siteNum:'SA002', network:'VIVA-RDX', address:'69-71 PRINCES HIGHWAY',     suburb:'TAILEM BEND',      state:'SA', postcode:'5260', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA003': { name:'VIVA PORT WAKEFIELD (BOLIVAR)', siteNum:'SA003', network:'VIVA-OTR', address:'859 PORT WAKEFIELD ROAD',   suburb:'BOLIVAR',          state:'SA', postcode:'5110', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA004': { name:'VIVA BORDERTOWN',               siteNum:'SA004', network:'VIVA-OTR', address:'2 DUKES HIGHWAY',           suburb:'BORDERTOWN',       state:'SA', postcode:'5268', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA005': { name:'VIVA CEDUNA',                   siteNum:'SA005', network:'VIVA-OTR', address:'35 EYRE HIGHWAY',           suburb:'CEDUNA',           state:'SA', postcode:'5690', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA006': { name:'VIVA DRY CREEK',                siteNum:'SA006', network:'VIVA-OTR', address:'11 VATER STREET',           suburb:'DRY CREEK',        state:'SA', postcode:'5094', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA007': { name:'VIVA KINGSTON',                 siteNum:'SA007', network:'VIVA-OTR', address:'1 PRINCES HIGHWAY',         suburb:'KINGSTON',         state:'SA', postcode:'5275', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA008': { name:'VIVA LOXTON',                   siteNum:'SA008', network:'VIVA-OTR', address:'52 FRENCH ROAD',            suburb:'LOXTON',           state:'SA', postcode:'5333', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA009': { name:'VIVA MOUNT GAMBIER EAST',       siteNum:'SA009', network:'VIVA-OTR', address:'CNR JUBILEE HIGHWAY & RAMSAY AVENUE', suburb:'MOUNT GAMBIER', state:'SA', postcode:'5290', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA010': { name:'VIVA NARACOORTE',               siteNum:'SA010', network:'VIVA-OTR', address:'1 DEVIATION ROAD',          suburb:'NARACOORTE',       state:'SA', postcode:'5271', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA011': { name:'VIVA OLD NOARLUNGA',            siteNum:'SA011', network:'VIVA-OTR', address:'LOT 76 MAIN SOUTH ROAD',    suburb:'NOARLUNGA',        state:'SA', postcode:'5168', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA012': { name:'VIVA NURIOOTPA',                siteNum:'SA012', network:'VIVA-OTR', address:'TANUNDA ROAD & NEW ROAD',   suburb:'NURIOOTPA',        state:'SA', postcode:'5355', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA013': { name:'VIVA PINNAROO',                 siteNum:'SA013', network:'VIVA-OTR', address:'6-8 MALLEE ROAD',           suburb:'PINNAROO',         state:'SA', postcode:'5304', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA014': { name:'VIVA PORT AUGUSTA OTR',         siteNum:'SA014', network:'VIVA-OTR', address:'CNR AUGUSTA HWY & NORTHERN POWER STATION RD', suburb:'PORT AUGUSTA', state:'SA', postcode:'5700', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA015': { name:'VIVA RIDLEYTON',                siteNum:'SA015', network:'VIVA-OTR', address:'231 SOUTH ROAD',            suburb:'RIDLEYTON',        state:'SA', postcode:'5008', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA016': { name:'VIVA TAILEM BEND MOTORSPORT',   siteNum:'SA016', network:'VIVA-OTR', address:'543 DUKES HIGHWAY',         suburb:'TAILEM BEND',      state:'SA', postcode:'5260', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA017': { name:'VIVA MANSFIELD PARK',           siteNum:'SA017', network:'VIVA-OTR', address:'452 GRAND JUNCTION ROAD',   suburb:'MANSFIELD PARK',   state:'SA', postcode:'5012', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA018': { name:'VIVA REGENCY PARK',             siteNum:'SA018', network:'VIVA-LIB', address:'64 PEDDER CRESCENT',        suburb:'REGENCY PARK',     state:'SA', postcode:'5010', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'SA019': { name:'AGL ENERGY PORT ADELAIDE',      siteNum:'SA019', network:'VIVA-COM', address:'TORRENS ISLAND PS, GRAND TRUNKWAY', suburb:'PORT ADELAIDE', state:'SA', postcode:'5015', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  // ── TAS ──
+  'TAS01': { name:'FONTERRA SPREYTON',             siteNum:'TAS01', network:'VIVA-COM', address:'155 MERSEY ROAD',            suburb:'SPREYTON',         state:'TAS', postcode:'7310', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
+  'TAS02': { name:'FONTERRA WYNYARD',              siteNum:'TAS02', network:'VIVA-COM', address:'92 INGLIS STREET',           suburb:'WYNYARD',          state:'TAS', postcode:'7325', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
 };
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const chevron = document.getElementById('settingsChevron');
+  const open = panel.style.display === 'block';
+  panel.style.display = open ? 'none' : 'block';
+  chevron.textContent = open ? '▼ show' : '▲ hide';
+}
+
+function filterCustomersByState(state) {
+  const customerSelect = document.getElementById('customerSelect');
+  customerSelect.innerHTML = '';
+
+  if (!state) {
+    customerSelect.disabled = true;
+    customerSelect.innerHTML = '<option value="">— Select state first —</option>';
+    const newOpt = document.createElement('option');
+    newOpt.value = 'new'; newOpt.textContent = '✏️ New / Unlisted Customer...';
+    customerSelect.appendChild(newOpt);
+    // Hide confirmation banner
+    const confirmed = document.getElementById('customerConfirmed');
+    if (confirmed) confirmed.style.display = 'none';
+    return;
+  }
+
+  customerSelect.disabled = false;
+  customerSelect.style.background = 'rgba(255,255,255,0.92)';
+  customerSelect.style.color = '#1a1a2e';
+  customerSelect.style.borderColor = 'rgba(255,255,255,0.4)';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = ''; defaultOpt.textContent = '— Select customer —';
+  customerSelect.appendChild(defaultOpt);
+
+  // Filter and sort customers by state
+  const stateCustomers = Object.values(CUSTOMERS)
+    .filter(c => c.state === state)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  stateCustomers.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.siteNum;
+    opt.textContent = c.name;
+    customerSelect.appendChild(opt);
+  });
+
+  // Always add unlisted at the bottom
+  const newOpt = document.createElement('option');
+  newOpt.value = 'new'; newOpt.textContent = '✏️ New / Unlisted Customer...';
+  customerSelect.appendChild(newOpt);
+
+  // Reset customer selection
+  autoFillCustomer('');
+}
 
 function autoFillCustomer(siteNum) {
   const newField = document.getElementById('newCustomerField');
@@ -2508,6 +2759,14 @@ function autoFillCustomer(siteNum) {
 
   // Store name for use in PDF/Excel
   document.getElementById('customerNameHidden').value = c.name;
+
+  // Show confirmation banner in hero
+  const confirmed = document.getElementById('customerConfirmed');
+  const confirmedText = document.getElementById('customerConfirmedText');
+  if (confirmed && confirmedText) {
+    confirmedText.textContent = c.name + ' — ' + c.suburb + ', ' + c.state;
+    confirmed.style.display = 'flex';
+  }
 
   // Site number & network
   setField('siteNumber', c.siteNum);
@@ -3461,13 +3720,11 @@ function drawArrowhead(ctx, fromX, fromY, toX, toY) {
 // DOWNLOAD TO DEVICE — PDF + Excel locally, no Drive, no email
 // =====================================================================
 async function downloadToDevice() {
-  // PDF only — form stays live until Upload & Send or Clear Form
   showToast('⏳ Generating PDF...');
   try {
     const doc = await generatePDF(true);
     const d = collectFormData();
     const baseName = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}`;
-
     const pdfBlob = doc.output('blob');
     const pdfUrl = URL.createObjectURL(pdfBlob);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
