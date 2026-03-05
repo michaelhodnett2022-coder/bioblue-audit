@@ -3971,7 +3971,13 @@ async function uploadAndSend() {
 
     // Append to master audit log in Excel subfolder
     showToast('📊 Updating audit log...');
-    await appendToAuditLog(xlFolderId, d);
+    try {
+      await appendToAuditLog(xlFolderId, d);
+      console.log('✓ Audit log updated');
+    } catch(logErr) {
+      console.error('Audit log update failed:', logErr);
+      showToast('⚠️ Log update failed: ' + logErr.message, 4000);
+    }
 
     showToast('✅ PDF uploaded + audit log updated!');
   } catch(driveErr) {
@@ -3982,20 +3988,24 @@ async function uploadAndSend() {
     showToast(isPopupBlocked
       ? '\u26a0\ufe0f Google sign-in blocked \u2014 allow popups in browser settings and try again'
       : '\u26a0\ufe0f Drive upload failed: ' + msg + ' \u2014 saving files to device instead', 6000);
-    // Fallback: save PDF + Excel to device if Drive failed
-    try {
-      const fbPdfUrl = URL.createObjectURL(pdfBlob);
-      const fbPdfA = document.createElement('a');
-      fbPdfA.href = fbPdfUrl; fbPdfA.download = baseName + '.pdf';
-      document.body.appendChild(fbPdfA); fbPdfA.click(); document.body.removeChild(fbPdfA);
-      setTimeout(() => URL.revokeObjectURL(fbPdfUrl), 30000);
-      await new Promise(r => setTimeout(r, 400));
-      const fbXlsxUrl = URL.createObjectURL(xlsxBlob);
-      const fbXlsxA = document.createElement('a');
-      fbXlsxA.href = fbXlsxUrl; fbXlsxA.download = baseName + '.xlsx';
-      document.body.appendChild(fbXlsxA); fbXlsxA.click(); document.body.removeChild(fbXlsxA);
-      setTimeout(() => URL.revokeObjectURL(fbXlsxUrl), 10000);
-    } catch(e) { console.warn('Fallback device save failed:', e); }
+    // Fallback: save to device only on desktop (iOS Safari blocks programmatic downloads)
+    if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      try {
+        const fbPdfUrl = URL.createObjectURL(pdfBlob);
+        const fbPdfA = document.createElement('a');
+        fbPdfA.href = fbPdfUrl; fbPdfA.download = baseName + '.pdf';
+        document.body.appendChild(fbPdfA); fbPdfA.click(); document.body.removeChild(fbPdfA);
+        setTimeout(() => URL.revokeObjectURL(fbPdfUrl), 30000);
+        await new Promise(r => setTimeout(r, 400));
+        const fbXlsxUrl = URL.createObjectURL(xlsxBlob);
+        const fbXlsxA = document.createElement('a');
+        fbXlsxA.href = fbXlsxUrl; fbXlsxA.download = baseName + '.xlsx';
+        document.body.appendChild(fbXlsxA); fbXlsxA.click(); document.body.removeChild(fbXlsxA);
+        setTimeout(() => URL.revokeObjectURL(fbXlsxUrl), 10000);
+      } catch(e) { console.warn('Fallback device save failed:', e); }
+    } else {
+      showToast('📱 Drive upload failed — retry with a wifi connection', 5000);
+    }
     await new Promise(r => setTimeout(r, 1500));
   }
 
@@ -4049,88 +4059,108 @@ async function uploadAndSend() {
 const AUDIT_LOG_NAME = 'BioBlue_Audit_Log.xlsx';
 
 async function appendToAuditLog(xlFolderId, d) {
-  // Build all Q headers and values in order
+  // Uses same flat column structure as buildExcelWorkbook so master log stays consistent
   const allQs = Object.values(ynQuestions).flat();
-  const qHeaders = allQs.map(q => `Q${q.num}: ${q.text.replace(/<[^>]+>/g,'').slice(0,40)}`);
+  const qHeaders = allQs.map(q => 'Q' + q.num + ': ' + q.text.replace(/<[^>]+>/g,'').substring(0,55));
   const qValues  = allQs.map(q => d.ynValues[q.id] || '—');
+  const scorePct = document.getElementById('auditScorePct')?.textContent || '—';
 
   const headers = [
-    'Audit Date','Customer Name','Site Address','Suburb','State','Postcode',
-    'Site Number','Auditor','Audit Score','Photos','Corrective Actions',
-    'Tank ID','Tank Volume (L)','Safe Fill (L)','Current Level (L)',
-    'Fill Connection','ISO Compliant',
-    ...qHeaders
+    'Submitted','Customer Name','Site Number','Network',
+    'Address','Suburb','State','Postcode',
+    'Audit Date','Auditor Name','Auditor Title','Auditor Email','Auditor Mobile',
+    'Site Contact','Contact Title','Site Email','Site Mobile',
+    'Access Hours','Max Vehicle','Key / Access Code','PPE Details',
+    'Tank ID','Tank Serial','Tank Owner','Tank Type',
+    'Tank Volume (L)','Safe Fill (L)','Current Level (L)',
+    'Fill Conn Type','Fill Conn Size','Level Monitor','Trident Monitor',
+    ...qHeaders,
+    'Corrective Actions',
+    'Site Rep Name','Site Rep Title','Site Rep Email','Site Rep Mobile',
+    'Photos Taken','Audit Score %',
   ];
 
   const newRow = [
-    d.auditDate, d.customerName,
+    new Date().toLocaleString('en-AU'),
+    d.customerName, d.siteNumber || '—', d.network || '—',
     d.siteAddress, d.suburb, d.state, d.postcode,
-    d.siteNumber, d.auditorName,
-    document.getElementById('auditScorePct')?.textContent || '—',
-    d.photoCount, d.correctiveActions,
-    d.tankId, d.tankVolume, d.safeFill, d.currentLevel,
-    `${d.fillConnType || ''} ${d.fillConnSize || ''}`.trim(),
-    document.getElementById('isoComplianceTitle')?.textContent || '—',
-    ...qValues
+    d.auditDate, d.auditorName, d.auditorTitle, d.auditorEmail, d.auditorMobile,
+    d.siteContact, d.siteContactTitle, d.siteEmail, d.siteMobile,
+    d.accessHours, d.maxVehicle, d.keyCode, d.ppeDetails,
+    d.tankId, d.tankSerial, d.tankOwner, d.tankType,
+    d.tankVolume, d.safeFill, d.currentLevel,
+    d.fillConnType, d.fillConnSize, d.dipSystem, d.tridentMonitor,
+    ...qValues,
+    d.correctiveActions,
+    d.repName, d.repTitle, d.repEmail, d.repMobile,
+    photos.length, scorePct,
   ];
 
-  // Check if log file already exists
+  // Check if log file already exists in Drive
   const searchRes = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=name='${AUDIT_LOG_NAME}' and '${xlFolderId}' in parents and trashed=false&fields=files(id)`,
     { headers: { Authorization: `Bearer ${gdriveToken}` } }
   );
+  if (!searchRes.ok) throw new Error('Log search failed: ' + searchRes.status);
   const searchData = await searchRes.json();
 
   let wb;
   let existingFileId = null;
 
   if (searchData.files && searchData.files.length > 0) {
-    // File exists — download and parse it
     existingFileId = searchData.files[0].id;
+    // Download existing log, parse it, append new row
     const dlRes = await fetch(
       `https://www.googleapis.com/drive/v3/files/${existingFileId}?alt=media`,
       { headers: { Authorization: `Bearer ${gdriveToken}` } }
     );
+    if (!dlRes.ok) throw new Error('Log download failed: ' + dlRes.status);
     const arrayBuffer = await dlRes.arrayBuffer();
     wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    // If existing file has different headers (old format), replace header row
+    if (!rows[0] || rows[0][0] !== 'Submitted') {
+      rows.unshift(headers);
+    }
     rows.push(newRow);
     const newWs = XLSX.utils.aoa_to_sheet(rows);
-    newWs['!cols'] = headers.map(() => ({ wch: 20 }));
+    newWs['!cols'] = headers.map((h, i) => ({ wch: i < 4 ? 22 : i < 32 ? 16 : 10 }));
+    newWs['!freeze'] = { xSplit: 0, ySplit: 1 };
     wb.Sheets[wb.SheetNames[0]] = newWs;
   } else {
-    // Create new file with headers + first row
+    // Create brand new log with headers + first row
     wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([headers, newRow]);
-    ws['!cols'] = headers.map(() => ({ wch: 20 }));
+    ws['!cols'] = headers.map((h, i) => ({ wch: i < 4 ? 22 : i < 32 ? 16 : 10 }));
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
     XLSX.utils.book_append_sheet(wb, ws, 'Audit Log');
   }
 
-  // Write to blob
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const logBlob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
   if (existingFileId) {
-    // Update existing file
     const updateForm = new FormData();
     updateForm.append('metadata', new Blob([JSON.stringify({})], { type: 'application/json' }));
     updateForm.append('file', logBlob, AUDIT_LOG_NAME);
-    await fetch(
+    const upRes = await fetch(
       `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart`,
       { method: 'PATCH', headers: { Authorization: `Bearer ${gdriveToken}` }, body: updateForm }
     );
+    if (!upRes.ok) throw new Error('Log update failed: ' + upRes.status);
   } else {
-    // Create new file
     const createForm = new FormData();
     createForm.append('metadata', new Blob([JSON.stringify({ name: AUDIT_LOG_NAME, parents: [xlFolderId] })], { type: 'application/json' }));
     createForm.append('file', logBlob, AUDIT_LOG_NAME);
-    await fetch(
+    const crRes = await fetch(
       'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
       { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: createForm }
     );
+    if (!crRes.ok) throw new Error('Log create failed: ' + crRes.status);
   }
 }
+
 
 // Generate Excel as Blob for Drive upload
 function exportExcelAsBlob(d) {
