@@ -246,6 +246,7 @@
   input[type="tel"],
   input[type="date"],
   input[type="number"],
+  input[type="time"],
   textarea,
   select {
     width: 100%;
@@ -2333,29 +2334,65 @@ function getSigDataUrl(canvasId) {
 // =====================================================================
 // PROGRESS
 // =====================================================================
+// IDs to completely skip for field state colouring
+const FIELD_STATE_SKIP = new Set([
+  'emailTo','emailCc',           // settings panel - not audit questions
+  'customerNameInline',          // duplicate field
+  'photoFileInput','cameraInput',// file inputs
+  'ppeOtherText',                // only relevant when PPE "Other" checked
+  'accessRestrictions',          // optional free text
+  'open24hrs',                   // checkbox
+]);
+
+function setFieldState(el, filled) {
+  el.classList.remove('field-empty','field-filled');
+  el.classList.add(filled ? 'field-filled' : 'field-empty');
+}
+
 function updateFieldStates() {
-  // All standard inputs, selects, textareas inside section cards
-  const fields = document.querySelectorAll('.section-body input[type="text"], .section-body input[type="email"], .section-body input[type="tel"], .section-body input[type="date"], .section-body input[type="number"], .section-body textarea, .section-body select');
+  // ── Standard inputs / selects / textareas ──────────────────
+  const fields = document.querySelectorAll(
+    'input[type="text"], input[type="email"], input[type="tel"], ' +
+    'input[type="date"], input[type="number"], textarea, select'
+  );
+
   fields.forEach(el => {
-    // Skip hidden inputs, photo inputs, signature canvases, read-only
-    if (el.type === 'hidden' || el.type === 'file' || el.readOnly) return;
-    // Skip the inline customer name duplicate
-    if (el.id === 'customerNameInline') return;
-    const val = el.value ? el.value.trim() : '';
-    el.classList.remove('field-empty', 'field-filled');
-    if (val && val !== '' && val !== '0') {
-      el.classList.add('field-filled');
-    } else {
-      el.classList.add('field-empty');
-    }
+    if (el.type === 'hidden' || el.type === 'file' || el.type === 'checkbox' ||
+        el.type === 'radio' || el.readOnly || FIELD_STATE_SKIP.has(el.id)) return;
+    // Skip photo caption inputs
+    if (el.classList.contains('photo-caption-input')) return;
+    // Skip the settings panel entirely
+    if (el.closest('#settingsPanel')) return;
+
+    const val = (el.value || '').trim();
+    setFieldState(el, val !== '' && val !== '0' && val !== 'Select...');
   });
 
-  // Also handle the hero dropdowns
+  // ── PPE checkboxes — green if any checked ─────────────────
+  const ppeChecks = document.querySelectorAll('input[name="ppe"]');
+  const ppeChecked = Array.from(ppeChecks).some(cb => cb.checked);
+  const ppeWrap = document.querySelector('.ppe-check-grid');
+  if (ppeWrap) {
+    ppeWrap.style.outline = ppeChecked
+      ? '2px solid #6dba8a' : '2px solid #f5a0a8';
+    ppeWrap.style.borderRadius = '8px';
+    ppeWrap.style.background = ppeChecked ? '#f2fbf5' : '#fff5f6';
+  }
+
+  // ── Access hours — green if open/close set or 24hr checked ─
+  const open24 = document.getElementById('open24hrs');
+  const openT  = document.getElementById('accessOpen');
+  const closeT = document.getElementById('accessClose');
+  if (openT && closeT) {
+    const accessFilled = (open24 && open24.checked) || (openT.value && closeT.value);
+    setFieldState(openT,  accessFilled);
+    setFieldState(closeT, accessFilled);
+  }
+
+  // ── Hero dropdowns (inline-styled) ────────────────────────
   const stateEl = document.getElementById('stateFilter');
   const custEl  = document.getElementById('customerSelect');
   if (stateEl) {
-    stateEl.classList.remove('field-empty','field-filled');
-    // hero dropdowns have inline styles - use border directly
     if (stateEl.value) {
       stateEl.style.borderColor = '#6dba8a';
       stateEl.style.background  = 'rgba(240,255,246,0.95)';
@@ -3856,22 +3893,8 @@ async function uploadAndSend() {
   // 2. Generate Excel blob
   const xlsxBlob = exportExcelAsBlob(d);
 
-  // 3. Download both to device
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const pdfUrl = URL.createObjectURL(pdfBlob);
-  if (isIOS) {
-    window.open(pdfUrl, '_blank');
-  } else {
-    const a = document.createElement('a'); a.href = pdfUrl; a.download = baseName + '.pdf';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  }
-  setTimeout(() => URL.revokeObjectURL(pdfUrl), 30000);
-  await new Promise(r => setTimeout(r, 500));
-  const xlsxUrl = URL.createObjectURL(xlsxBlob);
-  const xa = document.createElement('a'); xa.href = xlsxUrl; xa.download = baseName + '.xlsx';
-  document.body.appendChild(xa); xa.click(); document.body.removeChild(xa);
-  setTimeout(() => URL.revokeObjectURL(xlsxUrl), 5000);
-  await new Promise(r => setTimeout(r, 500));
+  // 3. No device download here — Drive upload handles storage.
+  //    Device copies only saved as fallback if Drive upload fails below.
 
   // 4. Google Drive upload
   let driveLink = null;
@@ -3953,14 +3976,26 @@ async function uploadAndSend() {
     showToast('✅ PDF uploaded + audit log updated!');
   } catch(driveErr) {
     console.error('Drive upload error:', driveErr);
-    gdriveToken = null; // Reset so next attempt gets fresh sign-in
+    gdriveToken = null;
     const msg = driveErr.message || 'Unknown error';
     const isPopupBlocked = msg.toLowerCase().includes('popup') || msg.toLowerCase().includes('blocked') || msg.toLowerCase().includes('cancelled');
-    if (isPopupBlocked) {
-      showToast('⚠️ Google sign-in was blocked or cancelled. Allow popups for this site then try again.', 7000);
-    } else {
-      showToast('⚠️ Drive upload failed: ' + msg, 5000);
-    }
+    showToast(isPopupBlocked
+      ? '\u26a0\ufe0f Google sign-in blocked \u2014 allow popups in browser settings and try again'
+      : '\u26a0\ufe0f Drive upload failed: ' + msg + ' \u2014 saving files to device instead', 6000);
+    // Fallback: save PDF + Excel to device if Drive failed
+    try {
+      const fbPdfUrl = URL.createObjectURL(pdfBlob);
+      const fbPdfA = document.createElement('a');
+      fbPdfA.href = fbPdfUrl; fbPdfA.download = baseName + '.pdf';
+      document.body.appendChild(fbPdfA); fbPdfA.click(); document.body.removeChild(fbPdfA);
+      setTimeout(() => URL.revokeObjectURL(fbPdfUrl), 30000);
+      await new Promise(r => setTimeout(r, 400));
+      const fbXlsxUrl = URL.createObjectURL(xlsxBlob);
+      const fbXlsxA = document.createElement('a');
+      fbXlsxA.href = fbXlsxUrl; fbXlsxA.download = baseName + '.xlsx';
+      document.body.appendChild(fbXlsxA); fbXlsxA.click(); document.body.removeChild(fbXlsxA);
+      setTimeout(() => URL.revokeObjectURL(fbXlsxUrl), 10000);
+    } catch(e) { console.warn('Fallback device save failed:', e); }
     await new Promise(r => setTimeout(r, 1500));
   }
 
@@ -4106,59 +4141,54 @@ function exportExcelAsBlob(d) {
 
 function buildExcelWorkbook(d) {
   if (!d) d = collectFormData();
-  const rows = [
-    ['BioBlue Bulk AdBlue® Site Audit Checklist'],
-    [],
-    ['SECTION A – SITE DETAILS'],
-    ['Customer / Business Name', d.customerName],
-    ['Audit Date', d.auditDate],
-    ['Delivery Site Address', d.siteAddress],
-    ['Suburb', d.suburb],
-    ['State', d.state],
-    ['Postcode', d.postcode],
-    ['Site Contact', d.siteContact],
-    ['Contact Title', d.siteContactTitle],
-    ['Site Email', d.siteEmail],
-    ['Site Mobile', d.siteMobile],
-    [],
-    ['SECTION B – DELIVERY ACCESS & SAFETY'],
-    ['Access Hours', d.accessHours],
-    ['Max Vehicle Size', d.maxVehicle],
-    ['Key / Access Code', d.keyCode],
-    ['PPE Details', d.ppeDetails],
+
+  // Flat format — one audit per row, all questions as columns
+  const allQs = Object.values(ynQuestions).flat();
+  const qHeaders = allQs.map(q => 'Q' + q.num + ': ' + q.text.replace(/<[^>]+>/g,'').substring(0, 55));
+
+  const headers = [
+    'Submitted', 'Customer Name', 'Site Number', 'Network',
+    'Address', 'Suburb', 'State', 'Postcode',
+    'Audit Date', 'Auditor Name', 'Auditor Title', 'Auditor Email', 'Auditor Mobile',
+    'Site Contact', 'Contact Title', 'Site Email', 'Site Mobile',
+    'Access Hours', 'Max Vehicle', 'Key / Access Code', 'PPE Details',
+    'Tank ID', 'Tank Serial', 'Tank Owner', 'Tank Type',
+    'Tank Volume (L)', 'Safe Fill (L)', 'Current Level (L)',
+    'Fill Conn Type', 'Fill Conn Size', 'Level Monitor', 'Trident Monitor',
+    ...qHeaders,
+    'Corrective Actions',
+    'Site Rep Name', 'Site Rep Title', 'Site Rep Email', 'Site Rep Mobile',
+    'Photos Taken', 'Audit Score %',
   ];
 
-  for (const [grp, qs] of Object.entries(ynQuestions)) {
-    if (!['b1','b2','b3','c1','c2','e1'].includes(grp)) continue;
-    const labels = { b1:'B.1 Site Accessibility', b2:'B.2 Site Safety', b3:'B.3 Environment & Spill', c1:'C.1 Tank Audit', c2:'C.2 QA Checks', e1:'Sign-Off Checks' };
-    rows.push([], [labels[grp], 'Answer']);
-    qs.forEach(q => rows.push([q.text.replace(/<[^>]+>/g,''), d.ynValues[q.id] || '—']));
-  }
+  const qValues = allQs.map(q => d.ynValues[q.id] || '—');
+  const scorePct = document.getElementById('auditScorePct')?.textContent || '—';
 
-  rows.push(
-    [], ['SECTION C – TANK DETAILS'],
-    ['Tank ID', d.tankId], ['Tank Serial #', d.tankSerial], ['Tank Owner', d.tankOwner],
-    ['Tank Type', d.tankType], ['Tank Volume (L)', d.tankVolume], ['Safe Fill Level (L)', d.safeFill],
-    ['Current Level (L)', d.currentLevel], ['Fill Connection Type', d.fillConnType],
-    ['Fill Connection Size', d.fillConnSize], ['Level Monitoring System', d.dipSystem],
-    ['Trident Monitor', d.tridentMonitor],
-    [], ['SECTION D – CORRECTIVE ACTIONS'],
-    ['Notes / Corrective Actions', d.correctiveActions],
-    [], ['SECTION F – AUDIT SIGN-OFF'],
-    ['Auditor Name', d.auditorName], ['Auditor Title', d.auditorTitle],
-    ['Auditor Email', d.auditorEmail], ['Auditor Mobile', d.auditorMobile],
-    ['Site Rep Name', d.repName], ['Site Rep Title', d.repTitle],
-    ['Site Rep Email', d.repEmail], ['Site Rep Mobile', d.repMobile],
-    ['Photos Taken', d.photoCount],
-    [], ['Generated', new Date().toLocaleString('en-AU')]
-  );
+  const dataRow = [
+    new Date().toLocaleString('en-AU'),
+    d.customerName, d.siteNumber || '—', d.network || '—',
+    d.siteAddress, d.suburb, d.state, d.postcode,
+    d.auditDate, d.auditorName, d.auditorTitle, d.auditorEmail, d.auditorMobile,
+    d.siteContact, d.siteContactTitle, d.siteEmail, d.siteMobile,
+    d.accessHours, d.maxVehicle, d.keyCode, d.ppeDetails,
+    d.tankId, d.tankSerial, d.tankOwner, d.tankType,
+    d.tankVolume, d.safeFill, d.currentLevel,
+    d.fillConnType, d.fillConnSize, d.dipSystem, d.tridentMonitor,
+    ...qValues,
+    d.correctiveActions,
+    d.repName, d.repTitle, d.repEmail, d.repMobile,
+    photos.length, scorePct,
+  ];
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 50 }, { wch: 40 }];
+  const ws = XLSX.utils.aoa_to_sheet([headers, dataRow]);
+  ws['!cols'] = headers.map((h, i) => ({ wch: i < 4 ? 22 : i < 32 ? 16 : 10 }));
+  ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Site Audit');
+  XLSX.utils.book_append_sheet(wb, ws, 'Audit');
   return wb;
 }
+
 
 async function saveAndSend() { return uploadAndSend(); } // alias for backwards compat
 
@@ -5258,6 +5288,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   updateProgress();
+  setTimeout(updateFieldStates, 300);
+
+  // Global delegated listeners — any field change anywhere triggers colour update
+  document.addEventListener('input',  () => updateFieldStates(), true);
+  document.addEventListener('change', () => updateFieldStates(), true);
 });
 
 // Resize signature canvases when window resizes
