@@ -3419,7 +3419,7 @@ async function generatePDF(returnDoc=false) {
     sectionHeader('E. SITE PHOTOS');
 
     const gap = 4;
-    const captionH = 8;
+    const captionH = 12; // tall enough for caption + timestamp
 
     for (let i = 0; i < photos.length; i++) {
       // Detect photo orientation before layout
@@ -3475,10 +3475,18 @@ async function generatePDF(returnDoc=false) {
       doc.setTextColor(...WHITE);
       doc.setFontSize(5.5);
       doc.setFont('helvetica','normal');
-      const capLine1 = doc.splitTextToSize(photos[i].caption || `Photo ${i+1}`, photoW - 3);
+      // Caption line 1 — user caption or photo number
+      const capText = photos[i].caption && photos[i].caption !== photos[i].file?.name
+        ? photos[i].caption : `Photo ${i+1}`;
+      const capLine1 = doc.splitTextToSize(capText, photoW - 3);
+      // Caption line 2 — timestamp
       const capLine2 = photos[i].timestamp || '';
-      doc.text(capLine1[0], px + 2, py + photoH + 4);
-      doc.text(capLine2, px + 2, py + photoH + 7);
+      doc.setFontSize(5.5);
+      doc.text(capLine1[0], px + 2, py + photoH + 4.5);
+      doc.setFontSize(5);
+      doc.setTextColor(180, 210, 255); // lighter blue for timestamp
+      doc.text(capLine2, px + 2, py + photoH + 9);
+      doc.setTextColor(...WHITE); // reset
 
       // Advance y position after last column in row
       if (col === photosPerRow - 1 || i === photos.length - 1) {
@@ -4123,9 +4131,9 @@ async function appendToAuditLog(xlFolderId, d) {
     wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    // If existing file has different headers (old format), replace header row
+    // Always enforce correct header row — replace row 0 if it doesn't match
     if (!rows[0] || rows[0][0] !== 'Submitted') {
-      rows.unshift(headers);
+      rows[0] = headers;  // replace, not prepend
     }
     rows.push(newRow);
     const newWs = XLSX.utils.aoa_to_sheet(rows);
