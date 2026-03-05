@@ -267,6 +267,20 @@
   }
   textarea { resize: vertical; min-height: 80px; }
 
+  /* Field completion states */
+  input.field-empty, textarea.field-empty, select.field-empty {
+    border-color: #f5a0a8 !important;
+    background: #fff5f6 !important;
+  }
+  input.field-filled, textarea.field-filled, select.field-filled {
+    border-color: #6dba8a !important;
+    background: #f2fbf5 !important;
+  }
+  input.field-filled:focus, textarea.field-filled:focus, select.field-filled:focus,
+  input.field-empty:focus, textarea.field-empty:focus, select.field-empty:focus {
+    box-shadow: none;
+  }
+
   /* GPS Address Field */
   .address-field-wrap {
     position: relative;
@@ -1145,8 +1159,8 @@
 
     <!-- Step label -->
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-      <div style="background:rgba(255,255,255,0.15);border-radius:20px;padding:4px 12px;display:inline-flex;align-items:center;gap:6px;">
-        <span style="color:#7AADDA;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">START HERE</span>
+      <div style="background:#e8192c;border-radius:20px;padding:4px 12px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(232,25,44,0.4);">
+        <span style="color:white;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">▶ START HERE</span>
       </div>
       <span style="color:rgba(255,255,255,0.4);font-size:11px;">Select state then customer to begin</span>
     </div>
@@ -1219,8 +1233,8 @@
     </div>
   </div>
 
-  <!-- COMPLIANCE SUMMARY -->
-  <div class="compliance-banner neutral" id="complianceBanner">
+  <!-- COMPLIANCE SUMMARY (hidden - shows only when audit scored) -->
+  <div class="compliance-banner neutral" id="complianceBanner" style="display:none;">
     <div class="compliance-icon">📋</div>
     <div>Complete the form to see compliance status. All C.2 items must be <strong>YES</strong> for ISO-22241 compliance.</div>
   </div>
@@ -2318,6 +2332,48 @@ function getSigDataUrl(canvasId) {
 // =====================================================================
 // PROGRESS
 // =====================================================================
+function updateFieldStates() {
+  // All standard inputs, selects, textareas inside section cards
+  const fields = document.querySelectorAll('.section-body input[type="text"], .section-body input[type="email"], .section-body input[type="tel"], .section-body input[type="date"], .section-body input[type="number"], .section-body textarea, .section-body select');
+  fields.forEach(el => {
+    // Skip hidden inputs, photo inputs, signature canvases, read-only
+    if (el.type === 'hidden' || el.type === 'file' || el.readOnly) return;
+    // Skip the inline customer name duplicate
+    if (el.id === 'customerNameInline') return;
+    const val = el.value ? el.value.trim() : '';
+    el.classList.remove('field-empty', 'field-filled');
+    if (val && val !== '' && val !== '0') {
+      el.classList.add('field-filled');
+    } else {
+      el.classList.add('field-empty');
+    }
+  });
+
+  // Also handle the hero dropdowns
+  const stateEl = document.getElementById('stateFilter');
+  const custEl  = document.getElementById('customerSelect');
+  if (stateEl) {
+    stateEl.classList.remove('field-empty','field-filled');
+    // hero dropdowns have inline styles - use border directly
+    if (stateEl.value) {
+      stateEl.style.borderColor = '#6dba8a';
+      stateEl.style.background  = 'rgba(240,255,246,0.95)';
+    } else {
+      stateEl.style.borderColor = '#f5a0a8';
+      stateEl.style.background  = 'rgba(255,245,246,0.95)';
+    }
+  }
+  if (custEl) {
+    if (!custEl.disabled && custEl.value && custEl.value !== '') {
+      custEl.style.borderColor = '#6dba8a';
+      custEl.style.background  = 'rgba(240,255,246,0.95)';
+    } else if (!custEl.disabled) {
+      custEl.style.borderColor = '#f5a0a8';
+      custEl.style.background  = 'rgba(255,245,246,0.95)';
+    }
+  }
+}
+
 function updateProgress() {
   const required = ['siteAddress','auditorName','auditDate'];
   const customerFilled = getCustomerName().trim().length > 0 ? 1 : 0;
@@ -2330,6 +2386,7 @@ function updateProgress() {
   const pct = Math.round((done / total) * 100);
   document.getElementById('progressBar').style.width = pct + '%';
   document.getElementById('progressLabel').textContent = pct + '% complete';
+  updateFieldStates();
 }
 
 // =====================================================================
