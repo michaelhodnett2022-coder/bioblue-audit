@@ -327,11 +327,12 @@
     border: 1.5px solid var(--gray-light);
     transition: border-color 0.15s, background 0.15s;
   }
-  .yn-item.yes     { background: var(--green-light); border-color: #b7e5d3; }
-  .yn-item.no      { background: var(--red-light); border-color: #f5c6c2; }
-  .yn-item.na      { background: var(--orange-light); border-color: #f5ddb5; }
-  .yn-item.yes-soft { background: #f0faf5; border-color: #cceedd; }
-  .yn-item.no-soft  { background: #fef6f5; border-color: #f5d8d6; }
+  .yn-item           { border-color: #f5a0a8; background: #fff5f6; }
+  .yn-item.yes       { background: var(--green-light); border-color: #6dba8a; }
+  .yn-item.no        { background: var(--red-light); border-color: #f5c6c2; }
+  .yn-item.na        { background: var(--orange-light); border-color: #f5ddb5; }
+  .yn-item.yes-soft  { background: #f0faf5; border-color: #6dba8a; }
+  .yn-item.no-soft   { background: #fef6f5; border-color: #f5d8d6; }
   .yn-num {
     display: inline-flex;
     align-items: center;
@@ -3878,15 +3879,27 @@ async function uploadAndSend() {
     showToast('☁️ Uploading to Google Drive...');
     if (!gdriveToken) {
       await new Promise((resolve, reject) => {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: GDRIVE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/drive.file',
-          callback: (response) => {
-            if (response.access_token) { gdriveToken = response.access_token; resolve(); }
-            else reject(new Error('Sign-in cancelled'));
-          },
-        });
-        client.requestAccessToken();
+        try {
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: GDRIVE_CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.file',
+            callback: (response) => {
+              if (response && response.access_token) {
+                gdriveToken = response.access_token;
+                resolve();
+              } else {
+                const err = response?.error || 'Sign-in failed or was cancelled';
+                reject(new Error(err));
+              }
+            },
+            error_callback: (err) => {
+              reject(new Error(err?.message || 'Google sign-in popup was blocked or failed'));
+            }
+          });
+          client.requestAccessToken({ prompt: '' });
+        } catch(e) {
+          reject(new Error('Google API not loaded: ' + e.message));
+        }
       });
     }
 
@@ -3939,10 +3952,16 @@ async function uploadAndSend() {
 
     showToast('✅ PDF uploaded + audit log updated!');
   } catch(driveErr) {
-    console.warn('Drive upload failed:', driveErr.message);
-    showToast('⚠️ Drive upload failed — continuing with email...');
-    if (driveErr.message.includes('401')) gdriveToken = null;
-    await new Promise(r => setTimeout(r, 1000));
+    console.error('Drive upload error:', driveErr);
+    gdriveToken = null; // Reset so next attempt gets fresh sign-in
+    const msg = driveErr.message || 'Unknown error';
+    const isPopupBlocked = msg.toLowerCase().includes('popup') || msg.toLowerCase().includes('blocked') || msg.toLowerCase().includes('cancelled');
+    if (isPopupBlocked) {
+      showToast('⚠️ Google sign-in was blocked or cancelled. Allow popups for this site then try again.', 7000);
+    } else {
+      showToast('⚠️ Drive upload failed: ' + msg, 5000);
+    }
+    await new Promise(r => setTimeout(r, 1500));
   }
 
   // 5. Email notification
