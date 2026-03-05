@@ -1119,7 +1119,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary" onclick="clearForm()">🔄 Clear</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑️ Clear Form</button>
       <button class="btn btn-secondary" onclick="loadDraftManual()" id="loadDraftBtn" style="display:none;">📂 Load Draft</button>
       <button class="btn btn-primary" onclick="saveDraft()">💾 Save Draft</button>
     </div>
@@ -3899,7 +3899,11 @@ async function uploadAndSend() {
   // 4. Google Drive upload
   let driveLink = null;
   try {
-    showToast('☁️ Uploading to Google Drive...');
+    showToast('☁️ Connecting to Google...');
+    // Check Google API is loaded
+    if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+      throw new Error('Google API not loaded — check internet connection and reload the page');
+    }
     if (!gdriveToken) {
       await new Promise((resolve, reject) => {
         try {
@@ -4004,7 +4008,7 @@ async function uploadAndSend() {
         setTimeout(() => URL.revokeObjectURL(fbXlsxUrl), 10000);
       } catch(e) { console.warn('Fallback device save failed:', e); }
     } else {
-      showToast('📱 Drive upload failed — retry with a wifi connection', 5000);
+      showToast('📱 Drive upload failed: ' + errMsg, 6000);
     }
     await new Promise(r => setTimeout(r, 1500));
   }
