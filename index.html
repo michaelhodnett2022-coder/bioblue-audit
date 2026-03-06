@@ -281,6 +281,15 @@
   input.field-empty:focus, textarea.field-empty:focus, select.field-empty:focus {
     box-shadow: none;
   }
+  /* Override Safari/Chrome autofill yellow */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #f2fbf5 inset !important;
+    -webkit-text-fill-color: var(--gray-dark) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
 
   /* GPS Address Field */
   .address-field-wrap {
@@ -1765,7 +1774,13 @@
       <div class="field-row">
         <div class="field-group">
           <label class="field-label required">Person Conducting Audit</label>
-          <input type="text" id="auditorName" placeholder="Full name" oninput="updateProgress()">
+          <select id="auditorName" onchange="autoFillAuditor(this.value); updateProgress();">
+            <option value="">— Select auditor —</option>
+            <option value="Michael Hodnett">Michael Hodnett</option>
+            <option value="Derek Page">Derek Page</option>
+            <option value="Angelo Sayas">Angelo Sayas</option>
+            <option value="Kevin Goverd">Kevin Goverd</option>
+          </select>
         </div>
         <div class="field-group">
           <label class="field-label">Title</label>
@@ -2347,6 +2362,9 @@ const FIELD_STATE_SKIP = new Set([
 function setFieldState(el, filled) {
   el.classList.remove('field-empty','field-filled');
   el.classList.add(filled ? 'field-filled' : 'field-empty');
+  // Force background via inline style to beat specificity and autofill overrides
+  el.style.background = filled ? '#f2fbf5' : '#fff5f6';
+  el.style.borderColor = filled ? '#6dba8a' : '#f5a0a8';
 }
 
 function updateFieldStates() {
@@ -2782,7 +2800,29 @@ function toggleSettings() {
   chevron.textContent = open ? '▼ show' : '▲ hide';
 }
 
+
+const AUDITORS = {
+  'Michael Hodnett': { title: 'BDM',                          email: 'michaelhodnett2022@gmail.com',    mobile: '0427 670 726' },
+  'Derek Page':      { title: 'Business Development Manager', email: 'derek.page@bioblue.com.au',       mobile: '+61 456 895 522' },
+  'Angelo Sayas':    { title: 'National Accounts',            email: 'angelo.sayas@bioblue.com.au',     mobile: '+61 459 884 407' },
+  'Kevin Goverd':    { title: 'Business Development Manager', email: 'kevin.goverd@bioblue.com.au',     mobile: '0474 366 288' },
+};
+
+function autoFillAuditor(name) {
+  const a = AUDITORS[name];
+  if (!a) return;
+  document.getElementById('auditorTitle').value  = a.title;
+  document.getElementById('auditorEmail').value  = a.email;
+  document.getElementById('auditorMobile').value = a.mobile;
+  updateFieldStates();
+}
+
 function filterCustomersByState(state) {
+  // Auto-populate the State field in Site Address section
+  const stateField = document.getElementById('state');
+  if (stateField && state) stateField.value = state;
+  updateFieldStates();
+
   const customerSelect = document.getElementById('customerSelect');
   customerSelect.innerHTML = '';
 
@@ -5305,7 +5345,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderYNGroups();
   initMudmap();
-  setMudmapTool('pen');
+  setMudmapTool('pan');
 
   // Auto-fill mud map address from site address field
   document.getElementById('siteAddress').addEventListener('input', syncMudmapAddress);
@@ -5315,11 +5355,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initSignaturePad('sigAuditor');
   initSignaturePad('sigRep');
 
-  // Auto-fill auditor profile
+  // Auto-select default auditor
   document.getElementById('auditorName').value = 'Michael Hodnett';
-  document.getElementById('auditorTitle').value = 'BDM';
-  document.getElementById('auditorEmail').value = 'michaelhodnett2022@gmail.com';
-  document.getElementById('auditorMobile').value = '0427 670 726';
+  autoFillAuditor('Michael Hodnett');
 
   // Set today's date
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
