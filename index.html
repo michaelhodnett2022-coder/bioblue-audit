@@ -5164,23 +5164,32 @@ function loadMudmapSatellite() {
   const resetTc = document.getElementById('mudmapTileCanvas');
   if (resetTc) resetTc.style.transform = '';
 
-  // Use OpenStreetMap static tile via nominatim geocode + tile URL
-  // We geocode the address to get lat/lon, then load a static map image
+  // Use Google Maps Geocoding API for accurate Australian address lookup
   const encoded = encodeURIComponent(addr + ', Australia');
-  fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+  const GMAPS_KEY = 'AIzaSyDKaJ2V0xig7oJ_DarCdYxGHPsrhqGGet4';
+  fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`)
     .then(r => r.json())
     .then(data => {
-      if (!data || !data[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
-      const lat = parseFloat(data[0].lat);
-      const lon = parseFloat(data[0].lon);
-      // Use a static map image from OpenStreetMap
+      if (!data || !data.results || data.results.length === 0) {
+        // Fallback to Nominatim if Google fails
+        return fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+          .then(r => r.json())
+          .then(nmData => {
+            if (!nmData || !nmData[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
+            const lat = parseFloat(nmData[0].lat);
+            const lon = parseFloat(nmData[0].lon);
+            const zoom = 18;
+            const w = document.getElementById('mudmapWrap').offsetWidth;
+            const h = w;
+            renderOSMTile(lat, lon, zoom, w, h);
+          });
+      }
+      const loc = data.results[0].geometry.location;
+      const lat = loc.lat;
+      const lon = loc.lng;
       const zoom = 18;
       const w = document.getElementById('mudmapWrap').offsetWidth;
-      const h = document.getElementById('mudmapWrap')?.offsetWidth || 400;
-      // Mapbox static (free tier) or fallback to tile
-      const mapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=${w}&height=${h}&center=lonlat:${lon},${lat}&zoom=${zoom}&apiKey=YOUR_KEY`;
-
-      // Fallback: use a tile-based approach rendered to canvas
+      const h = w;
       renderOSMTile(lat, lon, zoom, w, h);
     })
     .catch(() => { showToast('⚠️ Could not load map — draw manually'); });
