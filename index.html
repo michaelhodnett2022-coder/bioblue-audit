@@ -945,6 +945,10 @@
     cursor: pointer;
     flex-shrink: 0;
   }
+  .ppe-check-item span {
+    color: inherit;
+    font-size: 13px;
+  }
   .ppe-check-item:has(input:checked) {
     background: var(--blue-light);
     border-color: var(--blue-bright);
@@ -1634,7 +1638,7 @@
     <div class="section-body" id="sectionD">
       <div class="field-group">
         <label class="field-label" id="correctiveActionsLabel">Corrective Actions &amp; Notes</label>
-        <div id="correctiveActionsHint" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#856404;">
+        <div id="correctiveActionsHint" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#856404;font-weight:700;">
           ⚠️ <strong>Required</strong> — One or more audit items have failed. You must document corrective actions before submitting.
         </div>
         <textarea id="correctiveActions" rows="5" placeholder="If any non-compliance identified under C.2, indicate corrective actions advised and who is responsible for implementing them..."></textarea>
@@ -2101,11 +2105,11 @@ function checkCorrectiveActionsRequired() {
     if (hint)  hint.style.display = 'block';
 
     let hintMsg = '';
-    if (hasC2Failure) hintMsg += '⚠️ <strong>Required</strong> — One or more ISO-22241 C.2 items have failed. Corrective actions must be documented before submitting.';
+    if (hasC2Failure) hintMsg += '<span style="color:#c0392b;font-weight:700;">⚠️ Required — One or more ISO-22241 C.2 items have failed. Corrective actions must be documented before submitting.</span>';
     if (solidYItems.length > 0) {
       if (hintMsg) hintMsg += '<br><br>';
       hintMsg += '📋 <strong>Please note in Corrective Actions:</strong><ul style="margin:6px 0 0 18px;padding:0;">' +
-        solidYLabels.map(l => `<li style="margin-bottom:3px;">${l}</li>`).join('') +
+        solidYLabels.map(l => `<li style="margin-bottom:3px;color:#c0392b;font-weight:700;">${l}</li>`).join('') +
         '</ul>';
     }
     if (hint) hint.innerHTML = hintMsg;
@@ -2251,10 +2255,21 @@ function addPhoto(file) {
     photos.push({ dataUrl: e.target.result, caption: file.name, timestamp, file });
     renderPhotos();
     updateProgress();
+    // Auto-save photo to device
+    try {
+      const a = document.createElement('a');
+      a.href = e.target.result;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+      a.download = `BioBlue_${ts}_${safeName}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch(err) { console.warn('Auto-save photo failed:', err); }
     if (photos.length === MAX_PHOTOS) {
-      showToast(`📸 Photo added — maximum ${MAX_PHOTOS} photos reached`);
+      showToast(`📸 Photo saved & added — maximum ${MAX_PHOTOS} photos reached`);
     } else {
-      showToast(`📸 Photo added (${photos.length}/${MAX_PHOTOS})`);
+      showToast(`📸 Photo saved to device (${photos.length}/${MAX_PHOTOS})`);
     }
   };
   reader.readAsDataURL(file);
@@ -2355,6 +2370,7 @@ const FIELD_STATE_SKIP = new Set([
   'customerNameInline',          // duplicate field
   'photoFileInput','cameraInput',// file inputs
   'ppeOtherText',                // only relevant when PPE "Other" checked
+  'ppeDetails',                  // hidden computed field - not a user input
   'accessRestrictions',          // optional free text
   'open24hrs',                   // checkbox
 ]);
@@ -4715,10 +4731,22 @@ function clearForm() {
   clearSig('sigAuditor','sigAuditorLabel');
   clearSig('sigRep','sigRepLabel');
 
-  // Reset customer dropdown
-  document.getElementById('customerSelect').selectedIndex = 0;
+  // Reset hero panel — state, customer, confirmation banner
+  const stateEl = document.getElementById('stateFilter');
+  stateEl.selectedIndex = 0;
+  stateEl.style.borderColor = '#f5a0a8';
+  stateEl.style.background  = 'rgba(255,245,246,0.95)';
+  const custEl = document.getElementById('customerSelect');
+  custEl.selectedIndex = 0;
+  custEl.disabled = true;
+  custEl.innerHTML = '<option value="">— Select state first —</option><option value="new">✏️ New / Unlisted Customer...</option>';
+  custEl.style.borderColor = '';
+  custEl.style.background  = 'rgba(255,255,255,0.92)';
   document.getElementById('newCustomerField').style.display = 'none';
   document.getElementById('customerNameHidden').value = '';
+  // Hide green tick confirmation banner
+  const confirmed = document.getElementById('customerConfirmed');
+  if (confirmed) confirmed.style.display = 'none';
 
   // Reset tank volume
   document.getElementById('tankVolumeSelect').selectedIndex = 0;
@@ -4748,9 +4776,7 @@ function clearForm() {
 
   // Re-apply auditor profile and today's date
   document.getElementById('auditorName').value = 'Michael Hodnett';
-  document.getElementById('auditorTitle').value = 'BDM';
-  document.getElementById('auditorEmail').value = 'michaelhodnett2022@gmail.com';
-  document.getElementById('auditorMobile').value = '0427 670 726';
+  autoFillAuditor('Michael Hodnett');
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
 
   // Clear mud map fully
@@ -4814,7 +4840,10 @@ function undoMudmap() {
   const img = new Image();
   img.onload = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
+    // Draw at CSS pixel dimensions (not physical pixels) to avoid scale issue on iPhone
+    const cssW = parseFloat(canvas.style.width)  || canvas.offsetWidth;
+    const cssH = parseFloat(canvas.style.height) || canvas.offsetHeight;
+    ctx.drawImage(img, 0, 0, cssW, cssH);
   };
   img.src = prev;
 }
@@ -5166,7 +5195,7 @@ function loadMudmapSatellite() {
 
   // Use Google Maps Geocoding API for accurate Australian address lookup
   const encoded = encodeURIComponent(addr + ', Australia');
-  const GMAPS_KEY = 'AIzaSyDKaJ2V0xig7oJ_DarCdYxGHPsrhqGGet4';
+  const GMAPS_KEY = 'AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ';
   fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`)
     .then(r => r.json())
     .then(data => {
