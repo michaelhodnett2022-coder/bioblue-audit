@@ -503,6 +503,23 @@
     margin-bottom: 4px;
     font-family: 'DM Sans', sans-serif;
   }
+  .photo-save-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
   .photo-remove-btn {
     position: absolute;
     top: 5px;
@@ -2250,22 +2267,45 @@ function addPhoto(file) {
     return;
   }
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const timestamp = new Date().toLocaleString('en-AU');
-    photos.push({ dataUrl: e.target.result, caption: file.name, timestamp, file });
+    // Correct EXIF orientation before storing (fixes portrait photos on iPhone)
+    let correctedDataUrl = e.target.result;
+    try {
+      correctedDataUrl = await correctImageOrientation(e.target.result);
+    } catch(err) { console.warn('Orientation correction failed:', err); }
+    photos.push({ dataUrl: correctedDataUrl, caption: file.name, timestamp, file });
     renderPhotos();
     updateProgress();
     // Auto-save photo to device
-    try {
-      const a = document.createElement('a');
-      a.href = e.target.result;
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
-      a.download = `BioBlue_${ts}_${safeName}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch(err) { console.warn('Auto-save photo failed:', err); }
+    // On iPhone: use Web Share API (opens native share sheet → Save Image)
+    // On desktop: use <a download> for direct save
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const fileName = `BioBlue_${ts}_${safeName}`;
+    if (isIOS && navigator.share && typeof ClipboardItem !== 'undefined') {
+      // Convert base64 to blob for Web Share API
+      try {
+        const res = await fetch(correctedDataUrl);
+        const blob = await res.blob();
+        const shareFile = new File([blob], fileName, { type: 'image/jpeg' });
+        if (navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+          navigator.share({ files: [shareFile], title: 'BioBlue Site Photo' })
+            .catch(() => {}); // user may dismiss share sheet — that's fine
+        }
+      } catch(err) { console.warn('iOS share failed:', err); }
+    } else {
+      // Desktop: direct download
+      try {
+        const a = document.createElement('a');
+        a.href = correctedDataUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch(err) { console.warn('Auto-save photo failed:', err); }
+    }
     if (photos.length === MAX_PHOTOS) {
       showToast(`📸 Photo saved & added — maximum ${MAX_PHOTOS} photos reached`);
     } else {
@@ -2287,6 +2327,7 @@ function renderPhotos() {
         <input class="photo-caption-input" type="text" value="${p.caption}" placeholder="Add caption..." onchange="photos[${i}].caption=this.value">
       </div>
       <button class="photo-remove-btn" onclick="removePhoto(${i})">×</button>
+      <button class="photo-save-btn" onclick="savePhotoToDevice(${i})" title="Save to device">💾</button>
     `;
     grid.appendChild(div);
   });
@@ -2297,6 +2338,31 @@ function removePhoto(idx) {
   photos.splice(idx, 1);
   renderPhotos();
   updateProgress();
+}
+
+async function savePhotoToDevice(idx) {
+  const p = photos[idx];
+  if (!p) return;
+  const fileName = `BioBlue_Photo_${idx+1}.jpg`;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS && navigator.share) {
+    try {
+      const res = await fetch(p.dataUrl);
+      const blob = await res.blob();
+      const shareFile = new File([blob], fileName, { type: 'image/jpeg' });
+      if (navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+        await navigator.share({ files: [shareFile], title: 'BioBlue Site Photo' });
+        return;
+      }
+    } catch(err) { console.warn('Share failed:', err); }
+  }
+  // Fallback: direct download
+  const a = document.createElement('a');
+  a.href = p.dataUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // =====================================================================
