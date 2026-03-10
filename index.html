@@ -4810,9 +4810,14 @@ function clearForm() {
   custEl.style.background  = 'rgba(255,255,255,0.92)';
   document.getElementById('newCustomerField').style.display = 'none';
   document.getElementById('customerNameHidden').value = '';
-  // Hide green tick confirmation banner
-  const confirmed = document.getElementById('customerConfirmed');
-  if (confirmed) confirmed.style.display = 'none';
+  // Hide green tick confirmation banner — force hide both ways
+  const confirmedBanner = document.getElementById('customerConfirmed');
+  const confirmedTxt = document.getElementById('customerConfirmedText');
+  if (confirmedBanner) {
+    confirmedBanner.style.display = 'none';
+    confirmedBanner.style.setProperty('display', 'none', 'important');
+  }
+  if (confirmedTxt) confirmedTxt.textContent = '';
 
   // Reset tank volume
   document.getElementById('tankVolumeSelect').selectedIndex = 0;
@@ -4855,6 +4860,12 @@ function clearForm() {
   updateProgress();
   updateComplianceBanner();
   updateAuditResults();
+
+  // Final definitive hide of confirmation banner
+  const bannerEl = document.getElementById('customerConfirmed');
+  if (bannerEl) bannerEl.style.display = 'none';
+  const bannerTxt = document.getElementById('customerConfirmedText');
+  if (bannerTxt) bannerTxt.textContent = '';
 }
 
 // =====================================================================
@@ -5265,7 +5276,11 @@ function loadMudmapSatellite() {
   fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`)
     .then(r => r.json())
     .then(data => {
+      // Log Google response status for debugging
+      console.log('Google Geocode status:', data?.status, data?.error_message || '');
       if (!data || !data.results || data.results.length === 0) {
+        // Show which path we're taking
+        showToast(`⚠️ Google geocode failed (${data?.status || 'no response'}) — trying backup...`, 3000);
         // Fallback to Nominatim if Google fails
         return fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
           .then(r => r.json())
@@ -5279,6 +5294,7 @@ function loadMudmapSatellite() {
             renderOSMTile(lat, lon, zoom, w, h);
           });
       }
+      console.log('Google geocode success:', data.results[0].formatted_address);
       const loc = data.results[0].geometry.location;
       const lat = loc.lat;
       const lon = loc.lng;
@@ -5287,7 +5303,10 @@ function loadMudmapSatellite() {
       const h = w;
       renderOSMTile(lat, lon, zoom, w, h);
     })
-    .catch(() => { showToast('⚠️ Could not load map — draw manually'); });
+    .catch((err) => { 
+      console.error('Geocode fetch error:', err);
+      showToast('⚠️ Could not load map — draw manually'); 
+    });
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
