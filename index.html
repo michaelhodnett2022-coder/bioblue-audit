@@ -5271,43 +5271,58 @@ function loadMudmapSatellite() {
   const resetTc = document.getElementById('mudmapTileCanvas');
   if (resetTc) resetTc.style.transform = '';
 
-  // Use Google Maps Geocoding API for accurate Australian address lookup
+  // Use Google Places API (textsearch) for best Australian address coverage
   const encoded = encodeURIComponent(addr + ', Australia');
   const GMAPS_KEY = 'AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ';
-  fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`)
-    .then(r => r.json())
-    .then(data => {
-      // Log Google response status for debugging
-      console.log('Google Geocode status:', data?.status, data?.error_message || '');
-      if (!data || !data.results || data.results.length === 0) {
-        // Show which path we're taking
-        showToast(`⚠️ Google geocode failed (${data?.status || 'no response'}) — trying backup...`, 3000);
-        // Fallback to Nominatim if Google fails
-        return fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
-          .then(r => r.json())
-          .then(nmData => {
-            if (!nmData || !nmData[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
-            const lat = parseFloat(nmData[0].lat);
-            const lon = parseFloat(nmData[0].lon);
-            const zoom = 18;
-            const w = document.getElementById('mudmapWrap').offsetWidth;
-            const h = w;
-            renderOSMTile(lat, lon, zoom, w, h);
-          });
+
+  async function tryGeocode() {
+    // 1st attempt: Places Text Search (best coverage for rural/industrial AU)
+    try {
+      const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encoded}&region=au&key=${GMAPS_KEY}`;
+      const pr = await fetch(placesUrl);
+      const pd = await pr.json();
+      console.log('Places API status:', pd?.status);
+      if (pd?.status === 'OK' && pd.results && pd.results.length > 0) {
+        const loc = pd.results[0].geometry.location;
+        console.log('Places API success:', pd.results[0].formatted_address);
+        return { lat: loc.lat, lon: loc.lng };
       }
-      console.log('Google geocode success:', data.results[0].formatted_address);
-      const loc = data.results[0].geometry.location;
-      const lat = loc.lat;
-      const lon = loc.lng;
-      const zoom = 18;
-      const w = document.getElementById('mudmapWrap').offsetWidth;
-      const h = w;
-      renderOSMTile(lat, lon, zoom, w, h);
-    })
-    .catch((err) => { 
-      console.error('Geocode fetch error:', err);
-      showToast('⚠️ Could not load map — draw manually'); 
-    });
+    } catch(e) { console.warn('Places API error:', e); }
+
+    // 2nd attempt: Geocoding API fallback
+    try {
+      const gcUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`;
+      const gr = await fetch(gcUrl);
+      const gd = await gr.json();
+      console.log('Geocoding API status:', gd?.status);
+      if (gd?.status === 'OK' && gd.results && gd.results.length > 0) {
+        const loc = gd.results[0].geometry.location;
+        console.log('Geocoding API success:', gd.results[0].formatted_address);
+        return { lat: loc.lat, lon: loc.lng };
+      }
+    } catch(e) { console.warn('Geocoding API error:', e); }
+
+    // 3rd attempt: Nominatim
+    try {
+      const nmUrl = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
+      const nr = await fetch(nmUrl);
+      const nd = await nr.json();
+      if (nd && nd[0]) {
+        console.log('Nominatim fallback success');
+        return { lat: parseFloat(nd[0].lat), lon: parseFloat(nd[0].lon) };
+      }
+    } catch(e) { console.warn('Nominatim error:', e); }
+
+    return null;
+  }
+
+  tryGeocode().then(result => {
+    if (!result) { showToast('⚠️ Address not found — draw map manually'); return; }
+    const zoom = 18;
+    const w = document.getElementById('mudmapWrap').offsetWidth;
+    const h = w;
+    renderOSMTile(result.lat, result.lon, zoom, w, h);
+  });
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
