@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ&libraries=places" async defer></script>
 
 <style>
   :root {
@@ -5271,58 +5272,51 @@ function loadMudmapSatellite() {
   const resetTc = document.getElementById('mudmapTileCanvas');
   if (resetTc) resetTc.style.transform = '';
 
-  // Use Google Places API (textsearch) for best Australian address coverage
-  const encoded = encodeURIComponent(addr + ', Australia');
-  const GMAPS_KEY = 'AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ';
+  // Use Google Maps JS API geocoder (same engine as Google Maps app, CORS-safe)
+  const query = addr + ', Australia';
 
-  async function tryGeocode() {
-    // 1st attempt: Places Text Search (best coverage for rural/industrial AU)
-    try {
-      const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encoded}&region=au&key=${GMAPS_KEY}`;
-      const pr = await fetch(placesUrl);
-      const pd = await pr.json();
-      console.log('Places API status:', pd?.status);
-      if (pd?.status === 'OK' && pd.results && pd.results.length > 0) {
-        const loc = pd.results[0].geometry.location;
-        console.log('Places API success:', pd.results[0].formatted_address);
-        return { lat: loc.lat, lon: loc.lng };
-      }
-    } catch(e) { console.warn('Places API error:', e); }
-
-    // 2nd attempt: Geocoding API fallback
-    try {
-      const gcUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`;
-      const gr = await fetch(gcUrl);
-      const gd = await gr.json();
-      console.log('Geocoding API status:', gd?.status);
-      if (gd?.status === 'OK' && gd.results && gd.results.length > 0) {
-        const loc = gd.results[0].geometry.location;
-        console.log('Geocoding API success:', gd.results[0].formatted_address);
-        return { lat: loc.lat, lon: loc.lng };
-      }
-    } catch(e) { console.warn('Geocoding API error:', e); }
-
-    // 3rd attempt: Nominatim
-    try {
-      const nmUrl = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
-      const nr = await fetch(nmUrl);
-      const nd = await nr.json();
-      if (nd && nd[0]) {
-        console.log('Nominatim fallback success');
-        return { lat: parseFloat(nd[0].lat), lon: parseFloat(nd[0].lon) };
-      }
-    } catch(e) { console.warn('Nominatim error:', e); }
-
-    return null;
+  function doGeocode() {
+    if (window.google && window.google.maps && window.google.maps.Geocoder) {
+      // Google Maps JS API is loaded — use its geocoder
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: query, region: 'AU' }, (results, status) => {
+        console.log('Maps JS Geocoder status:', status);
+        if (status === 'OK' && results && results.length > 0) {
+          const loc = results[0].geometry.location;
+          console.log('Maps JS Geocoder success:', results[0].formatted_address);
+          const zoom = 18;
+          const w = document.getElementById('mudmapWrap').offsetWidth;
+          renderOSMTile(loc.lat(), loc.lng(), zoom, w, w);
+        } else {
+          // Fallback to Nominatim
+          console.warn('Maps JS Geocoder failed:', status, '— trying Nominatim');
+          tryNominatim();
+        }
+      });
+    } else {
+      // Maps JS API not yet loaded — fall back to Nominatim
+      console.warn('Maps JS API not loaded — trying Nominatim');
+      tryNominatim();
+    }
   }
 
-  tryGeocode().then(result => {
-    if (!result) { showToast('⚠️ Address not found — draw map manually'); return; }
-    const zoom = 18;
-    const w = document.getElementById('mudmapWrap').offsetWidth;
-    const h = w;
-    renderOSMTile(result.lat, result.lon, zoom, w, h);
-  });
+  function tryNominatim() {
+    const encoded = encodeURIComponent(query);
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+      .then(r => r.json())
+      .then(nd => {
+        if (nd && nd[0]) {
+          const zoom = 18;
+          const w = document.getElementById('mudmapWrap').offsetWidth;
+          renderOSMTile(parseFloat(nd[0].lat), parseFloat(nd[0].lon), zoom, w, w);
+        } else {
+          showToast('⚠️ Address not found — draw map manually');
+        }
+      })
+      .catch(() => showToast('⚠️ Address not found — draw map manually'));
+  }
+
+  doGeocode();
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
