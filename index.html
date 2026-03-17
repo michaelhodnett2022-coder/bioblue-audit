@@ -5405,8 +5405,11 @@ function renderOSMTile(lat, lon, zoom, w, h) {
         loaded++;
         if (loaded === total) showToast('🗺️ Satellite loaded — pan freely then draw');
       };
+      // *** GOOGLE SATELLITE TILES ONLY ***
+      // Rotate across Google's tile servers (mt0-mt3) to avoid rate limiting
+      const server = (tileX + tileY) % 4;
       img.onerror = () => { loaded++; };
-      img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${tileY}/${tileX}`;
+      img.src = `https://mt${server}.google.com/vt/lyrs=s&x=${tileX}&y=${tileY}&z=${zoom}`;
     }
   }
 }
