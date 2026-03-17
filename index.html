@@ -5272,15 +5272,18 @@ function loadMudmapSatellite() {
   const resetTc = document.getElementById('mudmapTileCanvas');
   if (resetTc) resetTc.style.transform = '';
 
-  // Use Google Maps JS API geocoder (same engine as Google Maps app, CORS-safe)
-  const query = addr + ', Australia';
+  // Detect Google Plus Code (e.g. "6Q4H+52 Karratha, Western Australia")
+  const plusCodePattern = /^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}/i;
+  const isPlusCode = plusCodePattern.test(addr.trim());
+
+  // Use Google Maps JS API geocoder — handles both Plus Codes and regular addresses
+  const query = isPlusCode ? addr : addr + ', Australia';
 
   function doGeocode() {
     if (window.google && window.google.maps && window.google.maps.Geocoder) {
-      // Google Maps JS API is loaded — use its geocoder
       const geocoder = new google.maps.Geocoder();
       geocoder.geocode({ address: query, region: 'AU' }, (results, status) => {
-        console.log('Maps JS Geocoder status:', status);
+        console.log('Maps JS Geocoder status:', status, isPlusCode ? '(Plus Code)' : '(Address)');
         if (status === 'OK' && results && results.length > 0) {
           const loc = results[0].geometry.location;
           console.log('Maps JS Geocoder success:', results[0].formatted_address);
@@ -5288,15 +5291,15 @@ function loadMudmapSatellite() {
           const w = document.getElementById('mudmapWrap').offsetWidth;
           renderOSMTile(loc.lat(), loc.lng(), zoom, w, w);
         } else {
-          // Fallback to Nominatim
           console.warn('Maps JS Geocoder failed:', status, '— trying Nominatim');
-          tryNominatim();
+          if (!isPlusCode) tryNominatim();
+          else showToast('⚠️ Plus Code not found — check and try again');
         }
       });
     } else {
-      // Maps JS API not yet loaded — fall back to Nominatim
       console.warn('Maps JS API not loaded — trying Nominatim');
-      tryNominatim();
+      if (!isPlusCode) tryNominatim();
+      else showToast('⚠️ Maps not loaded — try again in a moment');
     }
   }
 
@@ -5310,10 +5313,10 @@ function loadMudmapSatellite() {
           const w = document.getElementById('mudmapWrap').offsetWidth;
           renderOSMTile(parseFloat(nd[0].lat), parseFloat(nd[0].lon), zoom, w, w);
         } else {
-          showToast('⚠️ Address not found — draw map manually');
+          showToast('⚠️ Address not found — try a Plus Code from Google Maps');
         }
       })
-      .catch(() => showToast('⚠️ Address not found — draw map manually'));
+      .catch(() => showToast('⚠️ Address not found — try a Plus Code from Google Maps'));
   }
 
   doGeocode();
