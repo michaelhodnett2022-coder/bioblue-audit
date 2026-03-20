@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioBlue® Freight Distance Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:     #0d1b2a;
+    --blue:     #1a6dcc;
+    --teal:     #00b4d8;
+    --white:    #f0f4f8;
+    --grey:     #8a9bb0;
+    --panel:    #132233;
+    --border:   #1e3450;
+    --green:    #2ecc71;
+    --amber:    #f39c12;
+    --red:      #e74c3c;
+    --green-bg: rgba(46,204,113,0.12);
+    --amber-bg: rgba(243,156,18,0.12);
+    --red-bg:   rgba(231,76,60,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--navy); color: var(--white); font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; min-height: 100vh; }
+
+  header {
+    background: var(--panel); border-bottom: 2px solid var(--teal);
+    padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px; color: #fff;
+  }
+  .logo-text strong { display: block; font-size: 16px; font-weight: 700; }
+  .logo-text span   { font-size: 11px; color: var(--grey); letter-spacing: 1px; text-transform: uppercase; }
+  .header-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--grey); text-align: right; }
+  .header-meta b { color: var(--teal); }
+
+  .container { max-width: 1500px; margin: 0 auto; padding: 22px 28px; }
+
+  /* Key bar */
+  .key-bar {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+  }
+  .key-bar label { font-size: 11px; color: var(--grey); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .key-bar input {
+    flex: 1; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; color: var(--white);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; outline: none;
+  }
+  .key-bar input:focus { border-color: var(--teal); }
+
+  .btn {
+    background: var(--blue); color: #fff; border: none;
+    padding: 9px 22px; border-radius: 6px; cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 13px;
+    transition: background 0.2s; white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { background: var(--teal); color: var(--navy); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-outline {
+    background: transparent; border: 1px solid var(--border); color: var(--grey);
+    padding: 9px 18px; border-radius: 6px; cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-outline:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+  .card-label { font-size: 10px; color: var(--grey); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .card-value { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; }
+  .card-value.blue  { color: var(--teal); }
+  .card-value.green { color: var(--green); }
+  .card-value.amber { color: var(--amber); }
+  .card-value.red   { color: var(--red); }
+  .card-value.grey  { color: var(--grey); }
+
+  /* Progress */
+  #progress-wrap { margin-bottom: 18px; display: none; }
+  .prog-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; }
+  .prog-label { font-size: 11px; color: var(--grey); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .prog-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .prog-fill  { height: 100%; background: linear-gradient(90deg, var(--blue), var(--teal)); border-radius: 3px; transition: width 0.4s; width: 0%; }
+
+  /* Table */
+  .table-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .toolbar {
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .toolbar input {
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 12px; color: var(--white);
+    font-size: 12px; outline: none; width: 200px;
+  }
+  .toolbar input:focus { border-color: var(--teal); }
+  .filter-btns { display: flex; gap: 6px; margin-left: auto; }
+  .fbtn {
+    padding: 5px 13px; border-radius: 5px; border: 1px solid var(--border);
+    background: transparent; color: var(--grey); cursor: pointer; font-size: 11px;
+    font-family: 'IBM Plex Sans', sans-serif; transition: all 0.15s;
+  }
+  .fbtn[data-f="all"].on    { background: var(--grey);  color: var(--navy); border-color: var(--grey); }
+  .fbtn[data-f="green"].on  { background: var(--green); color: var(--navy); border-color: var(--green); }
+  .fbtn[data-f="amber"].on  { background: var(--amber); color: var(--navy); border-color: var(--amber); }
+  .fbtn[data-f="red"].on    { background: var(--red);   color: #fff;        border-color: var(--red); }
+  .fbtn[data-f="grey"].on   { background: #444; color: #fff; border-color: #666; }
+  .fbtn:not(.on):hover { border-color: var(--teal); color: var(--teal); }
+
+  .tbl-scroll { overflow-x: auto; max-height: 65vh; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { position: sticky; top: 0; z-index: 2; }
+  thead tr { background: #08111c; }
+  th {
+    padding: 10px 12px; text-align: left;
+    font-size: 10px; font-weight: 600; color: var(--grey);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--teal); }
+  th.asc::after  { content: ' ▲'; color: var(--teal); font-size: 9px; }
+  th.desc::after { content: ' ▼'; color: var(--teal); font-size: 9px; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(26,109,204,0.06); }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .dim  { color: var(--grey); font-size: 11px; }
+  .bold { font-weight: 600; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+  .badge.amber { background: var(--amber-bg); color: var(--amber); }
+  .badge.red   { background: var(--red-bg);   color: var(--red); }
+  .badge.grey  { background: rgba(138,155,176,0.1); color: var(--grey); }
+
+  .depot-pill {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .depot-pill.WA { background: rgba(0,180,216,0.15); color: var(--teal); }
+  .depot-pill.NT { background: rgba(46,204,113,0.15); color: var(--green); }
+  .depot-pill.EXT { background: rgba(243,156,18,0.15); color: var(--amber); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--grey); }
+  .empty-state .icon { font-size: 42px; margin-bottom: 14px; }
+
+  .note {
+    margin-top: 14px; padding: 12px 18px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 11px; color: var(--grey); line-height: 1.7;
+  }
+  .note b { color: var(--white); }
+
+  /* highlight rows */
+  tr.row-amber td { background: rgba(243,156,18,0.04); }
+  tr.row-red   td { background: rgba(231,76,60,0.04); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">BB</div>
+    <div class="logo-text">
+      <strong>BioBlue®</strong>
+      <span>Freight Distance Analyser</span>
+    </div>
+  </div>
+  <div class="header-meta">
+    WA Depot: <b>Maddington</b> &nbsp;·&nbsp; NT Depot: <b>Winnellie</b><br>
+    <span id="last-run">Not yet run</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- API Key -->
+  <div class="key-bar">
+    <label>Google Maps API Key</label>
+    <input type="password" id="api-key" placeholder="AIza…" value="AIzaSyBVmGSsqB5PEYz5-j5-9xu0x5ccjM0NArU">
+    <button class="btn" id="run-btn" onclick="runAnalysis()">▶&nbsp; Run Analysis</button>
+    <button class="btn-outline btn-sm" id="export-btn" onclick="exportCSV()" disabled>⬇ Export CSV</button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card"><div class="card-label">Total Sites</div><div class="card-value blue"  id="c-total">—</div></div>
+    <div class="card"><div class="card-label">✓ Consistent</div><div class="card-value green" id="c-green">—</div></div>
+    <div class="card"><div class="card-label">⚠ Hidden / Missing Freight</div><div class="card-value amber" id="c-amber">—</div></div>
+    <div class="card"><div class="card-label">✗ Freight Too Low vs Distance</div><div class="card-value red"   id="c-red">—</div></div>
+    <div class="card"><div class="card-label">— No Pricing Data</div><div class="card-value grey"  id="c-grey">—</div></div>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="progress-wrap">
+    <div class="prog-box">
+      <div class="prog-label">
+        <span id="prog-text">Initialising…</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search customer or suburb…" oninput="renderTable()">
+      <div class="filter-btns">
+        <button class="fbtn on"  data-f="all"   onclick="setFilter('all')">All</button>
+        <button class="fbtn"     data-f="green" onclick="setFilter('green')">✓ Consistent</button>
+        <button class="fbtn"     data-f="amber" onclick="setFilter('amber')">⚠ Hidden / Missing</button>
+        <button class="fbtn"     data-f="red"   onclick="setFilter('red')">✗ Too Low</button>
+        <button class="fbtn"     data-f="grey"  onclick="setFilter('grey')">— No Data</button>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('customer')">Customer</th>
+            <th onclick="sortBy('site')">Site</th>
+            <th onclick="sortBy('suburb')">Suburb</th>
+            <th onclick="sortBy('state')">St</th>
+            <th>Depot</th>
+            <th onclick="sortBy('km')">Road km ↕</th>
+            <th onclick="sortBy('oldBulk')">Old Bulk (E)</th>
+            <th onclick="sortBy('newBulk')">New Bulk (K)</th>
+            <th onclick="sortBy('hiddenFreight')">Hidden Freight<br><span style="font-weight:400;font-size:9px">(E minus K)</span></th>
+            <th onclick="sortBy('shownFreight')">Shown Freight<br><span style="font-weight:400;font-size:9px">(col F)</span></th>
+            <th onclick="sortBy('totalFreight')">Total Freight</th>
+            <th onclick="sortBy('centsPerKm')">¢ / km</th>
+            <th onclick="sortBy('status')">Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="14">
+            <div class="empty-state">
+              <div class="icon">📍</div>
+              <p>Click <b>▶ Run Analysis</b> to fetch road distances and flag freight inconsistencies.</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Flag logic:</b> &nbsp;
+    <span style="color:var(--green)">✓ Consistent</span> — freight component is reasonable relative to distance &nbsp;|&nbsp;
+    <span style="color:var(--amber)">⚠ Hidden/Missing</span> — gap between Old Bulk (E) and New Bulk (K) is &gt;$0.02 but nothing shown in col F, OR zero freight despite &gt;50 km &nbsp;|&nbsp;
+    <span style="color:var(--red)">✗ Too Low</span> — implied ¢/km is &lt;2¢ for sites over 100 km &nbsp;|&nbsp;
+    <b>QLD/NSW/SA sites</b> are flagged separately as they may be supplied from a different source.
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const DEPOT_WA  = 'Maddington WA 6109, Australia';
+const DEPOT_NT  = 'Winnellie NT 0820, Australia';
+
+// ── PRICING DATA ──────────────────────────────────────────────────────────────
+// oldBulk = col E, shownFreight = col F, newBulk = col K
+const SITES = [
+  {customer:"Richgrow",site:"Richgro (Landsdale, WA)",suburb:"Landsdale",state:"WA",oldBulk:0.800,shownFreight:null,newBulk:0.77},
+  {customer:"ASHFuels",site:"Karratha Light Industrial",suburb:"Karratha",state:"WA",oldBulk:0.990,shownFreight:null,newBulk:0.71},
+  {customer:"ASHFuels",site:"Acciona",suburb:"Port Hedland",state:"WA",oldBulk:1.020,shownFreight:null,newBulk:0.73},
+  {customer:"Azar Transport",site:"Azar Transport Wangara",suburb:"Wangara",state:"WA",oldBulk:0.740,shownFreight:null,newBulk:0.71},
+  {customer:"Capel Crane Hire",site:"Capel Crane Hire",suburb:"Capel",state:"WA",oldBulk:0.750,shownFreight:null,newBulk:0.69},
+  {customer:"CBK Haulage",site:"CBK Haulage",suburb:"Cranbrook",state:"WA",oldBulk:1.000,shownFreight:null,newBulk:0.92},
+  {customer:"Fremantle Freight & Storage",site:"Kenwick",suburb:"Kenwick",state:"WA",oldBulk:1.050,shownFreight:null,newBulk:1.02},
+  {customer:"Fremantle Freight & Storage",site:"Wattleup",suburb:"Wattleup",state:"WA",oldBulk:1.050,shownFreight:null,newBulk:1.02},
+  {customer:"Guerinoni & Son",site:"Kununurra",suburb:"Kununurra",state:"WA",oldBulk:0.920,shownFreight:null,newBulk:0.81},
+  {customer:"Hinds Transport",site:"Port Kennedy",suburb:"Port Kennedy",state:"WA",oldBulk:0.780,shownFreight:null,newBulk:0.75},
+  {customer:"Hinds Transport",site:"Neerabup",suburb:"Neerabup",state:"WA",oldBulk:0.780,shownFreight:null,newBulk:0.75},
+  {customer:"DM3",site:"Kalgoorlie",suburb:"Kalgoorlie",state:"WA",oldBulk:0.760,shownFreight:null,newBulk:0.63},
+  {customer:"Golden West Ice",site:"Hazelmere",suburb:"Hazelmere",state:"WA",oldBulk:0.720,shownFreight:null,newBulk:0.69},
+  {customer:"Jamieson Transport",site:"Wedgefield",suburb:"Wedgefield",state:"WA",oldBulk:1.050,shownFreight:null,newBulk:null},
+  {customer:"Kalyu",site:"Christmas Creek",suburb:"Newman",state:"WA",oldBulk:0.950,shownFreight:null,newBulk:0.63},
+  {customer:"Midland Brick",site:"South Guildford",suburb:"South Guildford",state:"WA",oldBulk:0.690,shownFreight:null,newBulk:0.66},
+  {customer:"RGR Road Haulage",site:"Midvale",suburb:"Midvale",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.67},
+  {customer:"Reef Group",site:"High Wycombe",suburb:"High Wycombe",state:"WA",oldBulk:0.740,shownFreight:null,newBulk:0.71},
+  {customer:"Refuel Australia",site:"Berrimah NT",suburb:"Berrimah",state:"NT",oldBulk:0.700,shownFreight:null,newBulk:0.64},
+  {customer:"Refuel Australia",site:"Darwin",suburb:"Darwin",state:"NT",oldBulk:0.700,shownFreight:null,newBulk:0.64},
+  {customer:"Refuel Australia",site:"Katherine",suburb:"Katherine",state:"NT",oldBulk:0.770,shownFreight:null,newBulk:0.64},
+  {customer:"Refuel Australia",site:"Tablelands NT",suburb:"Tabulam",state:"NT",oldBulk:0.850,shownFreight:null,newBulk:0.64},
+  {customer:"Refuel Australia",site:"Timber Creek NT",suburb:"Timber Creek",state:"NT",oldBulk:0.850,shownFreight:null,newBulk:0.64},
+  {customer:"Refuel Australia",site:"Dixons Roadhouse Port Hedland",suburb:"Port Hedland",state:"WA",oldBulk:0.580,shownFreight:0.240,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Carnarvon",suburb:"Carnarvon",state:"WA",oldBulk:0.580,shownFreight:0.120,newBulk:0.35},
+  {customer:"Refuel Australia",site:"Bencubbin",suburb:"Bencubbin",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Muchea",suburb:"Muchea",state:"WA",oldBulk:0.580,shownFreight:0.050,newBulk:0.07},
+  {customer:"Refuel Australia",site:"Harbour Rd Carnarvon",suburb:"Carnarvon",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Mt Magnet Roadhouse",suburb:"Mount Magnet",state:"WA",oldBulk:0.620,shownFreight:0.100,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Moorine Rock",suburb:"Moorine Rock",state:"WA",oldBulk:0.660,shownFreight:null,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Leonora",suburb:"Leonora",state:"WA",oldBulk:0.760,shownFreight:null,newBulk:0.58},
+  {customer:"Refuel Australia",site:"Canning Vale",suburb:"Canning Vale",state:"WA",oldBulk:0.630,shownFreight:null,newBulk:0.58},
+  {customer:"Petro Fuels",site:"Bassendean",suburb:"Bassendean",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.67},
+  {customer:"Petro Fuels",site:"Wubin",suburb:"Wubin",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.63},
+  {customer:"Petro Fuels",site:"Karragullen",suburb:"Karragullen",state:"WA",oldBulk:0.700,shownFreight:null,newBulk:0.67},
+  {customer:"Petro Fuels",site:"Laverton North",suburb:"Laverton North",state:"WA",oldBulk:0.910,shownFreight:null,newBulk:0.74},
+  {customer:"Sandgroper Contracting",site:"Picton East",suburb:"Picton East",state:"WA",oldBulk:0.770,shownFreight:null,newBulk:0.72},
+  {customer:"North Fleet",site:"Hazelmere",suburb:"Hazelmere",state:"WA",oldBulk:0.660,shownFreight:null,newBulk:0.63},
+  {customer:"North Fleet",site:"Port Hedland",suburb:"Port Hedland",state:"WA",oldBulk:0.840,shownFreight:null,newBulk:0.55},
+  {customer:"North Fleet",site:"Karratha",suburb:"Karratha",state:"WA",oldBulk:0.840,shownFreight:null,newBulk:0.56},
+  {customer:"North Fleet",site:"Newman Airport",suburb:"Newman",state:"WA",oldBulk:0.840,shownFreight:null,newBulk:0.61},
+  {customer:"North Fleet",site:"Newman Whaleback",suburb:"Newman",state:"WA",oldBulk:0.840,shownFreight:null,newBulk:0.61},
+  {customer:"Capel Transport",site:"Capel Transport",suburb:"Capel",state:"WA",oldBulk:0.760,shownFreight:null,newBulk:0.70},
+  {customer:"MDH Transport",site:"Karratha",suburb:"Karratha",state:"WA",oldBulk:0.950,shownFreight:null,newBulk:0.67},
+  {customer:"Urban Resources",site:"Bibra Lake",suburb:"Bibra Lake",state:"WA",oldBulk:0.750,shownFreight:null,newBulk:0.72},
+  {customer:"Barkley Homestead",site:"Tennant Creek",suburb:"Tennant Creek",state:"NT",oldBulk:0.980,shownFreight:null,newBulk:0.95},
+  {customer:"CJD Equipment Darwin",site:"Yarrawonga NT",suburb:"Yarrawonga",state:"NT",oldBulk:null,shownFreight:null,newBulk:null},
+  {customer:"Keogh Transport",site:"Darwin",suburb:"Darwin",state:"NT",oldBulk:0.770,shownFreight:null,newBulk:0.74},
+  {customer:"NT Bitumen & Ashphalt",site:"Holtze",suburb:"Holtze",state:"NT",oldBulk:0.740,shownFreight:null,newBulk:0.71},
+  {customer:"Manns Livestock Transport",site:"Tennant Creek",suburb:"Tennant Creek",state:"NT",oldBulk:0.830,shownFreight:null,newBulk:0.63},
+  {customer:"Freo Group",site:"Bunbury",suburb:"Bunbury",state:"WA",oldBulk:0.880,shownFreight:null,newBulk:0.83},
+  {customer:"Freo Group",site:"Kwinana",suburb:"Kwinana",state:"WA",oldBulk:0.880,shownFreight:null,newBulk:0.85},
+  {customer:"Instant Waste Management",site:"Bayswater",suburb:"Bayswater",state:"WA",oldBulk:0.750,shownFreight:null,newBulk:0.72},
+  {customer:"JSW Holdings",site:"Kununurra",suburb:"Kununurra",state:"WA",oldBulk:0.920,shownFreight:null,newBulk:0.81},
+  {customer:"Ordco",site:"Kununurra",suburb:"Kununurra",state:"WA",oldBulk:1.050,shownFreight:null,newBulk:0.94},
+  {customer:"Keolis Downer",site:"Clontarf QLD",suburb:"Clontarf",state:"QLD",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"North Lakes QLD",suburb:"North Lakes",state:"QLD",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Belmont North NSW",suburb:"Belmont North",state:"NSW",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Hamilton NSW",suburb:"Hamilton",state:"NSW",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Brookvale NSW",suburb:"Brookvale",state:"NSW",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Mona Vale NSW",suburb:"Mona Vale",state:"NSW",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Neutral Bay NSW",suburb:"Neutral Bay",state:"NSW",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Bayswater",suburb:"Bayswater",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Henley Brook",suburb:"Henley Brook",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Walliston",suburb:"Walliston",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Malaga",suburb:"Malaga",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Redcliffe",suburb:"Redcliffe",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Geraldton",suburb:"Geraldton",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Forrestfield",suburb:"Forrestfield",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Keolis Downer",site:"Path Transit Welshpool",suburb:"Welshpool",state:"WA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Aldgate SA",suburb:"Aldgate",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Balaklava SA",suburb:"Balaklava",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Clare SA",suburb:"Clare",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Eudunda SA",suburb:"Eudunda",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Goolwa SA",suburb:"Goolwa",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Mount Barker SA",suburb:"Mount Barker",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Mount Pleasant SA",suburb:"Mount Pleasant",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Murray Bridge SA",suburb:"Murray Bridge",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Nuriootpa SA",suburb:"Nuriootpa",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Pooraka SA",suburb:"Pooraka",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Renmark SA",suburb:"Renmark",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"Link SA",site:"Willaston SA",suburb:"Willaston",state:"SA",oldBulk:0.650,shownFreight:null,newBulk:0.62},
+  {customer:"WA Fuels",site:"Forrestania",suburb:"Forrestania",state:"WA",oldBulk:0.750,shownFreight:null,newBulk:0.67},
+  {customer:"WA Fuels",site:"Narngulu",suburb:"Narngulu",state:"WA",oldBulk:0.730,shownFreight:null,newBulk:0.63},
+];
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let results = [];
+let sortCol = 'km', sortDir = 1, activeFilter = 'all';
+
+// ── DISTANCE MATRIX via fetch (works on GitHub Pages - no CORS issue) ─────────
+async function getRoadKm(origin, destination, apiKey) {
+  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&mode=driving&key=${apiKey}`;
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    const el   = data.rows[0].elements[0];
+    if (el.status === 'OK') return Math.round(el.distance.value / 1000);
+  } catch(e) {}
+  return null;
+}
+
+// ── CLASSIFY ───────────────────────────────────────────────────────────────────
+function classify(s, km) {
+  const hidden = (s.oldBulk != null && s.newBulk != null)
+    ? Math.round((s.oldBulk - s.newBulk) * 1000) / 1000 : null;
+  const shown  = s.shownFreight || 0;
+  const total  = Math.round(((hidden || 0) + shown) * 1000) / 1000;
+  const centsPerKm = (km && total > 0) ? (total / km * 100) : null;
+
+  // external states — flag separately, not as errors
+  const isExternal = ['QLD','NSW','SA'].includes(s.state);
+
+  let status, notes;
+
+  if (s.oldBulk == null && s.newBulk == null) {
+    status = 'grey'; notes = 'No pricing data available';
+  } else if (isExternal) {
+    status = 'amber'; notes = `Interstate site (${s.state}) — confirm supply source & freight arrangement`;
+  } else if (km == null) {
+    status = 'grey'; notes = 'Could not calculate distance';
+  } else if (total === 0 && km > 50) {
+    status = 'amber'; notes = `No freight component but ${km} km from depot — freight likely hidden in bulk rate`;
+  } else if (hidden > 0.015 && shown === 0) {
+    status = 'amber'; notes = `$${hidden.toFixed(3)}/L hidden in bulk rate (E−K) — not separately itemised`;
+  } else if (centsPerKm !== null && centsPerKm < 2 && km > 100) {
+    status = 'red'; notes = `Only ${centsPerKm.toFixed(1)}¢/km implied — very low for ${km} km`;
+  } else if (centsPerKm !== null && centsPerKm > 35) {
+    status = 'amber'; notes = `${centsPerKm.toFixed(1)}¢/km — high vs other sites, worth checking`;
+  } else {
+    status = 'green';
+    notes  = centsPerKm != null ? `${centsPerKm.toFixed(1)}¢/km — looks reasonable` : 'Consistent';
+  }
+
+  return { hidden, shown, total, centsPerKm, status, notes };
+}
+
+// ── RUN ────────────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  if (!apiKey) { alert('Please enter your Google Maps API key.'); return; }
+
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('tbody').innerHTML = '';
+  results = [];
+
+  const total = SITES.length;
+
+  for (let i = 0; i < total; i++) {
+    const s    = SITES[i];
+    const pct  = Math.round(((i + 1) / total) * 100);
+    document.getElementById('prog-fill').style.width = pct + '%';
+    document.getElementById('prog-pct').textContent  = pct + '%';
+    document.getElementById('prog-text').textContent = `[${i+1}/${total}] ${s.suburb}, ${s.state}…`;
+
+    let km = null;
+    // Only fetch distances for WA/NT sites — interstate sites flagged separately
+    if (['WA','NT'].includes(s.state)) {
+      const depot = s.state === 'NT' ? DEPOT_NT : DEPOT_WA;
+      const dest  = `${s.suburb} ${s.state}, Australia`;
+      km = await getRoadKm(depot, dest, apiKey);
+      await new Promise(r => setTimeout(r, 150)); // rate limit buffer
+    }
+
+    const depot = s.state === 'NT' ? 'NT' : (['QLD','NSW','SA'].includes(s.state) ? 'EXT' : 'WA');
+    const { hidden, shown, total: totalFreight, centsPerKm, status, notes } = classify(s, km);
+    results.push({ ...s, depot, km, hidden, shown, totalFreight, centsPerKm, status, notes });
+  }
+
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('export-btn').disabled = false;
+  document.getElementById('last-run').innerHTML = `Last run: <b>${new Date().toLocaleTimeString()}</b>`;
+
+  updateCards();
+  renderTable();
+}
+
+// ── CARDS ──────────────────────────────────────────────────────────────────────
+function updateCards() {
+  document.getElementById('c-total').textContent = results.length;
+  document.getElementById('c-green').textContent = results.filter(r => r.status==='green').length;
+  document.getElementById('c-amber').textContent = results.filter(r => r.status==='amber').length;
+  document.getElementById('c-red').textContent   = results.filter(r => r.status==='red').length;
+  document.getElementById('c-grey').textContent  = results.filter(r => r.status==='grey').length;
+}
+
+// ── FILTER / SORT ──────────────────────────────────────────────────────────────
+function setFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  renderTable();
+}
+
+function sortBy(col) {
+  sortDir = (sortCol === col) ? sortDir * -1 : 1;
+  sortCol = col;
+  renderTable();
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────────────
+function renderTable() {
+  if (!results.length) return;
+
+  const q = document.getElementById('search').value.toLowerCase();
+  let data = results.filter(r => {
+    const ms = !q || r.customer.toLowerCase().includes(q) || r.suburb.toLowerCase().includes(q) || r.site.toLowerCase().includes(q);
+    const mf = activeFilter === 'all' || r.status === activeFilter;
+    return ms && mf;
+  });
+
+  data.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (av == null) av = sortDir > 0 ? 1e9 : -1e9;
+    if (bv == null) bv = sortDir > 0 ? 1e9 : -1e9;
+    return typeof av === 'string' ? av.localeCompare(bv) * sortDir : (av - bv) * sortDir;
+  });
+
+  document.querySelectorAll('th').forEach(th => th.classList.remove('asc','desc'));
+
+  const $ = (v, d=3) => v != null ? '$' + v.toFixed(d) : '—';
+  const km = v => v != null ? v.toLocaleString() + ' km' : '—';
+  const cp = v => v != null ? v.toFixed(1) + '¢' : '—';
+
+  const badges = {
+    green: `<span class="badge green">✓ Consistent</span>`,
+    amber: `<span class="badge amber">⚠ Hidden/Missing</span>`,
+    red:   `<span class="badge red">✗ Too Low</span>`,
+    grey:  `<span class="badge grey">— No Data</span>`,
+  };
+
+  document.getElementById('tbody').innerHTML = data.length ? data.map(r => `
+    <tr class="row-${r.status}">
+      <td class="bold">${r.customer}</td>
+      <td class="dim">${r.site}</td>
+      <td>${r.suburb}</td>
+      <td>${r.state}</td>
+      <td><span class="depot-pill ${r.depot}">${r.depot}</span></td>
+      <td class="mono bold">${km(r.km)}</td>
+      <td class="mono">${$(r.oldBulk)}</td>
+      <td class="mono">${$(r.newBulk)}</td>
+      <td class="mono" style="color:${r.hidden>0.015?'var(--amber)':'inherit'}">${$(r.hidden)}</td>
+      <td class="mono">${$(r.shownFreight)}</td>
+      <td class="mono bold">${$(r.totalFreight)}</td>
+      <td class="mono">${cp(r.centsPerKm)}</td>
+      <td>${badges[r.status]||''}</td>
+      <td class="dim" style="max-width:220px;font-size:11px">${r.notes}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="14"><div class="empty-state"><div class="icon">🔍</div><p>No results match your filter.</p></div></td></tr>`;
+}
+
+// ── EXPORT CSV ─────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const hdr = ['Customer','Site','Suburb','State','Depot','Road km','Old Bulk (E)','New Bulk (K)','Hidden Freight (E-K)','Shown Freight (F)','Total Freight','Cents per km','Status','Notes'];
+  const rows = results.map(r => [
+    r.customer, r.site, r.suburb, r.state, r.depot,
+    r.km??'', r.oldBulk??'', r.newBulk??'',
+    r.hidden??'', r.shownFreight??'', r.totalFreight??'',
+    r.centsPerKm!=null?r.centsPerKm.toFixed(2):'',
+    r.status, r.notes
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([hdr.join(','),...rows].join('\n'));
+  a.download = 'BioBlue_Freight_Analysis.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
