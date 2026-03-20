@@ -368,16 +368,32 @@ const SITES = [
 let results = [];
 let sortCol = 'km', sortDir = 1, activeFilter = 'all';
 
-// ── DISTANCE MATRIX via fetch (works on GitHub Pages - no CORS issue) ─────────
-async function getRoadKm(origin, destination, apiKey) {
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&mode=driving&key=${apiKey}`;
-  try {
-    const res  = await fetch(url);
-    const data = await res.json();
-    const el   = data.rows[0].elements[0];
-    if (el.status === 'OK') return Math.round(el.distance.value / 1000);
-  } catch(e) {}
-  return null;
+// ── DISTANCE MATRIX via JSONP (bypasses CORS in all browsers) ────────────────
+function getRoadKm(origin, destination, apiKey) {
+  return new Promise((resolve) => {
+    const cbName = 'dm_' + Math.random().toString(36).slice(2, 10);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      resolve(null);
+    }, 8000);
+
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      script.remove();
+      try {
+        const el = data.rows[0].elements[0];
+        if (el.status === 'OK') resolve(Math.round(el.distance.value / 1000));
+        else resolve(null);
+      } catch(e) { resolve(null); }
+    };
+
+    script.src = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${encodeURIComponent(origin)}&destinations=${encodeURIComponent(destination)}&mode=driving&key=${apiKey}&callback=${cbName}`;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; resolve(null); };
+    document.head.appendChild(script);
+  });
 }
 
 // ── CLASSIFY ───────────────────────────────────────────────────────────────────
