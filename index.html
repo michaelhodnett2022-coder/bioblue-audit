@@ -1580,6 +1580,7 @@
           <input type="number" id="currentLevel" placeholder="e.g. 1200">
         </div>
       </div>
+      <div class="subsection-label">C.1 Fill Point &amp; Access Checks</div>
       <div class="field-row">
         <div class="field-group">
           <label class="field-label">Fill Point Connection Type</label>
@@ -1616,8 +1617,6 @@
           </select>
         </div>
       </div>
-
-      <div class="subsection-label">C.1 Fill Point &amp; Access Checks</div>
       <div id="yn-c1" class="yn-group"></div>
 
       <div class="subsection-label">C.2 Storage Tank AdBlue® Quality Assurance Checks ⚠️</div>
@@ -1976,34 +1975,34 @@ const ynQuestions = {
     { id: 'spillKit',        num: 17, text: 'AdBlue® appropriate (hydrophilic) Spill Kit is accessible on site and clearly labelled?' },
   ],
   'c1': [
-    { id: 'fillCondition',  num: 18, text: 'Are fill connections in good condition?' },
-    { id: 'driverAccess',   num: 19, text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
-    { id: 'highAccess',     num: 20, text: 'If access point higher than 2m; is there safe raised platform/rails or secure tether point?', hasNA: true },
-    { id: 'fillLabelled',   num: 21, text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
-    { id: 'safeFillMarked', num: 22, text: 'Is the Safe Fill Level clearly marked/indicated on the tank?' },
-    { id: 'dipLabelled',    num: 23, text: 'Is tank dip point correctly labelled for AdBlue® and with tank number (if applicable)?' },
-    { id: 'levelAccurate',  num: 24, text: 'Is level monitoring system output accurate and marked in litres?', hasNA: true },
+    { id: 'fillCondition',  num: 21, text: 'Are fill connections in good condition?' },
+    { id: 'driverAccess',   num: 22, text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
+    { id: 'highAccess',     num: 23, text: 'If access point higher than 2m; is there safe raised platform/rails or secure tether point?', hasNA: true },
+    { id: 'fillLabelled',   num: 24, text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'safeFillMarked', num: 25, text: 'Is the Safe Fill Level clearly marked/indicated on the tank?' },
+    { id: 'dipLabelled',    num: 26, text: 'Is tank dip point correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'levelAccurate',  num: 27, text: 'Is level monitoring system output accurate and marked in litres?', hasNA: true },
   ],
   'c2': [
-    { id: 'dedicatedTank',   num: 25, text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
-    { id: 'tankLabelled',    num: 26, text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
-    { id: 'compatMaterials', num: 27, text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
-    { id: 'noIncompat',      num: 28, text: 'Does the Tank/dispensing unit contain copper, brass, aluminium, or uncoated mild steel?<sup>2</sup>', reverseColor: true },
-    { id: 'noLeak',          num: 29, text: 'Storage tank is free of visible leak(s)/damage.' },
-    { id: 'protectedTemp',   num: 30, text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
-    { id: 'tankCleaned',     num: 31, text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
-    { id: 'sealedEquip',     num: 32, text: 'AdBlue® is dispensed using clean, sealed equipment dedicated for AdBlue®.' },
-    { id: 'nozzleClean',     num: 33, text: 'Dispensing nozzle is clean and free from dirt, grime or foreign matter.' },
-    { id: 'lidSealed',       num: 34, text: 'Tank lid is closed and properly sealed (if applicable).' },
-    { id: 'ventSystem',      num: 35, text: 'Tank is fitted with compliant venting system (dust-proof, splashback-proof and filtered).' },
-    { id: 'ventCondition',   num: 36, text: 'Tank vent(s) are properly sealed, in good condition, and not blocked by foreign materials.' },
-    { id: 'fillClean',       num: 37, text: 'The AdBlue® fill point is clean and free from dirt, grime and foreign matter.' },
-    { id: 'dustCap',         num: 38, text: 'The AdBlue® fill point is fitted with a dust cap.' },
+    { id: 'dedicatedTank',   num: 28, text: 'Storage Tank is dedicated for AdBlue® (AUS 32) use only.' },
+    { id: 'tankLabelled',    num: 29, text: 'Storage Tank is clearly labelled as designated for AdBlue® use only.' },
+    { id: 'compatMaterials', num: 30, text: 'Storage Tank/dispensing unit is composed of AdBlue®-compatible materials.<sup>1</sup>' },
+    { id: 'noIncompat',      num: 31, text: 'Does the Tank/dispensing unit contain copper, brass, aluminium, or uncoated mild steel?<sup>2</sup>', reverseColor: true },
+    { id: 'noLeak',          num: 32, text: 'Storage tank is free of visible leak(s)/damage.' },
+    { id: 'protectedTemp',   num: 33, text: 'Tank is positioned to protect AdBlue® from direct sunlight and extreme temperatures.' },
+    { id: 'tankCleaned',     num: 34, text: 'If re-used or repurposed, tank has been cleaned before first fill with AdBlue®.<sup>3</sup>', hasNA: true },
+    { id: 'sealedEquip',     num: 35, text: 'AdBlue® is dispensed using clean, sealed equipment dedicated for AdBlue®.' },
+    { id: 'nozzleClean',     num: 36, text: 'Dispensing nozzle is clean and free from dirt, grime or foreign matter.' },
+    { id: 'lidSealed',       num: 37, text: 'Tank lid is closed and properly sealed (if applicable).' },
+    { id: 'ventSystem',      num: 38, text: 'Tank is fitted with compliant venting system (dust-proof, splashback-proof and filtered).' },
+    { id: 'ventCondition',   num: 39, text: 'Tank vent(s) are properly sealed, in good condition, and not blocked by foreign materials.' },
+    { id: 'fillClean',       num: 40, text: 'The AdBlue® fill point is clean and free from dirt, grime and foreign matter.' },
+    { id: 'dustCap',         num: 41, text: 'The AdBlue® fill point is fitted with a dust cap.' },
   ],
   'e1': [
-    { id: 'photoGate',   num: 39, text: 'I have taken time-stamped photos of the site front gate/entrance.', scoreNeutral: true },
-    { id: 'photoTank',   num: 40, text: 'I have taken time-stamped photos of the delivery zone and AdBlue® tank/fill point.', scoreNeutral: true },
-    { id: 'nonCompComm', num: 41, text: 'Any identified non-compliances have been clearly communicated to the site representative, along with recommended corrective actions where applicable.', scoreNeutral: true },
+    { id: 'photoGate',   num: 42, text: 'I have taken time-stamped photos of the site front gate/entrance.', scoreNeutral: true },
+    { id: 'photoTank',   num: 43, text: 'I have taken time-stamped photos of the delivery zone and AdBlue® tank/fill point.', scoreNeutral: true },
+    { id: 'nonCompComm', num: 44, text: 'Any identified non-compliances have been clearly communicated to the site representative, along with recommended corrective actions where applicable.', scoreNeutral: true },
   ],
 };
 
