@@ -1216,7 +1216,7 @@
       ">
         <option value="">— Select audit type first —</option>
         <option value="full">1) Full Onsite Audit</option>
-        <option value="offsite">2) Interim Offsite Audit (Logistics only)</option>
+        <option value="offsite">2) Interim Desktop Audit (Logistics only)</option>
       </select>
     </div>
 
@@ -2869,7 +2869,7 @@ function applyAuditType(type) {
   if (type === 'full') {
     showToast('📋 Full Onsite Audit — all sections shown');
   } else {
-    showToast('🚛 Interim Offsite Audit — sections 1, 2, 4 & 8 shown');
+    showToast('🚛 Interim Desktop Audit — sections 1, 2, 4 & 8 shown');
   }
 }
 
@@ -3378,7 +3378,7 @@ async function generatePDF(returnDoc=false) {
   const auditInfo = d.auditDate ? `Date: ${d.auditDate}` : '';
   doc.text(auditInfo, pageW - margin, 18, { align: 'right' });
   doc.text(d.customerName || '', pageW - margin, 24, { align: 'right' });
-  const auditTypeLabel = d.auditType === 'offsite' ? 'Interim Offsite Audit (Logistics only)' : 'Full Onsite Audit';
+  const auditTypeLabel = d.auditType === 'offsite' ? 'Interim Desktop Audit (Logistics only)' : 'Full Onsite Audit';
   doc.setFontSize(7); doc.setFont('helvetica','italic');
   doc.text(auditTypeLabel, pageW - margin, 29, { align: 'right' });
 
