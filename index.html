@@ -1197,6 +1197,29 @@
       <span style="color:rgba(255,255,255,0.4);font-size:11px;">Select state then customer to begin</span>
     </div>
 
+    <!-- Audit Type Selector -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="width:24px;height:24px;border-radius:50%;background:#e8192c;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <span style="color:white;font-size:12px;font-weight:700;">▶</span>
+        </div>
+        <label style="color:white;font-size:13px;font-weight:700;margin:0;letter-spacing:0.3px;">Select Audit Type</label>
+      </div>
+      <select id="auditTypeSelect" onchange="applyAuditType(this.value)" style="
+        width:100%;padding:12px 14px;border-radius:10px;
+        border:2px solid rgba(255,255,255,0.3);
+        background:rgba(255,255,255,0.92);
+        color:#1a1a2e;font-size:15px;font-weight:600;
+        -webkit-appearance:none;appearance:none;
+        background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%228%22 viewBox=%220 0 12 8%22><path d=%22M1 1l5 5 5-5%22 stroke=%22%23333%22 stroke-width=%222%22 fill=%22none%22/></svg>');
+        background-repeat:no-repeat;background-position:right 14px center;
+      ">
+        <option value="">— Select audit type first —</option>
+        <option value="full">1) Full Onsite Audit</option>
+        <option value="offsite">2) Interim Offsite Audit (Logistics only)</option>
+      </select>
+    </div>
+
     <!-- Step 1: State -->
     <div style="margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -1312,7 +1335,7 @@
   </div>
 
   <!-- SECTION A: SITE DETAILS -->
-  <div class="section-card">
+  <div class="section-card" id="cardA">
     <div class="section-header" onclick="toggleSection('sectionA')">
       <div class="section-header-icon">🏢</div>
       <div class="section-header-text">
@@ -1412,7 +1435,7 @@
   </div>
 
   <!-- SECTION B: DELIVERY ACCESS & SAFETY -->
-  <div class="section-card">
+  <div class="section-card" id="cardB">
     <div class="section-header" onclick="toggleSection('sectionB')">
       <div class="section-header-icon">🚛</div>
       <div class="section-header-text">
@@ -1514,7 +1537,7 @@
   </div>
 
   <!-- SECTION C: BULK ADBLUE DELIVERIES -->
-  <div class="section-card">
+  <div class="section-card" id="cardC">
     <div class="section-header" onclick="toggleSection('sectionC')">
       <div class="section-header-icon">🛢️</div>
       <div class="section-header-text">
@@ -1651,7 +1674,7 @@
   </div>
 
   <!-- SECTION D: CORRECTIVE ACTIONS -->
-  <div class="section-card">
+  <div class="section-card" id="cardD">
     <div class="section-header" onclick="toggleSection('sectionD')">
       <div class="section-header-icon">📝</div>
       <div class="section-header-text">
@@ -1672,7 +1695,7 @@
   </div>
 
   <!-- SECTION E: MUD MAP -->
-  <div class="section-card">
+  <div class="section-card" id="cardMudmap">
     <div class="section-header" onclick="toggleSection('sectionMudmap')">
       <div class="section-header-icon">🗺️</div>
       <div class="section-header-text">
@@ -1738,7 +1761,7 @@
   </div>
 
   <!-- SECTION F: PHOTOS (renumbered) -->
-  <div class="section-card">
+  <div class="section-card" id="cardPhotos">
     <div class="section-header" onclick="toggleSection('sectionPhotos')">
       <div class="section-header-icon">📸</div>
       <div class="section-header-text">
@@ -1785,7 +1808,7 @@
   </div>
 
   <!-- SECTION F: AUDIT SIGN-OFF -->
-  <div class="section-card">
+  <div class="section-card" id="cardF">
     <div class="section-header" onclick="toggleSection('sectionF')">
       <div class="section-header-icon">✍️</div>
       <div class="section-header-text">
@@ -2752,6 +2775,7 @@ function collectFormData() {
     repMobile: get('repMobile'),
     ynValues: { ...ynValues },
     photoCount: photos.length,
+    auditType: document.getElementById('auditTypeSelect')?.value || '',
     emailTo: get('emailTo'),
     emailCc: get('emailCc'),
   };
@@ -2813,6 +2837,41 @@ const CUSTOMERS = {
   'TAS01': { name:'FONTERRA SPREYTON',             siteNum:'TAS01', network:'VIVA-COM', address:'155 MERSEY ROAD',            suburb:'SPREYTON',         state:'TAS', postcode:'7310', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
   'TAS02': { name:'FONTERRA WYNYARD',              siteNum:'TAS02', network:'VIVA-COM', address:'92 INGLIS STREET',           suburb:'WYNYARD',          state:'TAS', postcode:'7325', tankVolume:'', safeFill:'', fillConnType:'', fillConnSize:'', contactName:'', contactTitle:'', contactMobile:'', contactEmail:'', tankSerial:'', tankOwner:'Client', tankType:'', dipSystem:'N/A' },
 };
+
+function applyAuditType(type) {
+  // Sections visible for each audit type
+  // Full: all sections
+  // Offsite: 1=cardA, 2=cardB, 4=cardC, 8=cardPhotos
+  const allCards    = ['cardA','cardB','cardC','cardD','cardMudmap','cardPhotos','cardF','auditResultsPanel'];
+  const offsiteCards = ['cardA','cardB','cardC','cardPhotos'];
+
+  if (!type) {
+    // No selection — hide everything except hero
+    allCards.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    return;
+  }
+
+  const showCards = type === 'full' ? allCards : offsiteCards;
+
+  allCards.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = showCards.includes(id) ? '' : 'none';
+  });
+
+  // Update PDF audit type label
+  window._auditType = type;
+
+  // Show a toast confirming the mode
+  if (type === 'full') {
+    showToast('📋 Full Onsite Audit — all sections shown');
+  } else {
+    showToast('🚛 Interim Offsite Audit — sections 1, 2, 4 & 8 shown');
+  }
+}
 
 function toggleSettings() {
   const panel = document.getElementById('settingsPanel');
@@ -3319,6 +3378,9 @@ async function generatePDF(returnDoc=false) {
   const auditInfo = d.auditDate ? `Date: ${d.auditDate}` : '';
   doc.text(auditInfo, pageW - margin, 18, { align: 'right' });
   doc.text(d.customerName || '', pageW - margin, 24, { align: 'right' });
+  const auditTypeLabel = d.auditType === 'offsite' ? 'Interim Offsite Audit (Logistics only)' : 'Full Onsite Audit';
+  doc.setFontSize(7); doc.setFont('helvetica','italic');
+  doc.text(auditTypeLabel, pageW - margin, 29, { align: 'right' });
 
   y = 40;
 
@@ -3657,7 +3719,13 @@ async function generatePDF(returnDoc=false) {
 // TEST DATA FILL
 // =====================================================================
 async function fillTestData() {
-  showToast('⚡ Starting test fill...');
+  const auditType = document.getElementById('auditTypeSelect')?.value || '';
+  if (!auditType) {
+    showToast('⚠️ Please select an audit type first');
+    return;
+  }
+  const isOffsite = auditType === 'offsite';
+  showToast(isOffsite ? '⚡ Filling Interim Offsite test data...' : '⚡ Starting full test fill...');
   await new Promise(r => setTimeout(r, 100));
   // Reset Y/N values directly without calling clearForm
   document.querySelectorAll('.yn-item').forEach(el => el.className = 'yn-item');
@@ -3699,26 +3767,25 @@ async function fillTestData() {
   document.getElementById('maxVehicle').value = 'B-Double Trailer';
 
   // Section B — answer all Y/N
-  const testAnswers = {
-    // B1
+  // Questions for all modes (sections 1 & 2 = B1+B2+B3)
+  const answersCommon = {
     truckAccess: 'Y', overheadWires: 'N', manoeuvre: 'Y',
     noReverse: 'Y', parkingMarked: 'Y', gateAccess: 'Y',
-    // B2
     siteInduction: 'Y', pedestrianAccess: 'Y', hazardFree: 'Y',
     lighting: 'Y', safetyCones: 'Y', tankVents: 'Y', ppeRequired: 'Y',
-    // B3
     spillContain: 'Y', awayFromDrains: 'Y', drainCovers: 'Y', spillKit: 'Y',
-    // C1
+  };
+  // Questions only for Full Onsite (sections 4, 5, 6 = C1+C2+F1)
+  const answersFullOnly = {
     fillCondition: 'Y', driverAccess: 'Y', highAccess: 'NA',
     fillLabelled: 'Y', safeFillMarked: 'Y', dipLabelled: 'Y', levelAccurate: 'Y',
-    // C2
     dedicatedTank: 'Y', tankLabelled: 'Y', compatMaterials: 'Y',
     noIncompat: 'N', noLeak: 'Y', protectedTemp: 'Y', tankCleaned: 'NA',
     sealedEquip: 'Y', nozzleClean: 'Y', lidSealed: 'Y',
     ventSystem: 'Y', ventCondition: 'Y', fillClean: 'Y', dustCap: 'Y',
-    // F1
     photoGate: 'Y', photoTank: 'Y', nonCompComm: 'Y',
   };
+  const testAnswers = isOffsite ? answersCommon : { ...answersCommon, ...answersFullOnly };
 
   // Bulk set Y/N answers using lightweight setter
   Object.entries(testAnswers).forEach(([id, val]) => {
@@ -3768,7 +3835,15 @@ async function fillTestData() {
   document.getElementById('keyCode').value = 'Gate code: 1234 — collect key from reception';
   document.getElementById('keyCodeField').style.display = 'block';
 
-  // Tank details
+  // Tank details — only for Full Onsite
+  if (!isOffsite) document.getElementById('tankVolumeSelect').value = '5000';
+  if (isOffsite) {
+    showToast('⚡ Interim Offsite test data loaded — sections 1, 2, 4 & 8 only');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateProgress(); updateComplianceBanner(); updateAuditResults();
+    checkC2Compliance(); checkCorrectiveActionsRequired();
+    return;
+  }
   document.getElementById('tankVolumeSelect').value = '5000';
   toggleTankVolumeOther('5000');
   document.getElementById('safeFill').value = '4500';
@@ -4833,6 +4908,12 @@ function clearForm() {
   resetMudmapFull();
   document.getElementById('mudmapAddress').value = '';
 
+  // Reset audit type selector and hide all cards
+  const auditTypeEl = document.getElementById('auditTypeSelect');
+  if (auditTypeEl) auditTypeEl.value = '';
+  applyAuditType('');
+  window._auditType = '';
+
   // Clear localStorage draft
   try { localStorage.removeItem('bioblue_draft'); } catch(e) {}
 
@@ -5448,6 +5529,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) { console.warn('EmailJS not loaded:', e); }
 
+  // Hide all section cards until audit type is selected
+  ['cardA','cardB','cardC','cardD','cardMudmap','cardPhotos','cardF','auditResultsPanel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   renderYNGroups();
   initMudmap();
   setMudmapTool('pan');
