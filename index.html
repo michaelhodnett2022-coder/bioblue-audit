@@ -1407,16 +1407,7 @@
           <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
         </div>
       </div>
-      <div class="field-row">
-        <div class="field-group">
-          <label class="field-label">Site Number</label>
-          <input type="text" id="siteNumber" placeholder="Auto-filled from customer selection">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Network</label>
-          <input type="text" id="siteNetwork" placeholder="e.g. Express">
-        </div>
-      </div>
+
     </div>
   </div>
 
@@ -1530,7 +1521,7 @@
     </div>
     <div class="section-body" id="sectionC">
 
-      <div class="subsection-label">C.1 On-Site Storage Tank Audit</div>
+      <div class="subsection-label">C. On-Site Storage Tank Audit</div>
 
       <div class="field-row">
         <div class="field-group">
@@ -1554,13 +1545,15 @@
         </div>
         <div class="field-group">
           <label class="field-label">Tank Type</label>
-          <select id="tankType">
+          <select id="tankType" onchange="toggleTankTypeOther(this.value)">
             <option value="">Select...</option>
             <option value="Poly Slim">Poly Slim</option>
             <option value="Poly Round">Poly Round</option>
             <option value="In Ground">In Ground</option>
             <option value="Cabinet Type">Cabinet Type</option>
+            <option value="Other">Other — please state</option>
           </select>
+          <input type="text" id="tankTypeOther" placeholder="Describe tank type..." style="display:none;margin-top:8px;" oninput="updateTankTypeValue()">
         </div>
       </div>
       <div class="field-row three">
@@ -1624,6 +1617,7 @@
         </div>
       </div>
 
+      <div class="subsection-label">C.1 Fill Point &amp; Access Checks</div>
       <div id="yn-c1" class="yn-group"></div>
 
       <div class="subsection-label">C.2 Storage Tank AdBlue® Quality Assurance Checks ⚠️</div>
@@ -2709,7 +2703,7 @@ function collectFormData() {
     tankId: get('tankId'),
     tankSerial: get('tankSerial'),
     tankOwner: get('tankOwner'),
-    tankType: get('tankType'),
+    tankType: getTankTypeValue(),
     tankVolume: get('tankVolume'),
     safeFill: get('safeFill'),
     currentLevel: get('currentLevel'),
@@ -2978,7 +2972,7 @@ function autoFillCustomer(siteNum) {
 
 function clearCustomerFields() {
   ['siteAddress','suburb','postcode','siteContact','siteContactTitle','siteEmail',
-   'siteMobile','tankVolume','safeFill','tankSerial','tankType','dipSystem',
+   'siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem',
    'siteNumber','siteNetwork'].forEach(id => setField(id, ''));
   document.getElementById('state').selectedIndex = 0;
   document.getElementById('tankOwner').selectedIndex = 0;
@@ -2992,6 +2986,32 @@ function setField(id, value) {
 }
 
 // =====================================================================
+function toggleTankTypeOther(val) {
+  const otherField = document.getElementById('tankTypeOther');
+  if (val === 'Other') {
+    otherField.style.display = 'block';
+    otherField.value = '';
+    otherField.focus();
+  } else {
+    otherField.style.display = 'none';
+  }
+  updateFieldStates();
+}
+
+function updateTankTypeValue() {
+  // tankType select stays as "Other" — the text input holds the detail
+  updateFieldStates();
+}
+
+function getTankTypeValue() {
+  const sel = document.getElementById('tankType');
+  if (sel.value === 'Other') {
+    const other = document.getElementById('tankTypeOther').value.trim();
+    return other ? 'Other: ' + other : 'Other';
+  }
+  return sel.value;
+}
+
 function toggleTankVolumeOther(val) {
   const otherField = document.getElementById('tankVolume');
   if (val === 'other') {
@@ -3301,7 +3321,7 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION C ----
   checkPage(14);
   sectionHeader('C. BULK ADBLUE\u00ae DELIVERIES');
-  subHeader('C.1 On-Site Storage Tank Audit');
+  subHeader('C. On-Site Storage Tank Audit');
   twoFieldRow('Tank ID', d.tankId, 'BioBlue Tank Serial #', d.tankSerial);
   twoFieldRow('Tank Owner', d.tankOwner, 'Tank Type', d.tankType);
   twoFieldRow('Tank Volume (L)', d.tankVolume, 'Safe Fill Level (L)', d.safeFill);
@@ -3827,7 +3847,18 @@ function osmSelect(idx, dropdownId) {
   // Fill suburb/state/postcode if available
   if (a.suburb || a.city || a.town || a.village)
     document.getElementById('suburb').value = a.suburb || a.city || a.town || a.village || '';
-  if (a.state) document.getElementById('state').value = a.state;
+  if (a.state) {
+    const stateMap = {
+      'Western Australia':'WA','New South Wales':'NSW','Victoria':'VIC',
+      'Queensland':'QLD','South Australia':'SA','Tasmania':'TAS',
+      'Northern Territory':'NT','Australian Capital Territory':'ACT'
+    };
+    const stateCode = stateMap[a.state] || a.state.toUpperCase().substring(0,3);
+    const stateEl = document.getElementById('state');
+    for (let i = 0; i < stateEl.options.length; i++) {
+      if (stateEl.options[i].value === stateCode) { stateEl.selectedIndex = i; break; }
+    }
+  }
   if (a.postcode) document.getElementById('postcode').value = a.postcode;
   dropdown.style.display = 'none';
   updateProgress();
@@ -4741,6 +4772,7 @@ function clearForm() {
 
   // Reset tank volume
   document.getElementById('tankVolumeSelect').selectedIndex = 0;
+  document.getElementById('tankTypeOther').style.display = 'none';
   document.getElementById('tankVolume').style.display = 'none';
   document.getElementById('tankVolume').value = '';
 
