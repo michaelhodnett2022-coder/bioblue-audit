@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1313,7 +1313,15 @@
 
   <!-- SECTION A: SITE DETAILS -->
   <div class="section-card">
-    <div class="section-body" id="sectionA" style="border-radius:var(--radius);">
+    <div class="section-header" onclick="toggleSection('sectionA')">
+      <div class="section-header-icon">🏢</div>
+      <div class="section-header-text">
+        <h2>1. Site Details</h2>
+        <p>Customer, location and contact information</p>
+      </div>
+      <div class="section-toggle" id="toggleA">▼</div>
+    </div>
+    <div class="section-body" id="sectionA">
       <div class="field-row">
         <div class="field-group">
           <label class="field-label required">Customer / Business Name</label>
@@ -1408,8 +1416,8 @@
     <div class="section-header" onclick="toggleSection('sectionB')">
       <div class="section-header-icon">🚛</div>
       <div class="section-header-text">
-        <h2>1. Access &amp; Site Safety</h2>
-        <p>Q1–17 · Accessibility, safety and spill containment</p>
+        <h2>2. Access &amp; Site Safety</h2>
+        <p>Q1–13 · Accessibility and site safety</p>
       </div>
       <div class="section-toggle" id="toggleB">▼</div>
     </div>
@@ -1493,7 +1501,13 @@
         </div>
       </div>
 
-      <div class="subsection-label">2. Safety, Environment &amp; Spill Containment</div>
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">🌿</div>
+        <div class="section-header-text">
+          <h2>3. Safety, Environment &amp; Spill Containment</h2>
+          <p>Q14–17 · Environmental protection and spill response</p>
+        </div>
+      </div>
       <div id="yn-b3" class="yn-group"></div>
 
     </div>
@@ -1504,7 +1518,7 @@
     <div class="section-header" onclick="toggleSection('sectionC')">
       <div class="section-header-icon">🛢️</div>
       <div class="section-header-text">
-        <h2>3. Onsite Storage Tank</h2>
+        <h2>4. Onsite Storage Tank</h2>
         <p>Q18–41 · Tank audit and quality assurance checks</p>
       </div>
       <div class="section-toggle" id="toggleC">▼</div>
@@ -1569,7 +1583,13 @@
           <input type="number" id="currentLevel" placeholder="e.g. 1200">
         </div>
       </div>
-      <div class="subsection-label">4. Fill Point &amp; Access Checks</div>
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">🔧</div>
+        <div class="section-header-text">
+          <h2>5. Fill Point &amp; Access Checks</h2>
+          <p>Q21–27 · Fill point condition and access verification</p>
+        </div>
+      </div>
       <div class="field-row">
         <div class="field-group">
           <label class="field-label">Fill Point Connection Type</label>
@@ -1608,7 +1628,13 @@
       </div>
       <div id="yn-c1" class="yn-group"></div>
 
-      <div class="subsection-label">5. Storage Tank AdBlue® Quality Assurance Checks ⚠️</div>
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">✅</div>
+        <div class="section-header-text">
+          <h2>6. Storage Tank AdBlue® Quality Assurance Checks ⚠️</h2>
+          <p>Q28–41 · ISO-22241 compliance — all items must be YES</p>
+        </div>
+      </div>
       <p style="font-size:12px;color:var(--gray-mid);margin-bottom:10px;">All items must be <strong>YES</strong> for ISO-22241 compliance. Any <strong>NO</strong> answer may affect product certification.</p>
       <div id="yn-c2" class="yn-group"></div>
 
@@ -1629,7 +1655,7 @@
     <div class="section-header" onclick="toggleSection('sectionD')">
       <div class="section-header-icon">📝</div>
       <div class="section-header-text">
-        <h2>6. Corrective Actions / Notes</h2>
+        <h2>7. Corrective Actions / Notes</h2>
         <p>Document any non-compliance and required corrective actions</p>
       </div>
       <div class="section-toggle" id="toggleD">▼</div>
@@ -1650,7 +1676,7 @@
     <div class="section-header" onclick="toggleSection('sectionMudmap')">
       <div class="section-header-icon">🗺️</div>
       <div class="section-header-text">
-        <h2>7. Site Mud Map</h2>
+        <h2>8. Site Mud Map</h2>
         <p>Draw truck entry/exit route and AdBlue® tank location</p>
       </div>
       <div class="section-toggle" id="toggleMudmap">▼</div>
@@ -1716,7 +1742,7 @@
     <div class="section-header" onclick="toggleSection('sectionPhotos')">
       <div class="section-header-icon">📸</div>
       <div class="section-header-text">
-        <h2>8. Site Photos</h2>
+        <h2>9. Site Photos</h2>
         <p>Time-stamped site and tank photographs <span class="photo-count-badge" id="photoCountBadge">0/20</span></p>
       </div>
       <div class="section-toggle" id="togglePhotos">▼</div>
@@ -1763,14 +1789,20 @@
     <div class="section-header" onclick="toggleSection('sectionF')">
       <div class="section-header-icon">✍️</div>
       <div class="section-header-text">
-        <h2>9. Audit Sign-Off</h2>
+        <h2>10. Audit Sign-Off</h2>
         <p>BioBlue auditor &amp; site representative sign-off</p>
       </div>
       <div class="section-toggle" id="toggleF">▼</div>
     </div>
     <div class="section-body" id="sectionF">
 
-      <div class="subsection-label">10. BioBlue (Auditor) Sign-Off</div>
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">✍️</div>
+        <div class="section-header-text">
+          <h2>11. BioBlue (Auditor) Sign-Off</h2>
+          <p>Auditor details and signature</p>
+        </div>
+      </div>
 
       <div id="yn-e1" class="yn-group"></div>
 
@@ -1812,7 +1844,13 @@
         </div>
       </div>
 
-      <div class="subsection-label">11. Customer (Site Representative) Sign-Off</div>
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">🤝</div>
+        <div class="section-header-text">
+          <h2>12. Customer (Site Representative) Sign-Off</h2>
+          <p>Site representative details and signature</p>
+        </div>
+      </div>
       <p style="font-size:12px;color:var(--gray-mid);margin-bottom:12px;">The site representative confirms: information provided is true and correct; understands non-compliance may affect product integrity; has been informed of required corrective actions.</p>
 
       <div class="field-row">
@@ -3293,7 +3331,7 @@ async function generatePDF(returnDoc=false) {
   twoFieldRow('Email', d.siteEmail, '', '');
 
   // ---- SECTION B ----
-  sectionHeader('1. ACCESS & SITE SAFETY');
+  sectionHeader('2. ACCESS & SITE SAFETY');
   
   twoFieldRow('Access Hours / Restrictions', d.accessHours, 'Maximum Vehicle Size', d.maxVehicle);
   if (d.keyCode) fieldRow('Key / Access Code', d.keyCode);
@@ -3303,12 +3341,12 @@ async function generatePDF(returnDoc=false) {
   if (d.ppeDetails) fieldRow('PPE Details', d.ppeDetails);
   ynQuestions['b2'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
 
-  subHeader('2. Safety, Environment & Spill Containment');
+  sectionHeader('3. SAFETY, ENVIRONMENT & SPILL CONTAINMENT');
   ynQuestions['b3'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
 
   // ---- SECTION C ----
   checkPage(14);
-  sectionHeader('3. ONSITE STORAGE TANK');
+  sectionHeader('4. ONSITE STORAGE TANK');
   
   twoFieldRow('Tank ID', d.tankId, 'BioBlue Tank Serial #', d.tankSerial);
   twoFieldRow('Tank Owner', d.tankOwner, 'Tank Type', d.tankType);
@@ -3316,10 +3354,10 @@ async function generatePDF(returnDoc=false) {
   twoFieldRow('Fill Connection Type', d.fillConnType, 'Fill Connection Size', d.fillConnSize);
   twoFieldRow('Level Monitoring System', d.dipSystem, 'Trident Monitor', d.tridentMonitor);
   twoFieldRow('Current Level (L)', d.currentLevel, '', '');
-  subHeader('4. Fill Point & Access Checks');
+  sectionHeader('5. FILL POINT & ACCESS CHECKS');
   ynQuestions['c1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
 
-  subHeader('5. Storage Tank AdBlue® Quality Assurance Checks');
+  sectionHeader('6. STORAGE TANK ADBLUE® QUALITY ASSURANCE CHECKS');
 
   // C.2 compliance notice
   const c2Answers = ynQuestions['c2'].map(q => d.ynValues[q.id]);
@@ -3431,7 +3469,7 @@ async function generatePDF(returnDoc=false) {
   y += 20;
 
   // ---- SECTION D ----
-  sectionHeader('6. CORRECTIVE ACTIONS / NOTES');
+  sectionHeader('7. CORRECTIVE ACTIONS / NOTES');
   checkPage(30);
   doc.setFillColor(...GRAY_LIGHT);
   const notesH = Math.max(25, doc.splitTextToSize(d.correctiveActions||'No notes.', contentW-4).length * 4 + 6);
@@ -3447,7 +3485,7 @@ async function generatePDF(returnDoc=false) {
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
     checkPage(80);
-    sectionHeader('7. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
+    sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
     const mapH = contentW; // square — same as width
     try {
       doc.addImage(mudmapData, 'JPEG', margin, y, contentW, mapH, undefined, 'FAST');
@@ -3467,7 +3505,7 @@ async function generatePDF(returnDoc=false) {
   if (photos.length > 0) {
     doc.addPage();
     y = margin;
-    sectionHeader('8. SITE PHOTOS');
+    sectionHeader('9. SITE PHOTOS');
 
     const gap = 4;
     const captionH = 12; // tall enough for caption + timestamp
@@ -3550,9 +3588,9 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION F: SIGN-OFF ---- always starts on fresh page
   doc.addPage();
   y = margin;
-  sectionHeader('9. AUDIT SIGN-OFF');
+  sectionHeader('10. AUDIT SIGN-OFF');
 
-  subHeader('10. BioBlue (Auditor) Sign-Off');
+  subHeader('11. BioBlue (Auditor) Sign-Off');
   ynQuestions['e1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
   twoFieldRow('Auditor Name', d.auditorName, 'Title', d.auditorTitle);
   twoFieldRow('Email', d.auditorEmail, 'Mobile', d.auditorMobile);
@@ -3571,7 +3609,7 @@ async function generatePDF(returnDoc=false) {
   doc.setTextColor(30,40,50); doc.setFontSize(8); doc.text('Date: ' + (d.auditDate||'____'), margin + contentW/2 + 2, y + 11);
   y += 25;
 
-  subHeader('11. Customer (Site Representative) Sign-Off');
+  subHeader('12. Customer (Site Representative) Sign-Off');
   doc.setTextColor(40,50,60); doc.setFontSize(7.5); doc.setFont('helvetica','italic');
   const disclaimer = 'The site representative confirms that: information provided is true and correct to the best of their knowledge; they understand that non-compliance with AdBlue® storage/handling/transfer requirements may affect product integrity and could void warranties; they have been informed of corrective actions required.';
   const dLines = doc.splitTextToSize(disclaimer, contentW);
