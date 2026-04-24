@@ -1606,13 +1606,6 @@
           <input type="number" id="currentLevel" placeholder="e.g. 1200">
         </div>
       </div>
-      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
-        <div class="section-header-icon">🔧</div>
-        <div class="section-header-text">
-          <h2>5. Fill Point &amp; Access Checks</h2>
-          <p>Q21–27 · Fill point condition and access verification</p>
-        </div>
-      </div>
       <div class="field-row">
         <div class="field-group">
           <label class="field-label">Fill Point Connection Type</label>
@@ -1658,7 +1651,16 @@
           </select>
         </div>
       </div>
+      <div id="section5Block">
+      <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
+        <div class="section-header-icon">🔧</div>
+        <div class="section-header-text">
+          <h2>5. Fill Point &amp; Access Checks</h2>
+          <p>Q21–27 · Fill point condition and access verification</p>
+        </div>
+      </div>
       <div id="yn-c1" class="yn-group"></div>
+      </div>
 
       <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
         <div class="section-header-icon">✅</div>
@@ -2891,6 +2893,9 @@ function applyAuditType(type) {
     const currentLevelGroup = levelRow.querySelector('#currentLevel')?.closest('.field-group');
     if (currentLevelGroup) currentLevelGroup.style.display = type === 'offsite' ? 'none' : '';
   }
+  // Hide Section 5 (Fill Point & Access Checks) in Desktop mode
+  const s5 = document.getElementById('section5Block');
+  if (s5) s5.style.display = type === 'offsite' ? 'none' : '';
 
   // Update PDF audit type label
   window._auditType = type;
