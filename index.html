@@ -1422,7 +1422,7 @@
       </div>
       <div class="field-row">
         <div class="field-group">
-          <label class="field-label">Email Address</label>
+          <label class="field-label">Email Address for POD</label>
           <input type="email" id="siteEmail" placeholder="contact@company.com">
         </div>
         <div class="field-group">
@@ -1582,7 +1582,7 @@
           <input type="text" id="tankTypeOther" placeholder="Describe tank type..." style="display:none;margin-top:8px;" oninput="updateTankTypeValue()">
         </div>
       </div>
-      <div class="field-row three">
+      <div class="field-row three" id="tankLevelRow">
         <div class="field-group">
           <label class="field-label">Tank Volume (L)</label>
           <select id="tankVolumeSelect" onchange="toggleTankVolumeOther(this.value)">
@@ -1637,7 +1637,16 @@
       <div class="field-row">
         <div class="field-group">
           <label class="field-label">Dip Reporting / Level Monitoring System</label>
-          <input type="text" id="dipSystem" placeholder="e.g. Trident Monitor / N/A">
+          <select id="dipSystem" onchange="toggleDipOther(this.value)">
+            <option value="">Select...</option>
+            <option value="Liquidator Slide">Liquidator Slide</option>
+            <option value="Sight Tube">Sight Tube</option>
+            <option value="Electronic Occio Screen (or similar)">Electronic Occio Screen (or similar)</option>
+            <option value="Behind the counter in shop printout">Behind the counter in shop printout</option>
+            <option value="N/A">N/A</option>
+            <option value="Other">Other — please state</option>
+          </select>
+          <input type="text" id="dipSystemOther" placeholder="Describe monitoring system..." style="display:none;margin-top:8px;" oninput="updateDipValue()">
         </div>
         <div class="field-group">
           <label class="field-label">Trident Monitoring Installed?</label>
@@ -2005,7 +2014,7 @@ const ynQuestions = {
     { id: 'truckAccess',   num: 1,  text: 'Is truck access to/from the customer site free of obstruction?' },
     { id: 'overheadWires', num: 2,  text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
     { id: 'manoeuvre',     num: 3,  text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
-    { id: 'noReverse',     num: 4,  text: 'Can vehicle be manoeuvred without reversing on premises?' },
+    { id: 'noReverse',     num: 4,  text: 'Can vehicle be manoeuvred without reversing into or on premises?' },
     { id: 'parkingMarked', num: 5,  text: 'Parking and unloading areas are clearly marked or communicated.' },
     { id: 'gateAccess',    num: 6,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
   ],
@@ -2014,8 +2023,8 @@ const ynQuestions = {
     { id: 'pedestrianAccess', num: 8,  text: 'Is there safe pedestrian access to the tank fill point(s) to undertake delivery?' },
     { id: 'hazardFree',       num: 9,  text: 'Is the delivery area/zone free of hazards or obstacles?' },
     { id: 'lighting',         num: 10, text: 'Is adequate lighting provided for early morning or evening deliveries?' },
-    { id: 'safetyCones',      num: 11, text: 'Safety cones or barriers are available to secure the delivery zone?' },
-    { id: 'tankVents',        num: 12, text: 'Are tank vents fitted, with no signs of overpressure/vacuum stress (e.g. deformation)?' },
+    { id: 'safetyCones',      num: 11, text: 'Safety cones or barriers are required.' },
+    { id: 'tankVents',        num: 12, text: 'Are tank vents fitted?' },
     { id: 'ppeRequired',      num: 13, text: 'Are there any site-specific Personal Protective Equipment (PPE) requirements?', triggerField: 'ppeField', scoreNeutral: true, reverseColor: true, solidColor: true },
   ],
   'b3': [
@@ -2758,7 +2767,7 @@ function collectFormData() {
     currentLevel: get('currentLevel'),
     fillConnType: get('fillConnType'),
     fillConnSize: get('fillConnSize'),
-    dipSystem: get('dipSystem'),
+    dipSystem: getDipValue(),
     tridentMonitor: get('tridentMonitor'),
     // D
     correctiveActions: get('correctiveActions'),
@@ -2843,7 +2852,7 @@ function applyAuditType(type) {
   // Full: all sections
   // Offsite: 1=cardA, 2=cardB, 4=cardC, 8=cardPhotos
   const allCards    = ['cardA','cardB','cardC','cardD','cardMudmap','cardPhotos','cardF','auditResultsPanel'];
-  const offsiteCards = ['cardA','cardB','cardC','cardMudmap'];
+  const offsiteCards = ['cardA','cardB','cardC','cardMudmap','cardPhotos'];
 
   if (!type) {
     // No selection — hide everything except hero
@@ -2861,6 +2870,27 @@ function applyAuditType(type) {
     if (!el) return;
     el.style.display = showCards.includes(id) ? '' : 'none';
   });
+  // Reinitialise signature pads if sign-off section is now visible
+  // (canvas.offsetWidth is 0 when card is hidden at init time)
+  if (showCards.includes('cardF')) {
+    setTimeout(() => {
+      ['sigAuditor','sigRep'].forEach(canvasId => {
+        const canvas = document.getElementById(canvasId);
+        if (canvas && canvas.offsetWidth > 0 && canvas.width === 0) {
+          const ctx = canvas.getContext('2d');
+          canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+          ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+      });
+    }, 100);
+  }
+
+  // Hide Current Level field in Desktop mode
+  const levelRow = document.getElementById('tankLevelRow');
+  if (levelRow) {
+    const currentLevelGroup = levelRow.querySelector('#currentLevel')?.closest('.field-group');
+    if (currentLevelGroup) currentLevelGroup.style.display = type === 'offsite' ? 'none' : '';
+  }
 
   // Update PDF audit type label
   window._auditType = type;
@@ -2869,7 +2899,7 @@ function applyAuditType(type) {
   if (type === 'full') {
     showToast('📋 Full Onsite Audit — all sections shown');
   } else {
-    showToast('🚛 Interim Desktop Audit — sections 1, 2, 4 & 8 shown');
+    showToast('🚛 Interim Desktop Audit — sections 1, 2, 4, 8 & 9 shown');
   }
 }
 
@@ -3057,7 +3087,7 @@ function autoFillCustomer(siteNum) {
 
 function clearCustomerFields() {
   ['siteAddress','suburb','postcode','siteContact','siteContactTitle','siteEmail',
-   'siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem',
+   'siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem','dipSystemOther',
    'siteNumber','siteNetwork'].forEach(id => setField(id, ''));
   document.getElementById('state').selectedIndex = 0;
   document.getElementById('tankOwner').selectedIndex = 0;
@@ -3071,6 +3101,25 @@ function setField(id, value) {
 }
 
 // =====================================================================
+function toggleDipOther(val) {
+  const other = document.getElementById('dipSystemOther');
+  if (other) other.style.display = val === 'Other' ? 'block' : 'none';
+  updateFieldStates();
+}
+
+function updateDipValue() {
+  updateFieldStates();
+}
+
+function getDipValue() {
+  const sel = document.getElementById('dipSystem');
+  if (sel.value === 'Other') {
+    const other = document.getElementById('dipSystemOther')?.value.trim();
+    return other ? 'Other: ' + other : 'Other';
+  }
+  return sel.value;
+}
+
 function toggleTankTypeOther(val) {
   const otherField = document.getElementById('tankTypeOther');
   if (val === 'Other') {
@@ -4875,6 +4924,7 @@ function clearForm() {
   // Reset tank volume
   document.getElementById('tankVolumeSelect').selectedIndex = 0;
   document.getElementById('tankTypeOther').style.display = 'none';
+  document.getElementById('dipSystemOther').style.display = 'none';
   document.getElementById('tankVolume').style.display = 'none';
   document.getElementById('tankVolume').value = '';
 
