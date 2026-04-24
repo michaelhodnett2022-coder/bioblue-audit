@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ&libraries=places" async defer></script>
 
 <style>
   :root {
@@ -1524,6 +1525,7 @@
         </div>
       </div>
 
+      <div id="section3Block">
       <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
         <div class="section-header-icon">🌿</div>
         <div class="section-header-text">
@@ -1532,6 +1534,7 @@
         </div>
       </div>
       <div id="yn-b3" class="yn-group"></div>
+      </div>
 
     </div>
   </div>
@@ -1662,6 +1665,7 @@
       <div id="yn-c1" class="yn-group"></div>
       </div>
 
+      <div id="section6Block">
       <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
         <div class="section-header-icon">✅</div>
         <div class="section-header-text">
@@ -1680,6 +1684,7 @@
         <sup>1</sup> AdBlue®-compatible materials include stainless steel 316L or high-density polyethylene (HDPE).<br>
         <sup>2</sup> Or any other AdBlue® non-compatible materials according to ISO-22241. See Safety Data Sheet.<br>
         <sup>3</sup> ISO-22241 compliant cleaning procedures must be completed and documented before first-fill.
+      </div>
       </div>
     </div>
   </div>
@@ -2893,9 +2898,11 @@ function applyAuditType(type) {
     const currentLevelGroup = levelRow.querySelector('#currentLevel')?.closest('.field-group');
     if (currentLevelGroup) currentLevelGroup.style.display = type === 'offsite' ? 'none' : '';
   }
-  // Hide Section 5 (Fill Point & Access Checks) in Desktop mode
-  const s5 = document.getElementById('section5Block');
-  if (s5) s5.style.display = type === 'offsite' ? 'none' : '';
+  // Hide Sections 3, 5, 6 in Desktop mode
+  ['section3Block','section5Block','section6Block'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = type === 'offsite' ? 'none' : '';
+  });
 
   // Update PDF audit type label
   window._auditType = type;
@@ -3267,6 +3274,9 @@ async function correctImageRotation(dataUrl, targetW, targetH) {
     img.src = dataUrl;
   });
 }
+
+// Alias for backwards compatibility
+const correctImageOrientation = correctImageRotation;
 
 function getExifOrientation(dataUrl, callback) {
   // Extract EXIF orientation byte from JPEG binary
