@@ -1271,13 +1271,58 @@
         <option value="new" style="color:#333;background:white;">✏️ New / Unlisted Customer...</option>
       </select>
       <div id="newCustomerField" style="display:none;margin-top:8px;">
-        <input type="text" id="customerName" placeholder="Enter customer / business name" oninput="updateProgress()" style="
-          width:100%;padding:12px 14px;border-radius:10px;
-          border:2px solid rgba(255,255,255,0.3);
-          background:rgba(255,255,255,0.92);
-          color:#1a1a2e;font-size:15px;
-          box-sizing:border-box;
-        ">
+        <div style="background:rgba(255,255,255,0.92);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:11px;font-weight:700;color:#003466;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid #cce0ff;padding-bottom:6px;">
+            New Customer — BioBlue Naming Convention
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Customer Billing Entity <span style="color:#c0392b;">*</span></label>
+            <input type="text" id="newBillingEntity" placeholder="Who BioBlue invoices e.g. Wickhams" oninput="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;width:100%;box-sizing:border-box;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Site Location Name / End User Name <span style="color:#c0392b;">*</span></label>
+            <input type="text" id="newSiteName" placeholder="e.g. Warwick or Wishart Rd Store" oninput="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;width:100%;box-sizing:border-box;">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Descriptor <span style="color:#c0392b;">*</span></label>
+              <select id="newDescriptor" onchange="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;-webkit-appearance:none;">
+                <option value="">Select...</option>
+                <option value="Depot">Depot</option>
+                <option value="Service Station">Service Station</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Terminal">Terminal</option>
+                <option value="Warehouse">Warehouse</option>
+                <option value="Farm">Farm</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">State <span style="color:#c0392b;">*</span></label>
+              <select id="newState" onchange="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;-webkit-appearance:none;">
+                <option value="">Select...</option>
+                <option value="WA">WA</option>
+                <option value="NT">NT</option>
+                <option value="QLD">QLD</option>
+                <option value="NSW">NSW</option>
+                <option value="VIC">VIC</option>
+                <option value="SA">SA</option>
+                <option value="TAS">TAS</option>
+                <option value="ACT">ACT</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Suburb <span style="color:#c0392b;">*</span></label>
+            <input type="text" id="newSuburb" placeholder="e.g. Warwick" oninput="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;width:100%;box-sizing:border-box;">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Generated Site Name (locked)</label>
+            <div id="generatedNameDisplay" style="padding:10px 12px;border-radius:8px;border:1.5px solid #6dba8a;background:#f2fbf5;font-size:14px;font-weight:600;color:#003466;min-height:42px;display:flex;align-items:center;">
+              <span id="generatedNameText" style="color:#aaa;font-style:italic;">Fill fields above to generate name...</span>
+            </div>
+            <input type="hidden" id="customerName">
+          </div>
+        </div>
       </div>
       <input type="hidden" id="customerNameHidden">
     </div>
@@ -1417,8 +1462,8 @@
           <input type="text" id="siteContact" placeholder="Full name">
         </div>
         <div class="field-group">
-          <label class="field-label">Title / Role</label>
-          <input type="text" id="siteContactTitle" placeholder="e.g. Site Manager">
+          <label class="field-label">Mobile</label>
+          <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
         </div>
       </div>
       <div class="field-row">
@@ -1427,8 +1472,8 @@
           <input type="email" id="siteEmail" placeholder="contact@company.com">
         </div>
         <div class="field-group">
-          <label class="field-label">Mobile</label>
-          <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
+          <label class="field-label">Title / Role</label>
+          <input type="text" id="siteContactTitle" placeholder="e.g. Site Manager">
         </div>
       </div>
 
@@ -1448,7 +1493,7 @@
     <div class="section-body" id="sectionB">
 
 
-      <div class="field-row">
+      <div class="field-row" style="align-items:flex-start;">
         <div class="field-group">
           <label class="field-label">Access Hours / Restrictions</label>
           <div class="time-picker-wrap">
@@ -1501,6 +1546,15 @@
       </div>
 
       <div id="yn-b2" class="yn-group"></div>
+      <div id="inductionField" style="display:none;">
+        <div class="inline-details-field">
+          <div class="inline-details-arrow">↳</div>
+          <div class="inline-details-content">
+            <label class="field-label">If Yes — provide induction / sign-in details</label>
+            <input type="text" id="inductionDetails" placeholder="e.g. Contact Joe on 5378 0294 for instructions">
+          </div>
+        </div>
+      </div>
       <div id="ppeField" style="display:none;">
         <div class="inline-details-field">
           <div class="inline-details-arrow">↳</div>
@@ -1576,10 +1630,14 @@
           <label class="field-label">Tank Type</label>
           <select id="tankType" onchange="toggleTankTypeOther(this.value)">
             <option value="">Select...</option>
-            <option value="Poly Slim">Poly Slim</option>
-            <option value="Poly Round">Poly Round</option>
-            <option value="In Ground">In Ground</option>
-            <option value="Cabinet Type">Cabinet Type</option>
+            <option value="Poly Round Single Skin">Poly Round Single Skin</option>
+            <option value="Poly Slimline Single Skin">Poly Slimline Single Skin</option>
+            <option value="Poly Round Bunded">Poly Round Bunded</option>
+            <option value="Poly Slimline Bunded">Poly Slimline Bunded</option>
+            <option value="Container/Split compartment (Combi tank)">Container/Split compartment (Combi tank)</option>
+            <option value="Container tank">Container tank</option>
+            <option value="Underground">Underground</option>
+            <option value="IBC">IBC</option>
             <option value="Other">Other — please state</option>
           </select>
           <input type="text" id="tankTypeOther" placeholder="Describe tank type..." style="display:none;margin-top:8px;" oninput="updateTankTypeValue()">
@@ -1590,12 +1648,12 @@
           <label class="field-label">Tank Volume (L)</label>
           <select id="tankVolumeSelect" onchange="toggleTankVolumeOther(this.value)">
             <option value="">Select...</option>
+            <option value="1000">1,000L</option>
             <option value="2500">2,500L</option>
+            <option value="3000">3,000L</option>
             <option value="5000">5,000L</option>
             <option value="10000">10,000L</option>
             <option value="20000">20,000L</option>
-            <option value="20600">20,600L</option>
-            <option value="22800">22,800L</option>
             <option value="other">Other — please state</option>
           </select>
           <input type="number" id="tankVolume" placeholder="Enter volume in litres..." style="display:none; margin-top:8px;">
@@ -1614,19 +1672,16 @@
           <label class="field-label">Fill Point Connection Type</label>
           <select id="fillConnType">
             <option value="">Select...</option>
-            <option value="2&quot; Camlock">2" Camlock</option>
-            <option value="2&quot; Dry Break">2" Dry Break</option>
-            <option value="3&quot; Camlock">3" Camlock</option>
-            <option value="3&quot; Dry Break">3" Dry Break</option>
-            <option value="Other">Other</option>
+            <option value="Camlock">Camlock</option>
+            <option value="Dry Break">Dry Break</option>
           </select>
         </div>
         <div class="field-group">
           <label class="field-label">Fill Point Connection Size</label>
           <select id="fillConnSize">
             <option value="">Select...</option>
-            <option value='2"'>2"</option>
-            <option value='3"'>3"</option>
+            <option value="2 inch">2 inch</option>
+            <option value="3 inch">3 inch</option>
           </select>
         </div>
       </div>
@@ -1637,7 +1692,7 @@
             <option value="">Select...</option>
             <option value="Liquidator Slide">Liquidator Slide</option>
             <option value="Sight Tube">Sight Tube</option>
-            <option value="Electronic Occio Screen (or similar)">Electronic Occio Screen (or similar)</option>
+            <option value="Digital Gauge">Digital Gauge</option>
             <option value="Behind the counter in shop printout">Behind the counter in shop printout</option>
             <option value="N/A">N/A</option>
             <option value="Other">Other — please state</option>
@@ -2018,15 +2073,15 @@ function getCustomerName() {
 
 const ynQuestions = {
   'b1': [
-    { id: 'truckAccess',   num: 1,  text: 'Is truck access to/from the customer site free of obstruction?' },
-    { id: 'overheadWires', num: 2,  text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
-    { id: 'manoeuvre',     num: 3,  text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
-    { id: 'noReverse',     num: 4,  text: 'Can vehicle be manoeuvred without reversing into or on premises?' },
-    { id: 'parkingMarked', num: 5,  text: 'Parking and unloading areas are clearly marked or communicated.' },
-    { id: 'gateAccess',    num: 6,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
+    { id: 'gateAccess',    num: 1,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
+    { id: 'truckAccess',   num: 2,  text: 'Is truck access to/from the customer site free of obstruction?' },
+    { id: 'overheadWires', num: 3,  text: 'Are there any overhead wires obstructing delivery zone or site entrance/thoroughfare?', reverseColor: true },
+    { id: 'manoeuvre',     num: 4,  text: 'Is there adequate room within site to manoeuvre vehicle safely?' },
+    { id: 'noReverse',     num: 5,  text: 'Can vehicle be manoeuvred without reversing into or on premises?' },
+    { id: 'parkingMarked', num: 6,  text: 'Parking and unloading areas are clearly marked or communicated.' },
   ],
   'b2': [
-    { id: 'siteInduction',    num: 7,  text: 'Is a site-specific induction or sign-in process required? (if YES, include details in Notes)', scoreNeutral: true, reverseColor: true, solidColor: true },
+    { id: 'siteInduction',    num: 7,  text: 'Is a site-specific induction or sign-in process required?', triggerField: 'inductionField', scoreNeutral: true, reverseColor: true, solidColor: true },
     { id: 'pedestrianAccess', num: 8,  text: 'Is there safe pedestrian access to the tank fill point(s) to undertake delivery?' },
     { id: 'hazardFree',       num: 9,  text: 'Is the delivery area/zone free of hazards or obstacles?' },
     { id: 'lighting',         num: 10, text: 'Is adequate lighting provided for early morning or evening deliveries?' },
@@ -2762,7 +2817,8 @@ function collectFormData() {
     accessRestrictions: get('accessRestrictions'),
     open24hrs: document.getElementById('open24hrs')?.checked,
     maxVehicle: get('maxVehicle'),
-    keyCode: get('keyCode'),
+    keyCode: get('keyCode','inductionDetails'),
+    inductionDetails: get('inductionDetails'),
     ppeDetails: get('ppeDetails'),
     // C
     tankId: get('tankId'),
@@ -3047,7 +3103,7 @@ function autoFillCustomer(siteNum) {
 
   // Section C — tank details
   const volSelect = document.getElementById('tankVolumeSelect');
-  const volOptions = ['2500','5000','10000','20000','20600','22800'];
+  const volOptions = ['1000','2500','3000','5000','10000','20000'];
   if (volOptions.includes(c.tankVolume)) {
     for (let i = 0; i < volSelect.options.length; i++) {
       if (volSelect.options[i].value === c.tankVolume) { volSelect.selectedIndex = i; break; }
@@ -3113,6 +3169,42 @@ function setField(id, value) {
 }
 
 // =====================================================================
+function buildCustomerName() {
+  const entity   = (document.getElementById('newBillingEntity')?.value || '').trim();
+  const siteName = (document.getElementById('newSiteName')?.value || '').trim();
+  const desc     = (document.getElementById('newDescriptor')?.value || '').trim();
+  const suburb   = (document.getElementById('newSuburb')?.value || '').trim();
+  const state    = (document.getElementById('newState')?.value || '').trim();
+
+  const textEl   = document.getElementById('generatedNameText');
+  const hiddenEl = document.getElementById('customerName');
+  const hiddenEl2 = document.getElementById('customerNameHidden');
+
+  if (!entity || !siteName || !desc || !suburb || !state) {
+    if (textEl) { textEl.textContent = 'Fill all fields above to generate name...'; textEl.style.color='#aaa'; textEl.style.fontStyle='italic'; }
+    if (hiddenEl) hiddenEl.value = '';
+    if (hiddenEl2) hiddenEl2.value = '';
+    updateProgress();
+    return;
+  }
+
+  const generated = `${entity} - ${siteName} ${desc} (${suburb}, ${state})`;
+  if (textEl) { textEl.textContent = generated; textEl.style.color='#003466'; textEl.style.fontStyle='normal'; }
+  if (hiddenEl) hiddenEl.value = generated;
+  if (hiddenEl2) hiddenEl2.value = generated;
+
+  // Also auto-populate suburb and state in Section A if empty
+  const suburbEl = document.getElementById('suburb');
+  const stateEl  = document.getElementById('state');
+  if (suburbEl && !suburbEl.value) suburbEl.value = suburb;
+  if (stateEl && !stateEl.value) {
+    for (let i = 0; i < stateEl.options.length; i++) {
+      if (stateEl.options[i].value === state) { stateEl.selectedIndex = i; break; }
+    }
+  }
+  updateProgress();
+}
+
 function toggleDipOther(val) {
   const other = document.getElementById('dipSystemOther');
   if (other) other.style.display = val === 'Other' ? 'block' : 'none';
@@ -4926,6 +5018,10 @@ function clearForm() {
   custEl.style.borderColor = '';
   custEl.style.background  = 'rgba(255,255,255,0.92)';
   document.getElementById('newCustomerField').style.display = 'none';
+  ['newBillingEntity','newSiteName','newSuburb'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const nd=document.getElementById('newDescriptor'); if(nd) nd.selectedIndex=0;
+  const ns=document.getElementById('newState'); if(ns) ns.selectedIndex=0;
+  const gt=document.getElementById('generatedNameText'); if(gt){ gt.textContent='Fill fields above to generate name...'; gt.style.color='#aaa'; gt.style.fontStyle='italic'; }
   document.getElementById('customerNameHidden').value = '';
   // Hide green tick confirmation banner — force hide both ways
   const confirmedBanner = document.getElementById('customerConfirmed');
