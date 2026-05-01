@@ -4071,6 +4071,7 @@ async function fillTestData() {
 // COMBINED SAVE & SEND
 // =====================================================================
 
+let osmTimer = null;
 function osmAutocomplete(input, dropdownId) {
   const q = input.value.trim();
   const dropdown = document.getElementById(dropdownId);
@@ -5194,9 +5195,7 @@ function clearMudmap() {
   mudmapHistory = [];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   arrowFirstTap = null;
-  // Redraw address pin after clear
-  if (mudmapCurrentLat !== null) drawAddressPin();
-  showToast('🗺️ Drawing cleared — address pin restored');
+  showToast('🗺️ Drawing cleared');
 }
 
 function resetMudmapFull() {
@@ -5361,7 +5360,6 @@ function renderOSMTile(lat, lon, zoom, w, h) {
         loaded++;
         if (loaded === total) {
           showToast('🗺️ Satellite loaded — pan freely then draw');
-          drawAddressPin();
         }
       };
       // *** GOOGLE SATELLITE TILES ONLY — DO NOT CHANGE TO ARCGIS ***
@@ -5373,57 +5371,6 @@ function renderOSMTile(lat, lon, zoom, w, h) {
   }
 }
 
-function drawAddressPin() {
-  const canvas = document.getElementById('mudmapCanvas');
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-
-  // Pin sits at the centre of the viewport (geocoded address location)
-  const wrap = document.getElementById('mudmapWrap');
-  const cx = (wrap.offsetWidth  / 2) * dpr;
-  const cy = (wrap.offsetWidth / 2) * dpr;
-
-  const r = 14 * dpr;  // pin circle radius
-  const pinH = r * 2.2; // total drop height below circle centre
-
-  ctx.save();
-
-  // Drop shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.4)';
-  ctx.shadowBlur  = 6 * dpr;
-  ctx.shadowOffsetX = 2 * dpr;
-  ctx.shadowOffsetY = 3 * dpr;
-
-  // Teardrop body
-  ctx.beginPath();
-  ctx.arc(cx, cy - r * 0.3, r, Math.PI * 1.15, Math.PI * 1.85, false);
-  ctx.bezierCurveTo(
-    cx + r, cy - r * 0.3 + r * 1.1,
-    cx + r * 0.3, cy + pinH * 0.6,
-    cx, cy + pinH
-  );
-  ctx.bezierCurveTo(
-    cx - r * 0.3, cy + pinH * 0.6,
-    cx - r, cy - r * 0.3 + r * 1.1,
-    cx - r, cy - r * 0.3
-  );
-  ctx.closePath();
-  ctx.fillStyle = '#E53935';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.lineWidth = 1.5 * dpr;
-  ctx.stroke();
-
-  ctx.shadowColor = 'transparent';
-
-  // Inner white circle
-  ctx.beginPath();
-  ctx.arc(cx, cy - r * 0.3, r * 0.45, 0, Math.PI * 2);
-  ctx.fillStyle = 'white';
-  ctx.fill();
-
-  ctx.restore();
-}
 
 function getMudmapDataUrl() {
   const drawCanvas = document.getElementById('mudmapCanvas');
