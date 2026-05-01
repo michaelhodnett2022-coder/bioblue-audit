@@ -5550,7 +5550,7 @@ function renderOSMTile(lat, lon, zoom, w, h) {
   const tileSize = 256;
 
   // Load a 7×7 tile grid — gives ~3 tiles of pan room in each direction
-  const PAD = 3;
+  const PAD = 6;
   const tilesX = Math.ceil(w / tileSize) + PAD * 2;
   const tilesY = Math.ceil(h / tileSize) + PAD * 2;
   const totalW = tilesX * tileSize;
@@ -5634,7 +5634,7 @@ function getMudmapDataUrl() {
 
   const wrap = document.getElementById('mudmapWrap');
   const w = wrap.offsetWidth;
-  const h = document.getElementById('mudmapWrap')?.offsetWidth || 400;
+  const h = w; // square
 
   const out = document.createElement('canvas');
   out.width  = w * 2;
@@ -5642,22 +5642,33 @@ function getMudmapDataUrl() {
   const ctx = out.getContext('2d');
   ctx.scale(2, 2);
 
-  // Fill with dark map background colour as fallback
+  // Fill background
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, w, h);
 
-  // Composite tile canvas — account for its CSS position (left/top) and user pan offset
+  // Composite tile canvas using EXACT same positioning as what user sees on screen.
+  // The tile canvas is positioned via style.left/top (base offset from renderOSMTile)
+  // AND via CSS transform: translate(tileOffsetX, tileOffsetY) from panning.
+  // Both must be applied to get the correct visible region.
   if (tileCanvas && tileCanvas.width > 0) {
-    const baseLeft = parseInt(tileCanvas.style.left) || 0;
-    const baseTop  = parseInt(tileCanvas.style.top)  || 0;
-    const totalLeft = baseLeft + tileOffsetX;
-    const totalTop  = baseTop  + tileOffsetY;
-    ctx.drawImage(tileCanvas, totalLeft, totalTop, tileCanvas.width, tileCanvas.height);
+    const baseLeft = parseFloat(tileCanvas.style.left) || 0;
+    const baseTop  = parseFloat(tileCanvas.style.top)  || 0;
+    // tileOffsetX/Y track the cumulative pan via CSS transform
+    const finalLeft = baseLeft + tileOffsetX;
+    const finalTop  = baseTop  + tileOffsetY;
+    // Draw the tile canvas at its actual screen position
+    // tileCanvas dimensions are in physical pixels (set as tc.width = totalW)
+    // but we draw into CSS pixel space (ctx scaled to 2x for quality)
+    ctx.drawImage(tileCanvas,
+      0, 0, tileCanvas.width, tileCanvas.height,
+      finalLeft, finalTop, tileCanvas.width, tileCanvas.height);
   }
 
-  // Draw annotations scaled down from DPR canvas to CSS pixel space
-  const dpr = window.devicePixelRatio || 1;
-  ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, 0, 0, w, h);
+  // Draw annotations — drawCanvas is DPR-scaled, map back to CSS pixels
+  ctx.drawImage(drawCanvas,
+    0, 0, drawCanvas.width, drawCanvas.height,
+    0, 0, w, h);
+
   return out.toDataURL('image/jpeg', 0.9);
 }
 
