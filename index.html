@@ -3712,16 +3712,14 @@ async function generatePDF(returnDoc=false) {
   doc.text(notesLines, margin+3, y+5);
   y += notesH + 6;
 
-  // ---- SECTION 8: MUD MAP ----
-  checkPage(20);
+  // ---- SECTION 8: MUD MAP — always on its own fresh page ----
+  doc.addPage();
+  y = margin;
   sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
-    // Use contentW for square — 194mm was too tall and got clipped on A4
-    const mapMargin = margin;
     const mapW = contentW;
-    const mapH = contentW; // perfect square, fits A4 with room for header + caption
-    checkPage(mapH + 12);
+    const mapH = contentW; // square
     try {
       doc.addImage(mudmapData, 'JPEG', margin, y, mapW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
