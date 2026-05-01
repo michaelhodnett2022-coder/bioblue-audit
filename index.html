@@ -3715,14 +3715,10 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION E: MUD MAP ----
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
-    // Capture exact on-screen dimensions to preserve aspect ratio — no cropping
-    const mudmapWrapEl = document.getElementById('mudmapWrap');
-    const screenW = mudmapWrapEl ? mudmapWrapEl.offsetWidth  : 400;
-    const screenH = mudmapWrapEl ? mudmapWrapEl.offsetHeight : 400;
-    const screenRatio = screenH / screenW;
+    // Map is always square on screen (aspect-ratio:1/1 CSS)
     const mapMargin = 8;
     const mapW = pageW - mapMargin * 2;
-    const mapH = Math.round(mapW * screenRatio);
+    const mapH = mapW; // perfect square — matches screen aspect-ratio:1/1
     checkPage(mapH + 20);
     sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
     try {
@@ -4059,61 +4055,42 @@ async function fillTestData() {
 // =====================================================================
 // COMBINED SAVE & SEND
 // =====================================================================
-async function downloadPDFOnly() {
-  showToast('⏳ Generating PDF...');
-  try {
-    const doc = await generatePDF(true);
-    const d = collectFormData();
-    const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
 
-    const pdfBlob = doc.output('blob');
-
-    // iOS Safari: window.open with blob URL is most reliable
-    const url = URL.createObjectURL(pdfBlob);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      // On iOS open in new tab — user taps Share → Save to Files
-      window.open(url, '_blank');
-      showToast('✅ PDF opened — tap Share → Save to Files');
-    } else {
-      // Desktop/Android: use anchor download
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fname;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('✅ PDF downloaded');
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  } catch(e) {
-    showToast('❌ Could not generate PDF: ' + e.message);
-  }
-}
-
-// =====================================================================
-// OSM NOMINATIM ADDRESS AUTOCOMPLETE
-// =====================================================================
-let osmTimer = null;
 function osmAutocomplete(input, dropdownId) {
   const q = input.value.trim();
   const dropdown = document.getElementById(dropdownId);
   if (q.length < 4) { dropdown.style.display = 'none'; return; }
   clearTimeout(osmTimer);
+  // Extract leading house number from query to prepend back to results
+  const houseMatch = q.match(/^(\d+[a-zA-Z]?)\s+/);
+  const typedHouseNum = houseMatch ? houseMatch[1] : null;
+
   osmTimer = setTimeout(async () => {
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=au&format=json&addressdetails=1&limit=6`;
       const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
       const data = await res.json();
       if (!data.length) { dropdown.style.display = 'none'; return; }
-      dropdown.innerHTML = data.map((r, i) => `
+      // Deduplicate by display_name before rendering
+      // If user typed a house number, prepend it to results that don't include it
+      if (typedHouseNum) {
+        data.forEach(r => {
+          if (!r.display_name.startsWith(typedHouseNum)) {
+            r.display_name = typedHouseNum + ' ' + r.display_name;
+          }
+        });
+      }
+      const unique = data.filter((r, i, arr) =>
+        arr.findIndex(x => x.display_name === r.display_name) === i
+      );
+      dropdown.innerHTML = unique.map((r, i) => `
         <div onclick="osmSelect(${i},'${dropdownId}')" data-idx="${i}"
           style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333;"
           onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
           📍 ${r.display_name}
         </div>
       `).join('');
-      dropdown._results = data;
+      dropdown._results = unique;
       dropdown.style.display = 'block';
     } catch(e) { dropdown.style.display = 'none'; }
   }, 350);
@@ -4126,7 +4103,7 @@ function osmSelect(idx, dropdownId) {
   const a = r.address || {};
   dropdown.style.display = 'none';
 
-  // If selected from mud map field — just fill that field and return
+  // If selected from mud map field — fill field then auto-load map
   if (dropdownId === 'mudmapAddrSuggestions') {
     const mapField = document.getElementById('mudmapAddress');
     if (mapField) {
@@ -4134,6 +4111,8 @@ function osmSelect(idx, dropdownId) {
       mapField.value = street
         ? [street, a.suburb||a.city||a.town||'', a.state||''].filter(Boolean).join(', ')
         : r.display_name.split(',').slice(0,3).join(',');
+      // Auto-trigger map load after short delay
+      setTimeout(() => loadMudmapSatellite(), 200);
     }
     return;
   }
@@ -4353,7 +4332,6 @@ async function uploadAndSend() {
     showToast('📊 Updating audit log...');
     try {
       await appendToAuditLog(xlFolderId, d);
-      console.log('✓ Audit log updated');
     } catch(logErr) {
       console.error('Audit log update failed:', logErr);
       showToast('⚠️ Log update failed: ' + logErr.message, 4000);
@@ -4606,316 +4584,10 @@ const GDRIVE_CLIENT_ID   = '49055725643-mlnqu8l92vmau83rnrk8imupiqvs03t1.apps.go
 const GDRIVE_FOLDER_NAME = 'BioBlue Audits';
 let gdriveToken = null;
 
-function uploadToDrive() {
-  if (gdriveToken) {
-    doUploadToDrive();
-  } else {
-    // Trigger Google Sign-In
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: GDRIVE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: (response) => {
-        if (response.access_token) {
-          gdriveToken = response.access_token;
-          doUploadToDrive();
-        } else {
-          showToast('❌ Google sign-in failed');
-        }
-      },
-    });
-    client.requestAccessToken();
-  }
-}
 
-async function doUploadToDrive() {
-  showToast('⏳ Generating PDF for Drive...');
-  try {
-    const doc = await generatePDF(true);
-    const d = collectFormData();
-    const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_') || 'Draft'}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
-    const pdfBlob = doc.output('blob');
 
-    showToast('☁️ Uploading to Google Drive...');
+async function saveAndSend() { return uploadAndSend(); }
 
-    // Find or create BioBlue Audits folder
-    const folderRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
-      { headers: { Authorization: `Bearer ${gdriveToken}` } }
-    );
-    const folderData = await folderRes.json();
-    let folderId;
-
-    if (folderData.files && folderData.files.length > 0) {
-      folderId = folderData.files[0].id;
-    } else {
-      // Create the folder
-      const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
-      });
-      const created = await createRes.json();
-      folderId = created.id;
-    }
-
-    // Upload PDF to folder
-    const metadata = { name: fname, parents: [folderId] };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', pdfBlob, fname);
-
-    const uploadRes = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
-      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
-    );
-    const uploaded = await uploadRes.json();
-
-    if (uploaded.id) {
-      showToast('✅ PDF saved to Google Drive!');
-      document.getElementById('modalMsg').textContent =
-        `✅ PDF uploaded to Google Drive!\n\nFolder: ${GDRIVE_FOLDER_NAME}\nFile: ${fname}\n\nView it at:\n${uploaded.webViewLink || 'Google Drive → BioBlue Audits'}`;
-      document.getElementById('submitModal').classList.add('active');
-    } else {
-      throw new Error(JSON.stringify(uploaded));
-    }
-  } catch(e) {
-    showToast('❌ Drive upload failed: ' + e.message);
-    console.error('Drive upload error:', e);
-    // Token may have expired — reset so next click re-auths
-    if (e.message.includes('401') || e.message.includes('auth')) gdriveToken = null;
-  }
-}
-
-async function saveAndSend() {
-  // Clear any previous error states
-  document.querySelectorAll('.field-error').forEach(el => el.classList.remove('field-error'));
-  document.querySelectorAll('.field-error-msg').forEach(el => el.remove());
-
-  // Validate required fields
-  const allQs = Object.values(ynQuestions).flat();
-  // Only C2 failures make corrective actions mandatory
-  const c2Qs = ynQuestions['c2'] || [];
-  const hasC2Failure = c2Qs.some(q => {
-    const val = ynValues[q.id];
-    if (!val || val === 'NA') return false;
-    return q.reverseColor ? val === 'Y' : val === 'N';
-  });
-
-  const validationRules = [
-    { id: 'customerSelect', check: () => getCustomerName().trim() !== '', label: 'Customer / Business Name', section: 'sectionA' },
-    { id: 'siteAddress',    check: () => document.getElementById('siteAddress').value.trim() !== '', label: 'Delivery Site Address', section: 'sectionA' },
-    { id: 'auditDate',      check: () => document.getElementById('auditDate').value.trim() !== '', label: 'Date of Audit', section: 'sectionA' },
-    { id: 'auditorName',    check: () => document.getElementById('auditorName').value.trim() !== '', label: 'Auditor Name', section: 'sectionF' },
-    ...(hasC2Failure ? [{ id: 'correctiveActions', check: () => document.getElementById('correctiveActions').value.trim() !== '', label: 'Corrective Actions (required for C.2 failures)', section: 'sectionD' }] : []),
-  ];
-
-  const errors = validationRules.filter(r => !r.check());
-
-  if (errors.length > 0) {
-    errors.forEach(e => {
-      const section = document.getElementById(e.section);
-      if (section && section.style.display === 'none') {
-        section.style.display = 'block';
-        const key = e.section.replace('section','');
-        const toggle = document.getElementById('toggle' + key);
-        if (toggle) toggle.textContent = '▲';
-      }
-      const el = document.getElementById(e.id);
-      if (el) {
-        el.classList.add('field-error');
-        const msg = document.createElement('div');
-        msg.className = 'field-error-msg';
-        msg.textContent = `⚠️ ${e.label} is required`;
-        el.parentNode.insertBefore(msg, el.nextSibling);
-        ['input','change'].forEach(evt => el.addEventListener(evt, () => {
-          el.classList.remove('field-error');
-          if (msg.parentNode) msg.remove();
-        }, { once: true }));
-      }
-    });
-    const firstError = document.getElementById(errors[0].id);
-    if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    showToast(`⚠️ Please complete ${errors.length} required field${errors.length > 1 ? 's' : ''} highlighted in red`);
-    return;
-  }
-
-  const d = collectFormData();
-  const safeName = d.customerName.replace(/[^a-zA-Z0-9]/g,'_');
-  const safeDate = d.auditDate || new Date().toISOString().split('T')[0];
-  const baseName = `BioBlue_Site_Audit_${safeName}_${safeDate}`;
-
-  // 1. Generate PDF
-  showToast('⏳ Generating PDF...');
-  const pdfDoc = await generatePDF(true);
-  const pdfBlobMain = pdfDoc.output('blob');
-
-  // 2. Download PDF and Excel to device as backup using blob URL (iOS safe)
-  const pdfUrl2  = URL.createObjectURL(pdfBlobMain);
-  const dlA = document.createElement('a');
-  dlA.href = pdfUrl2; dlA.download = baseName + '.pdf'; dlA.target = '_blank';
-  document.body.appendChild(dlA); dlA.click(); document.body.removeChild(dlA);
-  setTimeout(() => URL.revokeObjectURL(pdfUrl2), 5000);
-  await new Promise(r => setTimeout(r, 500));
-  exportExcel(true);
-  await new Promise(r => setTimeout(r, 500));
-
-  // 3. Upload to Google Drive automatically
-  let driveLink = null;
-  try {
-    showToast('☁️ Uploading to Google Drive...');
-
-    // Auth — request token if not already signed in
-    if (!gdriveToken) {
-      await new Promise((resolve, reject) => {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: GDRIVE_CLIENT_ID,
-          scope: 'https://www.googleapis.com/auth/drive.file',
-          callback: (response) => {
-            if (response.access_token) { gdriveToken = response.access_token; resolve(); }
-            else reject(new Error('Google sign-in cancelled'));
-          },
-        });
-        client.requestAccessToken();
-      });
-    }
-
-    // Find or create BioBlue Audits folder
-    const folderRes = await fetch(
-      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
-      { headers: { Authorization: `Bearer ${gdriveToken}` } }
-    );
-    const folderData = await folderRes.json();
-    let folderId;
-    if (folderData.files && folderData.files.length > 0) {
-      folderId = folderData.files[0].id;
-    } else {
-      const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${gdriveToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: GDRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
-      });
-      folderId = (await cr.json()).id;
-    }
-
-    // Upload PDF
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify({ name: baseName + '.pdf', parents: [folderId] })], { type: 'application/json' }));
-    form.append('file', pdfBlobMain, baseName + '.pdf');
-    const upRes = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
-      { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
-    );
-    const uploaded = await upRes.json();
-    if (uploaded.id) {
-      driveLink = uploaded.webViewLink;
-      showToast('✅ PDF saved to Google Drive!');
-    }
-  } catch(driveErr) {
-    console.warn('Drive upload skipped:', driveErr.message);
-    showToast('⚠️ Drive upload skipped — continuing...');
-    await new Promise(r => setTimeout(r, 1000));
-  }
-
-  // 4. Send via EmailJS — text notification
-  showToast('📧 Sending email notification...');
-  try {
-    if (typeof emailjs === 'undefined') throw new Error('EmailJS not loaded');
-
-    const allQs = Object.entries(ynQuestions).flatMap(([s,qs]) => qs.map(q=>({...q,section:s})));
-    const failures = allQs.filter(q => {
-      const val = ynValues[q.id];
-      if (!val || val === 'NA' || q.scoreNeutral) return false;
-      return q.reverseColor ? val === 'Y' : val === 'N';
-    });
-    const failureList = failures.length > 0
-      ? failures.map(q => `  • Q${q.num}: ${q.text.replace(/<[^>]+>/g,'')}`).join('\n')
-      : '  None — all items passed.';
-
-    const templateParams = {
-      to_email:       d.emailTo || 'michael.hodnett@bioblue.com.au',
-      reply_to:       'michaelhodnett2022@gmail.com',
-      customer_name:  d.customerName,
-      audit_date:     d.auditDate,
-      address:        [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '),
-      auditor_name:   d.auditorName || 'Michael Hodnett',
-      site_number:    d.siteNumber || '—',
-      audit_score:    `${document.getElementById('auditScorePct')?.textContent || '—'}`,
-      photo_count:    `${photos.length} photo(s) attached to PDF`,
-      failures:       failureList,
-      corrective_actions: d.correctiveActions || 'None noted.',
-      message:        driveLink
-        ? `PDF uploaded to Google Drive: ${driveLink}`
-        : `PDF saved to auditor device. No Drive link available.`,
-    };
-
-    const response = await emailjs.send('service_f0s6xv5', 'template_9wr2vra', templateParams);
-    console.log('EmailJS success:', response);
-    try { localStorage.setItem('bioblue_last_submission', JSON.stringify(d)); } catch(e) {}
-
-    document.getElementById('modalMsg').textContent =
-      `✅ Audit submitted successfully!\n\n📄 PDF saved to device\n☁️ PDF uploaded to Google Drive\n📧 Email notification sent\n\n${driveLink ? 'Drive: ' + driveLink : ''}`;
-    document.getElementById('submitModal').classList.add('active');
-    showToast('✅ Audit complete!');
-
-  } catch(err) {
-    console.error('EmailJS error:', err);
-    const errMsg = err?.text || err?.message || JSON.stringify(err) || 'Unknown error';
-    document.getElementById('modalMsg').textContent =
-      `⚠️ Email notification failed: ${errMsg}\n\nBut your audit is saved:\n• PDF on device\n${driveLink ? '• PDF on Google Drive\n' : ''}• Excel on device`;
-    document.getElementById('submitModal').classList.add('active');
-    showToast('⚠️ Email failed — PDF saved to Drive & device');
-  }
-}
-
-// =====================================================================
-async function submitAndEmail() {
-  const d = collectFormData();
-  if (!d.customerName || !d.siteAddress) {
-    showToast('⚠️ Please fill in Customer Name and Address first');
-    return;
-  }
-
-  showToast('⏳ Generating PDF...');
-  const doc = await generatePDF(true);
-
-  const pdfBytes = doc.output('arraybuffer');
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
-
-  const fname = `BioBlue_Site_Audit_${d.customerName.replace(/\s+/g,'_')}_${d.auditDate || new Date().toISOString().split('T')[0]}.pdf`;
-  const subject = encodeURIComponent(`BioBlue Site Audit – ${d.customerName} – ${d.auditDate || 'Today'}`);
-  const body = encodeURIComponent(
-    `Hi,\n\nPlease find attached the completed BioBlue Bulk AdBlue® Site Audit for:\n\nCustomer: ${d.customerName}\nAddress: ${d.siteAddress}, ${d.suburb} ${d.state}\nDate: ${d.auditDate}\nAuditor: ${d.auditorName}\n\nRegards,\n${d.auditorName}`
-  );
-
-  const cc = d.emailCc ? `&cc=${encodeURIComponent(d.emailCc)}` : '';
-  const mailtoLink = `mailto:${d.emailTo}?subject=${subject}&body=${body}${cc}`;
-
-  // Download PDF immediately — blob URL works reliably on iOS Safari
-  const pdfBlob = doc.output('blob');
-  const pdfUrl = URL.createObjectURL(pdfBlob);
-  const dlLink = document.createElement('a');
-  dlLink.href = pdfUrl;
-  dlLink.download = fname;
-  dlLink.target = '_blank';
-  document.body.appendChild(dlLink);
-  dlLink.click();
-  document.body.removeChild(dlLink);
-  setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
-
-  setTimeout(() => {
-    window.location.href = mailtoLink;
-  }, 800);
-
-  document.getElementById('modalMsg').textContent = `The PDF "${fname}" has been downloaded. Your email client will open – please attach the downloaded PDF and send. (Some email clients support direct attachment; if yours doesn't, attach manually.)`;
-  document.getElementById('submitModal').classList.add('active');
-  showToast('✉️ Email client opening...');
-
-  // Save to localStorage as backup
-  try {
-    const saveKey = `bioblue_audit_${Date.now()}`;
-    localStorage.setItem(saveKey, JSON.stringify(collectFormData()));
-  } catch(e){}
-}
 
 function closeModal() {
   document.getElementById('submitModal').classList.remove('active');
@@ -5207,7 +4879,22 @@ function initMudmap() {
     img.src = imgData;
   }
   resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    // Also resize signature pads
+    ['sigAuditor','sigRep'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (canvas && canvas.offsetWidth > 0) {
+        const ctx = canvas.getContext('2d');
+        const imgData = canvas.toDataURL();
+        canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight);
+        img.src = imgData;
+      }
+    });
+  });
 
   let drawing = false, panning = false;
   let lastX, lastY, prevX, prevY, panStartX, panStartY;
@@ -5382,7 +5069,7 @@ function initMudmap() {
 let mudmapTileData = null;
 let mudmapTileW = 0, mudmapTileH = 0;
 let tileOffsetX = 0, tileOffsetY = 0;
-let mudmapCurrentLat = null, mudmapCurrentLon = null, mudmapCurrentZoom = 17;
+let mudmapCurrentLat = null, mudmapCurrentLon = null, mudmapCurrentZoom = 19;
 
 function refillMudmapTiles() {
   if (mudmapCurrentLat === null) return;
@@ -5448,7 +5135,7 @@ function refillMudmapTiles() {
 
 function mudmapZoom(direction) {
   if (mudmapCurrentLat === null) { showToast('⚠️ Load a map first'); return; }
-  const newZoom = Math.min(19, Math.max(14, mudmapCurrentZoom + direction));
+  const newZoom = Math.min(21, Math.max(15, mudmapCurrentZoom + direction));
   if (newZoom === mudmapCurrentZoom) {
     showToast(direction > 0 ? '🔍 Maximum zoom reached' : '🔍 Minimum zoom reached');
     return;
@@ -5538,7 +5225,6 @@ function loadMudmapSatellite() {
     .then(r => r.json())
     .then(data => {
       // Log Google response status for debugging
-      console.log('Google Geocode status:', data?.status, data?.error_message || '');
       if (!data || !data.results || data.results.length === 0) {
         // Show which path we're taking
         showToast(`⚠️ Google geocode failed (${data?.status || 'no response'}) — trying backup...`, 3000);
@@ -5549,17 +5235,16 @@ function loadMudmapSatellite() {
             if (!nmData || !nmData[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
             const lat = parseFloat(nmData[0].lat);
             const lon = parseFloat(nmData[0].lon);
-            const zoom = 18;
+            const zoom = 19;
             const w = document.getElementById('mudmapWrap').offsetWidth;
             const h = w;
             renderOSMTile(lat, lon, zoom, w, h);
           });
       }
-      console.log('Google geocode success:', data.results[0].formatted_address);
       const loc = data.results[0].geometry.location;
       const lat = loc.lat;
       const lon = loc.lng;
-      const zoom = 18;
+      const zoom = 19;
       const w = document.getElementById('mudmapWrap').offsetWidth;
       const h = w;
       renderOSMTile(lat, lon, zoom, w, h);
@@ -5729,7 +5414,7 @@ function getMudmapDataUrl() {
 
   const wrap = document.getElementById('mudmapWrap');
   const w = wrap.offsetWidth;
-  const h = wrap.offsetHeight || w; // use actual height to preserve aspect ratio
+  const h = w; // square — matches screen aspect-ratio:1/1
 
   const out = document.createElement('canvas');
   out.width  = w * 2;
@@ -5837,20 +5522,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Resize signature canvases when window resizes
-window.addEventListener('resize', () => {
-  ['sigAuditor','sigRep'].forEach(id => {
-    const canvas = document.getElementById(id);
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      const imgData = canvas.toDataURL();
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-      const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.offsetWidth, canvas.offsetHeight);
-      img.src = imgData;
-    }
-  });
-});
+// Signature resize merged into main resize handler below
 </script>
 </body>
 </html>
