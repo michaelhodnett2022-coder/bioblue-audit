@@ -5242,41 +5242,42 @@ function loadMudmapSatellite() {
   const resetTc = document.getElementById('mudmapTileCanvas');
   if (resetTc) resetTc.style.transform = '';
 
-  // Use Google Maps Geocoding API for accurate Australian address lookup
-  const encoded = encodeURIComponent(addr + ', Australia');
-  const GMAPS_KEY = 'AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ';
-  fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&region=au&key=${GMAPS_KEY}`)
-    .then(r => r.json())
-    .then(data => {
-      // Log Google response status for debugging
-      if (!data || !data.results || data.results.length === 0) {
-        // Show which path we're taking
-        showToast(`⚠️ Google geocode failed (${data?.status || 'no response'}) — trying backup...`, 3000);
-        // Fallback to Nominatim if Google fails
-        return fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
-          .then(r => r.json())
-          .then(nmData => {
-            if (!nmData || !nmData[0]) { showToast('⚠️ Address not found — draw map manually'); return; }
-            const lat = parseFloat(nmData[0].lat);
-            const lon = parseFloat(nmData[0].lon);
-            const zoom = 19;
-            const w = document.getElementById('mudmapWrap').offsetWidth;
-            const h = w;
-            renderOSMTile(lat, lon, zoom, w, h);
-          });
-      }
-      const loc = data.results[0].geometry.location;
-      const lat = loc.lat;
-      const lon = loc.lng;
-      const zoom = 19;
-      const w = document.getElementById('mudmapWrap').offsetWidth;
-      const h = w;
-      renderOSMTile(lat, lon, zoom, w, h);
-    })
-    .catch((err) => { 
-      console.error('Geocode fetch error:', err);
-      showToast('⚠️ Could not load map — draw manually'); 
-    });
+  // Use Google Maps JS API geocoder (CORS-safe, same engine as Google Maps app)
+  const query = addr.includes('+') ? addr : addr + ', Australia'; // support Plus Codes
+
+  function doGeocode() {
+    if (window.google && window.google.maps && window.google.maps.Geocoder) {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: query, region: 'AU' }, (results, status) => {
+        if (status === 'OK' && results && results.length > 0) {
+          const loc = results[0].geometry.location;
+          const w = document.getElementById('mudmapWrap').offsetWidth;
+          renderOSMTile(loc.lat(), loc.lng(), 19, w, w);
+        } else {
+          tryNominatim();
+        }
+      });
+    } else {
+      tryNominatim();
+    }
+  }
+
+  function tryNominatim() {
+    const encoded = encodeURIComponent(query);
+    fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`)
+      .then(r => r.json())
+      .then(nd => {
+        if (nd && nd[0]) {
+          const w = document.getElementById('mudmapWrap').offsetWidth;
+          renderOSMTile(parseFloat(nd[0].lat), parseFloat(nd[0].lon), 19, w, w);
+        } else {
+          showToast('⚠️ Address not found — draw map manually');
+        }
+      })
+      .catch(() => showToast('⚠️ Address not found — draw map manually'));
+  }
+
+  doGeocode();
 }
 
 function renderOSMTile(lat, lon, zoom, w, h) {
