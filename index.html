@@ -3712,15 +3712,15 @@ async function generatePDF(returnDoc=false) {
   doc.text(notesLines, margin+3, y+5);
   y += notesH + 6;
 
-  // ---- SECTION E: MUD MAP ----
+  // ---- SECTION 8: MUD MAP ----
+  checkPage(20);
+  sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
-    // Map is always square on screen (aspect-ratio:1/1 CSS)
     const mapMargin = 8;
     const mapW = pageW - mapMargin * 2;
-    const mapH = mapW; // perfect square — matches screen aspect-ratio:1/1
-    checkPage(mapH + 20);
-    sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
+    const mapH = mapW; // perfect square
+    checkPage(mapH + 12);
     try {
       doc.addImage(mudmapData, 'JPEG', mapMargin, y, mapW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
@@ -3733,13 +3733,21 @@ async function generatePDF(returnDoc=false) {
     doc.setTextColor(...GRAY);
     doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', mapMargin, y);
     y += 8;
+  } else {
+    doc.setFillColor(...GRAY_LIGHT);
+    doc.roundedRect(margin, y, contentW, 14, 1, 1, 'F');
+    doc.setTextColor(...GRAY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica','italic');
+    doc.text('No mud map completed for this audit.', margin + 4, y + 9);
+    y += 18;
   }
 
-  // ---- SECTION F: PHOTOS ----
+  // ---- SECTION 9: PHOTOS ----
+  doc.addPage();
+  y = margin;
+  sectionHeader('9. SITE PHOTOS');
   if (photos.length > 0) {
-    doc.addPage();
-    y = margin;
-    sectionHeader('9. SITE PHOTOS');
 
     const gap = 4;
     const captionH = 12; // tall enough for caption + timestamp
@@ -3819,7 +3827,17 @@ async function generatePDF(returnDoc=false) {
     y += 4;
   }
 
-  // ---- SECTION F: SIGN-OFF ---- always starts on fresh page
+  } else {
+    doc.setFillColor(...GRAY_LIGHT);
+    doc.roundedRect(margin, y, contentW, 14, 1, 1, 'F');
+    doc.setTextColor(...GRAY);
+    doc.setFontSize(9);
+    doc.setFont('helvetica','italic');
+    doc.text('No photos attached to this audit.', margin + 4, y + 9);
+    y += 18;
+  }
+
+  // ---- SECTION 10: SIGN-OFF ---- always starts on fresh page
   doc.addPage();
   y = margin;
   sectionHeader('10. AUDIT SIGN-OFF');
@@ -4075,7 +4093,9 @@ function osmAutocomplete(input, dropdownId) {
       // If user typed a house number, prepend it to results that don't include it
       if (typedHouseNum) {
         data.forEach(r => {
-          if (!r.display_name.startsWith(typedHouseNum)) {
+          // Prepend house number if not already present anywhere near the start
+          const hasNum = r.display_name.match(/^\d+/);
+          if (!hasNum) {
             r.display_name = typedHouseNum + ' ' + r.display_name;
           }
         });
@@ -4112,7 +4132,12 @@ function osmSelect(idx, dropdownId) {
         ? [street, a.suburb||a.city||a.town||'', a.state||''].filter(Boolean).join(', ')
         : r.display_name.split(',').slice(0,3).join(',');
       // Auto-trigger map load after short delay
-      setTimeout(() => loadMudmapSatellite(), 200);
+      // Small delay to ensure field value is committed before map loads
+      setTimeout(() => {
+        if (document.getElementById('mudmapAddress').value.trim()) {
+          loadMudmapSatellite();
+        }
+      }, 300);
     }
     return;
   }
