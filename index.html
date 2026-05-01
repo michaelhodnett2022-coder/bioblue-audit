@@ -3909,12 +3909,19 @@ async function fillTestData() {
   for (const k in ynValues) delete ynValues[k];
   await new Promise(r => setTimeout(r, 50));
 
-  // Section A — directly set customer fields without triggering events
+  // Section A — fill new customer naming fields
   document.getElementById('customerSelect').value = 'new';
   document.getElementById('newCustomerField').style.display = 'block';
-  document.getElementById('customerName').value = 'VIVA TEST SITE';
-  document.getElementById('customerNameHidden').value = 'VIVA TEST SITE';
-
+  // Fill structured naming fields
+  document.getElementById('newBillingEntity').value = 'BioBlue Test';
+  document.getElementById('newSiteName').value = 'Testville';
+  document.getElementById('newDescriptor').value = 'Depot';
+  document.getElementById('newSuburb').value = 'TESTVILLE';
+  const newStateEl = document.getElementById('newState');
+  for (let i = 0; i < newStateEl.options.length; i++) {
+    if (newStateEl.options[i].value === 'WA') { newStateEl.selectedIndex = i; break; }
+  }
+  buildCustomerName(); // generates locked name
   // Manually fill address details
   document.getElementById('siteAddress').value = '123 Test Street';
   document.getElementById('suburb').value = 'TESTVILLE';
@@ -3924,12 +3931,10 @@ async function fillTestData() {
   }
   document.getElementById('postcode').value = '6000';
   document.getElementById('siteContact').value = 'Test Contact';
-  syncMudmapAddress();
-  document.getElementById('siteContactTitle').value = 'Site Manager';
-  document.getElementById('siteEmail').value = 'test@vivaenergy.com.au';
   document.getElementById('siteMobile').value = '0400 000 000';
-  document.getElementById('siteNumber').value = 'TEST-001';
-  document.getElementById('siteNetwork').value = 'Express';
+  document.getElementById('siteEmail').value = 'test@vivaenergy.com.au';
+  document.getElementById('siteContactTitle').value = 'Site Manager';
+  syncMudmapAddress();
 
   // Date
   document.getElementById('auditDate').value = new Date().toISOString().split('T')[0];
@@ -4025,8 +4030,8 @@ async function fillTestData() {
   document.getElementById('safeFill').value = '4500';
   document.getElementById('currentLevel').value = '2000';
   document.getElementById('tankSerial').value = 'ADBT-TEST-001';
-  document.getElementById('tankType').value = 'Poly Slim';
-  document.getElementById('dipSystem').value = 'Manual Dip';
+  document.getElementById('tankType').value = 'Poly Round Single Skin';
+  document.getElementById('dipSystem').value = 'Sight Tube';
 
   // Section D
   document.getElementById('correctiveActions').value = 'Test audit — no corrective actions required. All systems operating within normal parameters.';
