@@ -1286,7 +1286,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div style="display:flex;flex-direction:column;gap:4px;">
               <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">Descriptor <span style="color:#c0392b;">*</span></label>
-              <select id="newDescriptor" onchange="buildCustomerName()" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;-webkit-appearance:none;">
+              <select id="newDescriptor" onchange="buildCustomerName(); toggleDescriptorOther(this.value)" style="padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;-webkit-appearance:none;">
                 <option value="">Select...</option>
                 <option value="Depot">Depot</option>
                 <option value="Service Station">Service Station</option>
@@ -1294,7 +1294,9 @@
                 <option value="Terminal">Terminal</option>
                 <option value="Warehouse">Warehouse</option>
                 <option value="Farm">Farm</option>
+                <option value="Other">Other — please state</option>
               </select>
+              <input type="text" id="newDescriptorOther" placeholder="Describe site type..." style="display:none;margin-top:6px;padding:10px 12px;border-radius:8px;border:1.5px solid #dde3ed;font-size:14px;width:100%;box-sizing:border-box;" oninput="buildCustomerName()">
             </div>
             <div style="display:flex;flex-direction:column;gap:4px;">
               <label style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.4px;">State <span style="color:#c0392b;">*</span></label>
@@ -1782,8 +1784,9 @@
       </p>
 
       <!-- Address loader -->
-      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-        <input type="text" id="mudmapAddress" placeholder="Site address (auto-filled from Section A)" style="flex:1;min-width:200px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;position:relative;">
+        <input type="text" id="mudmapAddress" placeholder="Site address or Plus Code (auto-filled from Section A)" style="flex:1;min-width:200px;" oninput="osmAutocomplete(this,'mudmapAddrSuggestions')" autocomplete="off">
+        <div id="mudmapAddrSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ccc;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:999;max-height:220px;overflow-y:auto;"></div>
         <button onclick="loadMudmapSatellite()" style="font-size:13px;padding:8px 18px;border-radius:8px;border:2px solid var(--blue-mid);background:var(--blue-mid);color:white;font-weight:700;cursor:pointer;white-space:nowrap;">Add Map</button>
       </div>
 
@@ -3169,10 +3172,20 @@ function setField(id, value) {
 }
 
 // =====================================================================
+function toggleDescriptorOther(val) {
+  const el = document.getElementById('newDescriptorOther');
+  if (el) {
+    el.style.display = val === 'Other' ? 'block' : 'none';
+    if (val !== 'Other') el.value = '';
+  }
+}
+
 function buildCustomerName() {
   const entity   = (document.getElementById('newBillingEntity')?.value || '').trim();
   const siteName = (document.getElementById('newSiteName')?.value || '').trim();
-  const desc     = (document.getElementById('newDescriptor')?.value || '').trim();
+  const descSel   = document.getElementById('newDescriptor')?.value || '';
+  const descOther = (document.getElementById('newDescriptorOther')?.value || '').trim();
+  const desc      = descSel === 'Other' ? descOther : descSel;
   const suburb   = (document.getElementById('newSuburb')?.value || '').trim();
   const state    = (document.getElementById('newState')?.value || '').trim();
 
@@ -3704,12 +3717,15 @@ async function generatePDF(returnDoc=false) {
   if (mudmapData) {
     checkPage(80);
     sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
-    const mapH = contentW; // square — same as width
+    // Use full page width minus small margins for maximum map size
+    const mapMargin = 8;
+    const mapW = pageW - mapMargin * 2;
+    const mapH = mapW; // square
     try {
-      doc.addImage(mudmapData, 'JPEG', margin, y, contentW, mapH, undefined, 'FAST');
+      doc.addImage(mudmapData, 'JPEG', mapMargin, y, mapW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
       doc.setLineWidth(0.3);
-      doc.rect(margin, y, contentW, mapH);
+      doc.rect(mapMargin, y, mapW, mapH);
     } catch(e) {}
     y += mapH + 4;
     doc.setFontSize(7);
@@ -4099,10 +4115,23 @@ function osmSelect(idx, dropdownId) {
   const r = dropdown._results[idx];
   if (!r) return;
   const a = r.address || {};
-  // Fill siteAddress
+  dropdown.style.display = 'none';
+
+  // If selected from mud map field — just fill that field and return
+  if (dropdownId === 'mudmapAddrSuggestions') {
+    const mapField = document.getElementById('mudmapAddress');
+    if (mapField) {
+      const street = [a.house_number, a.road].filter(Boolean).join(' ');
+      mapField.value = street
+        ? [street, a.suburb||a.city||a.town||'', a.state||''].filter(Boolean).join(', ')
+        : r.display_name.split(',').slice(0,3).join(',');
+    }
+    return;
+  }
+
+  // Fill site address fields in Section 1
   const street = [a.house_number, a.road].filter(Boolean).join(' ');
   document.getElementById('siteAddress').value = street || r.display_name.split(',')[0];
-  // Fill suburb/state/postcode if available
   if (a.suburb || a.city || a.town || a.village)
     document.getElementById('suburb').value = a.suburb || a.city || a.town || a.village || '';
   if (a.state) {
@@ -4118,18 +4147,17 @@ function osmSelect(idx, dropdownId) {
     }
   }
   if (a.postcode) document.getElementById('postcode').value = a.postcode;
-  dropdown.style.display = 'none';
   updateProgress();
-  // Auto-fill mud map address field too
+  // Auto-fill mud map address field if empty
   const mapField = document.getElementById('mudmapAddress');
   if (mapField && !mapField.value) mapField.value = r.display_name.split(',').slice(0,3).join(',');
 }
 
 // Close dropdown when clicking outside
 document.addEventListener('click', e => {
-  ['siteAddrSuggestions'].forEach(id => {
+  ['siteAddrSuggestions','mudmapAddrSuggestions'].forEach(id => {
     const d = document.getElementById(id);
-    if (d && !d.contains(e.target) && e.target.id !== 'siteAddress') d.style.display = 'none';
+    if (d && !d.contains(e.target) && e.target.id !== 'siteAddress' && e.target.id !== 'mudmapAddress') d.style.display = 'none';
   });
 });
 
@@ -5020,6 +5048,7 @@ function clearForm() {
   document.getElementById('newCustomerField').style.display = 'none';
   ['newBillingEntity','newSiteName','newSuburb'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const nd=document.getElementById('newDescriptor'); if(nd) nd.selectedIndex=0;
+  const ndo=document.getElementById('newDescriptorOther'); if(ndo){ ndo.value=''; ndo.style.display='none'; }
   const ns=document.getElementById('newState'); if(ns) ns.selectedIndex=0;
   const gt=document.getElementById('generatedNameText'); if(gt){ gt.textContent='Fill fields above to generate name...'; gt.style.color='#aaa'; gt.style.fontStyle='italic'; }
   document.getElementById('customerNameHidden').value = '';
