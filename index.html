@@ -3715,12 +3715,16 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION E: MUD MAP ----
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
-    checkPage(80);
-    sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
-    // Use full page width minus small margins for maximum map size
+    // Capture exact on-screen dimensions to preserve aspect ratio — no cropping
+    const mudmapWrapEl = document.getElementById('mudmapWrap');
+    const screenW = mudmapWrapEl ? mudmapWrapEl.offsetWidth  : 400;
+    const screenH = mudmapWrapEl ? mudmapWrapEl.offsetHeight : 400;
+    const screenRatio = screenH / screenW;
     const mapMargin = 8;
     const mapW = pageW - mapMargin * 2;
-    const mapH = mapW; // square
+    const mapH = Math.round(mapW * screenRatio);
+    checkPage(mapH + 20);
+    sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
     try {
       doc.addImage(mudmapData, 'JPEG', mapMargin, y, mapW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
@@ -3731,7 +3735,7 @@ async function generatePDF(returnDoc=false) {
     doc.setFontSize(7);
     doc.setFont('helvetica','italic');
     doc.setTextColor(...GRAY);
-    doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', margin, y);
+    doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', mapMargin, y);
     y += 8;
   }
 
@@ -5476,7 +5480,9 @@ function clearMudmap() {
   mudmapHistory = [];
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   arrowFirstTap = null;
-  showToast('🗺️ Drawing cleared');
+  // Redraw address pin after clear
+  if (mudmapCurrentLat !== null) drawAddressPin();
+  showToast('🗺️ Drawing cleared — address pin restored');
 }
 
 function resetMudmapFull() {
@@ -5640,7 +5646,10 @@ function renderOSMTile(lat, lon, zoom, w, h) {
       img.onload = () => {
         tctx.drawImage(img, pixX, pixY, tileSize, tileSize);
         loaded++;
-        if (loaded === total) showToast('🗺️ Satellite loaded — pan freely then draw');
+        if (loaded === total) {
+          showToast('🗺️ Satellite loaded — pan freely then draw');
+          drawAddressPin();
+        }
       };
       // *** GOOGLE SATELLITE TILES ONLY — DO NOT CHANGE TO ARCGIS ***
       // Rotate across Google tile servers (mt0-mt3) to avoid rate limiting
@@ -5649,6 +5658,58 @@ function renderOSMTile(lat, lon, zoom, w, h) {
       img.src = `https://mt${server}.google.com/vt/lyrs=s&x=${tileX}&y=${tileY}&z=${zoom}`;
     }
   }
+}
+
+function drawAddressPin() {
+  const canvas = document.getElementById('mudmapCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+
+  // Pin sits at the centre of the viewport (geocoded address location)
+  const wrap = document.getElementById('mudmapWrap');
+  const cx = (wrap.offsetWidth  / 2) * dpr;
+  const cy = (wrap.offsetWidth / 2) * dpr;
+
+  const r = 14 * dpr;  // pin circle radius
+  const pinH = r * 2.2; // total drop height below circle centre
+
+  ctx.save();
+
+  // Drop shadow
+  ctx.shadowColor = 'rgba(0,0,0,0.4)';
+  ctx.shadowBlur  = 6 * dpr;
+  ctx.shadowOffsetX = 2 * dpr;
+  ctx.shadowOffsetY = 3 * dpr;
+
+  // Teardrop body
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.3, r, Math.PI * 1.15, Math.PI * 1.85, false);
+  ctx.bezierCurveTo(
+    cx + r, cy - r * 0.3 + r * 1.1,
+    cx + r * 0.3, cy + pinH * 0.6,
+    cx, cy + pinH
+  );
+  ctx.bezierCurveTo(
+    cx - r * 0.3, cy + pinH * 0.6,
+    cx - r, cy - r * 0.3 + r * 1.1,
+    cx - r, cy - r * 0.3
+  );
+  ctx.closePath();
+  ctx.fillStyle = '#E53935';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1.5 * dpr;
+  ctx.stroke();
+
+  ctx.shadowColor = 'transparent';
+
+  // Inner white circle
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.3, r * 0.45, 0, Math.PI * 2);
+  ctx.fillStyle = 'white';
+  ctx.fill();
+
+  ctx.restore();
 }
 
 function getMudmapDataUrl() {
@@ -5663,7 +5724,7 @@ function getMudmapDataUrl() {
 
   const wrap = document.getElementById('mudmapWrap');
   const w = wrap.offsetWidth;
-  const h = w; // square
+  const h = wrap.offsetHeight || w; // use actual height to preserve aspect ratio
 
   const out = document.createElement('canvas');
   out.width  = w * 2;
@@ -5671,29 +5732,32 @@ function getMudmapDataUrl() {
   const ctx = out.getContext('2d');
   ctx.scale(2, 2);
 
-  // Fill background
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, w, h);
 
-  // Composite tile canvas using EXACT same positioning as what user sees on screen.
-  // The tile canvas is positioned via style.left/top (base offset from renderOSMTile)
-  // AND via CSS transform: translate(tileOffsetX, tileOffsetY) from panning.
-  // Both must be applied to get the correct visible region.
   if (tileCanvas && tileCanvas.width > 0) {
-    const baseLeft = parseFloat(tileCanvas.style.left) || 0;
-    const baseTop  = parseFloat(tileCanvas.style.top)  || 0;
-    // tileOffsetX/Y track the cumulative pan via CSS transform
-    const finalLeft = baseLeft + tileOffsetX;
-    const finalTop  = baseTop  + tileOffsetY;
-    // Draw the tile canvas at its actual screen position
-    // tileCanvas dimensions are in physical pixels (set as tc.width = totalW)
-    // but we draw into CSS pixel space (ctx scaled to 2x for quality)
+    // Read the ACTUAL rendered position of the tile canvas from the DOM —
+    // this is the ground truth regardless of what any JS variables say.
+    // getBoundingClientRect gives position relative to viewport.
+    // wrap.getBoundingClientRect gives the viewport-relative position of the map container.
+    const wrapRect = wrap.getBoundingClientRect();
+    const tcRect   = tileCanvas.getBoundingClientRect();
+
+    // Offset of tile canvas top-left relative to the map container top-left
+    const actualLeft = tcRect.left - wrapRect.left;
+    const actualTop  = tcRect.top  - wrapRect.top;
+
+    // tileCanvas.width/height are in physical pixels (devicePixelRatio scaled).
+    // We draw into CSS pixel space, so use the CSS dimensions.
+    const tcCssW = tcRect.width;
+    const tcCssH = tcRect.height;
+
     ctx.drawImage(tileCanvas,
       0, 0, tileCanvas.width, tileCanvas.height,
-      finalLeft, finalTop, tileCanvas.width, tileCanvas.height);
+      actualLeft, actualTop, tcCssW, tcCssH);
   }
 
-  // Draw annotations — drawCanvas is DPR-scaled, map back to CSS pixels
+  // Draw annotations — drawCanvas is DPR-scaled, map back to CSS pixel space
   ctx.drawImage(drawCanvas,
     0, 0, drawCanvas.width, drawCanvas.height,
     0, 0, w, h);
