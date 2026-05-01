@@ -3717,21 +3717,22 @@ async function generatePDF(returnDoc=false) {
   sectionHeader('8. SITE MUD MAP — TRUCK ROUTE & ADBLUE\u00ae TANK LOCATION');
   const mudmapData = getMudmapDataUrl();
   if (mudmapData) {
-    const mapMargin = 8;
-    const mapW = pageW - mapMargin * 2;
-    const mapH = mapW; // perfect square
+    // Use contentW for square — 194mm was too tall and got clipped on A4
+    const mapMargin = margin;
+    const mapW = contentW;
+    const mapH = contentW; // perfect square, fits A4 with room for header + caption
     checkPage(mapH + 12);
     try {
-      doc.addImage(mudmapData, 'JPEG', mapMargin, y, mapW, mapH, undefined, 'FAST');
+      doc.addImage(mudmapData, 'JPEG', margin, y, mapW, mapH, undefined, 'FAST');
       doc.setDrawColor(...BLUE_LIGHT);
       doc.setLineWidth(0.3);
-      doc.rect(mapMargin, y, mapW, mapH);
+      doc.rect(margin, y, mapW, mapH);
     } catch(e) {}
     y += mapH + 4;
     doc.setFontSize(7);
     doc.setFont('helvetica','italic');
     doc.setTextColor(...GRAY);
-    doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', mapMargin, y);
+    doc.text('Red lines indicate truck entry/exit route. Blue dot indicates AdBlue\u00ae tank location.', margin, y);
     y += 8;
   } else {
     doc.setFillColor(...GRAY_LIGHT);
