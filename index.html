@@ -1415,6 +1415,13 @@
         <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
       </div>
 
+      <div class="field-row full" style="margin-bottom:12px;">
+        <div class="field-group">
+          <label class="field-label">Email for POD</label>
+          <input type="email" id="podEmail" placeholder="e.g. invoices@company.com" oninput="updateProgress()">
+        </div>
+      </div>
+
       <div class="field-group" style="margin-bottom:12px;">
         <label class="field-label required">Delivery Site Address</label>
         <div class="address-field-wrap">
@@ -1460,21 +1467,21 @@
 
       <div class="field-row">
         <div class="field-group">
-          <label class="field-label">Delivery Site Contact</label>
+          <label class="field-label">Site Contact Name</label>
           <input type="text" id="siteContact" placeholder="Full name">
         </div>
         <div class="field-group">
-          <label class="field-label">Mobile</label>
+          <label class="field-label">Site Contact Mobile</label>
           <input type="tel" id="siteMobile" placeholder="04XX XXX XXX">
         </div>
       </div>
       <div class="field-row">
         <div class="field-group">
-          <label class="field-label">Email Address for POD</label>
+          <label class="field-label">Site Contact Email Address</label>
           <input type="email" id="siteEmail" placeholder="contact@company.com">
         </div>
         <div class="field-group">
-          <label class="field-label">Title / Role</label>
+          <label class="field-label">Site Contact Title / Role</label>
           <input type="text" id="siteContactTitle" placeholder="e.g. Site Manager">
         </div>
       </div>
@@ -1956,7 +1963,7 @@
           <input type="text" id="repName" placeholder="Full name">
         </div>
         <div class="field-group">
-          <label class="field-label">Title / Role</label>
+          <label class="field-label">Site Contact Title / Role</label>
           <input type="text" id="repTitle" placeholder="e.g. Site Manager">
         </div>
       </div>
@@ -2807,6 +2814,7 @@ function collectFormData() {
     suburb: get('suburb'),
     state: get('state'),
     postcode: get('postcode'),
+    podEmail: get('podEmail'),
     siteContact: get('siteContact'),
     siteContactTitle: get('siteContactTitle'),
     siteEmail: get('siteEmail'),
@@ -3158,7 +3166,7 @@ function autoFillCustomer(siteNum) {
 
 function clearCustomerFields() {
   ['siteAddress','suburb','postcode','siteContact','siteContactTitle','siteEmail',
-   'siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem','dipSystemOther',
+   'podEmail','siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem','dipSystemOther',
    'siteNumber','siteNetwork'].forEach(id => setField(id, ''));
   document.getElementById('state').selectedIndex = 0;
   document.getElementById('tankOwner').selectedIndex = 0;
@@ -3558,7 +3566,8 @@ async function generatePDF(returnDoc=false) {
   twoFieldRow('Customer / Business Name', d.customerName, 'Date of Audit', d.auditDate);
   twoFieldRow('Site Number', d.siteNumber, 'Network', d.siteNetwork);
   fieldRow('Delivery Site Address', [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '));
-  twoFieldRow('Site Contact', d.siteContact + (d.siteContactTitle ? ' – ' + d.siteContactTitle : ''), 'Mobile', d.siteMobile);
+  twoFieldRow('Email for POD', d.podEmail || '—', '', '');
+  twoFieldRow('Site Contact Name', d.siteContact + (d.siteContactTitle ? ' – ' + d.siteContactTitle : ''), 'Mobile', d.siteMobile);
   twoFieldRow('Email', d.siteEmail, '', '');
 
   // ---- SECTION B ----
