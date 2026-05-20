@@ -1415,10 +1415,28 @@
         <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
       </div>
 
-      <div class="field-row full" style="margin-bottom:12px;">
-        <div class="field-group">
-          <label class="field-label">Email for POD</label>
-          <input type="email" id="podEmail" placeholder="e.g. invoices@company.com" oninput="updateProgress()">
+      <div style="
+        display:flex;align-items:center;gap:12px;
+        background:linear-gradient(135deg,#003466 0%,#0055a5 100%);
+        border-radius:10px;padding:12px 16px;margin-bottom:16px;
+        border-left:5px solid #64d2ff;
+        box-shadow:0 2px 8px rgba(0,52,102,0.18);
+      ">
+        <div style="font-size:22px;flex-shrink:0;">📧</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64d2ff;margin-bottom:4px;">
+            Email for POD — Proof of Delivery Notifications
+          </div>
+          <input type="email" id="podEmail"
+            placeholder="e.g. invoices@company.com"
+            oninput="updateProgress()"
+            style="
+              width:100%;padding:9px 12px;border-radius:8px;
+              border:1.5px solid rgba(255,255,255,0.3);
+              background:rgba(255,255,255,0.92);
+              color:#1a1a2e;font-size:14px;font-weight:500;
+              box-sizing:border-box;
+            ">
         </div>
       </div>
 
@@ -1541,17 +1559,7 @@
       </div>
 
       <div id="yn-b1" class="yn-group">
-        <!-- Y/N items injected by JS -->
-      </div>
-      <!-- Gate access inline details - shown/hidden by JS -->
-      <div id="keyCodeField" style="display:none;">
-        <div class="inline-details-field">
-          <div class="inline-details-arrow">↳</div>
-          <div class="inline-details-content">
-            <label class="field-label">If Yes — provide key / code / access details</label>
-            <input type="text" id="keyCode" placeholder="e.g. Retrieve tank key from shop counter, Gate code 1234...">
-          </div>
-        </div>
+        <!-- Y/N items injected by JS — keyCodeField injected after Q1 by renderYNGroups -->
       </div>
 
       <div id="yn-b2" class="yn-group"></div>
@@ -2085,7 +2093,7 @@ const ynQuestions = {
   'b1': [
     { id: 'gateAccess',    num: 1,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
     { id: 'truckAccess',   num: 2,  text: 'Is the access route to the delivery zone clear of obstructions?' },
-    { id: 'overheadWires', num: 3,  text: 'Are there overhead power lines or cables that could obstruct delivery?', reverseColor: true },
+    { id: 'overheadWires', num: 3,  text: 'Are there overhead power lines or cables that could obstruct delivery?', reverseColor: true, solidColor: true },
     { id: 'manoeuvre',     num: 4,  text: 'Is there sufficient space on site to manoeuvre the delivery vehicle safely?' },
     { id: 'noReverse',     num: 5,  text: 'Can vehicle be manoeuvred without reversing into or on premises?' },
     { id: 'parkingMarked', num: 6,  text: 'Is the delivery/unloading area clearly marked or communicated to the driver?' },
@@ -2162,6 +2170,22 @@ function renderYNGroups() {
         </div>
       `;
       container.appendChild(div);
+
+      // Inject inline detail fields directly after their trigger question
+      if (q.id === 'gateAccess') {
+        const kf = document.createElement('div');
+        kf.id = 'keyCodeField';
+        kf.style.display = 'none';
+        kf.innerHTML = `
+          <div class="inline-details-field">
+            <div class="inline-details-arrow">↳</div>
+            <div class="inline-details-content">
+              <label class="field-label">If Yes — provide key / code / access details</label>
+              <input type="text" id="keyCode" placeholder="e.g. Retrieve tank key from shop counter, Gate code 1234...">
+            </div>
+          </div>`;
+        container.appendChild(kf);
+      }
     });
   }
 }
