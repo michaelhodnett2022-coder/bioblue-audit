@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBb-EHe4hw-UmY9xFNRDMwbf-A27S2WbPQ&libraries=places" async defer></script>
 
 <style>
@@ -2053,8 +2054,9 @@
 </div><!-- end main-content -->
 
 <!-- STICKY FOOTER -->
-<div class="sticky-footer">
-  <button class="btn btn-clear" onclick="confirmClearForm()">🗑️ Clear Form</button>
+<div class="sticky-footer" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+  <button class="btn btn-clear" onclick="confirmClearForm()">🗑️ Clear</button>
+  <button class="btn btn-pdf-dl" onclick="loadExistingAudit()">📂 Load</button>
   <button class="btn btn-pdf-dl" onclick="downloadToDevice()">⬇️ Download</button>
   <button class="btn btn-submit" onclick="uploadAndSend()">☁️ Upload & Send</button>
 </div>
@@ -4382,7 +4384,12 @@ async function uploadAndSend() {
     const upRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
       { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: pdfForm });
     const uploaded = await upRes.json();
-    if (uploaded.id) driveLink = uploaded.webViewLink;
+    if (uploaded.id) {
+      driveLink = uploaded.webViewLink;
+      _auditPdfFileId = uploaded.id;
+      // Save JSON data file alongside PDF for future editing
+      await saveAuditJSON(folderId, baseName, d, uploaded.id);
+    }
 
     // Append to master audit log in Excel subfolder
     showToast('📊 Updating audit log...');
@@ -4576,6 +4583,397 @@ async function appendToAuditLog(xlFolderId, d) {
 }
 
 
+// =====================================================================
+// SAVE AUDIT JSON — saves form data alongside PDF for future editing
+// =====================================================================
+async function saveAuditJSON(folderId, baseName, d, pdfFileId) {
+  try {
+    const payload = {
+      ...d,
+      _savedAt: new Date().toISOString(),
+      _pdfFileId: pdfFileId,
+      _auditJsonFileId: _auditJsonFileId || null, // preserve if re-saving
+    };
+    const jsonBlob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const jsonName = baseName + '_data.json';
+
+    if (_auditJsonFileId) {
+      // UPDATE existing JSON file
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({})], { type: 'application/json' }));
+      form.append('file', jsonBlob, jsonName);
+      const res = await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${_auditJsonFileId}?uploadType=multipart`,
+        { method: 'PATCH', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
+      );
+      if (res.ok) { console.log('JSON updated'); }
+    } else {
+      // CREATE new JSON file
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({ name: jsonName, parents: [folderId] })], { type: 'application/json' }));
+      form.append('file', jsonBlob, jsonName);
+      const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+        { method: 'POST', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        _auditJsonFileId = data.id;
+      }
+    }
+  } catch(e) {
+    console.warn('JSON save failed (non-critical):', e.message);
+  }
+}
+
+// =====================================================================
+// LOAD EXISTING AUDIT — search Drive for JSON files and restore form
+// =====================================================================
+async function loadExistingAudit() {
+  showToast('☁️ Connecting to Google Drive...');
+
+  // Ensure we have a Drive token
+  try {
+    if (typeof google === 'undefined' || !google?.accounts?.oauth2) {
+      throw new Error('Google API not loaded');
+    }
+    if (!gdriveToken) {
+      await new Promise((resolve, reject) => {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: GDRIVE_CLIENT_ID,
+          scope: 'https://www.googleapis.com/auth/drive.file',
+          callback: (response) => {
+            if (response && response.access_token) { gdriveToken = response.access_token; resolve(); }
+            else reject(new Error(response?.error || 'Sign-in failed'));
+          },
+          error_callback: (err) => reject(new Error(err?.message || 'Sign-in failed'))
+        });
+        client.requestAccessToken({ prompt: '' });
+      });
+    }
+  } catch(e) {
+    showToast('⚠️ Google sign-in failed: ' + e.message);
+    return;
+  }
+
+  // Search Drive for JSON data files in BioBlue Audits folder
+  showToast('🔍 Searching for saved audits...');
+  try {
+    // Find the BioBlue Audits folder first
+    const folderRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${GDRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const folderData = await folderRes.json();
+    if (!folderData.files || folderData.files.length === 0) {
+      showToast('⚠️ No saved audits found in Drive');
+      return;
+    }
+    const folderId = folderData.files[0].id;
+
+    // Search for JSON data files
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and name contains '_data.json' and trashed=false&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc&pageSize=50`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const searchData = await searchRes.json();
+    const files = searchData.files || [];
+
+    if (files.length === 0) {
+      showToast('⚠️ No saved audit data files found. Note: only audits submitted after this update can be reloaded.');
+      return;
+    }
+
+    // Show picker modal
+    showAuditPickerModal(files);
+
+  } catch(e) {
+    showToast('⚠️ Search failed: ' + e.message);
+  }
+}
+
+function showAuditPickerModal(files) {
+  // Remove existing modal if present
+  const existing = document.getElementById('auditPickerModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'auditPickerModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  `;
+
+  const formatDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' }) +
+           ' ' + d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+  };
+
+  const rows = files.map((f, i) => {
+    const name = f.name.replace('BioBlue_Site_Audit_','').replace('_data.json','').replace(/_/g,' ');
+    return `<div onclick="selectAuditFile('${f.id}','${f.name}')" style="
+      padding:12px 14px;cursor:pointer;border-bottom:1px solid #eee;
+      display:flex;flex-direction:column;gap:3px;
+      transition:background 0.15s;
+    " onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
+      <div style="font-size:13px;font-weight:600;color:#003466;">${name}</div>
+      <div style="font-size:11px;color:#888;">Last modified: ${formatDate(f.modifiedTime)}</div>
+    </div>`;
+  }).join('');
+
+  modal.innerHTML = `
+    <div style="background:white;border-radius:12px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.25);overflow:hidden;">
+      <div style="background:#003466;color:white;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">📂 Load Existing Audit</div>
+          <div style="font-size:11px;opacity:0.7;margin-top:2px;">${files.length} saved audit${files.length !== 1 ? 's' : ''} found</div>
+        </div>
+        <button onclick="document.getElementById('auditPickerModal').remove()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;">✕</button>
+      </div>
+      <div style="overflow-y:auto;flex:1;">${rows}</div>
+      <div style="padding:12px 16px;border-top:1px solid #eee;background:#f9fafb;">
+        <p style="font-size:11px;color:#888;margin:0;">Only audits submitted after this update are listed. Select one to restore all form fields.</p>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+async function selectAuditFile(fileId, fileName) {
+  document.getElementById('auditPickerModal')?.remove();
+  showToast('⏳ Loading audit data...');
+
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    if (!res.ok) throw new Error('Download failed: ' + res.status);
+    const data = await res.json();
+
+    // Store JSON file ID so resubmit updates instead of creates
+    _auditJsonFileId = fileId;
+    _auditPdfFileId = data._pdfFileId || null;
+
+    // Restore form
+    restoreFromJSON(data);
+    showToast('✅ Audit loaded — make your changes then tap Upload & Send to update');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Show editing banner
+    showEditingBanner(fileName);
+
+  } catch(e) {
+    showToast('⚠️ Load failed: ' + e.message);
+  }
+}
+
+function showEditingBanner(fileName) {
+  const existing = document.getElementById('editingBanner');
+  if (existing) existing.remove();
+  const name = fileName.replace('BioBlue_Site_Audit_','').replace('_data.json','').replace(/_/g,' ');
+  const banner = document.createElement('div');
+  banner.id = 'editingBanner';
+  banner.style.cssText = `
+    background:linear-gradient(135deg,#7c3aed,#5b21b6);
+    color:white;padding:10px 16px;border-radius:10px;
+    margin-bottom:14px;display:flex;align-items:center;gap:10px;
+    font-size:13px;font-weight:600;
+  `;
+  banner.innerHTML = `
+    <span style="font-size:18px;">✏️</span>
+    <div style="flex:1;">
+      <div>Editing existing audit: <strong>${name}</strong></div>
+      <div style="font-size:11px;opacity:0.8;margin-top:2px;">Upload & Send will overwrite the original PDF and update the audit log</div>
+    </div>
+    <button onclick="cancelEdit()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;">Cancel Edit</button>
+  `;
+  // Insert after hero panel
+  const hero = document.getElementById('startHero');
+  if (hero && hero.nextSibling) {
+    hero.parentNode.insertBefore(banner, hero.nextSibling);
+  }
+}
+
+function cancelEdit() {
+  _auditJsonFileId = null;
+  _auditPdfFileId = null;
+  document.getElementById('editingBanner')?.remove();
+  showToast('Edit cancelled — form reset');
+  clearForm();
+}
+
+function restoreFromJSON(data) {
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+  };
+
+  // Apply audit type first so sections appear
+  if (data.auditType) {
+    const atEl = document.getElementById('auditTypeSelect');
+    if (atEl) { atEl.value = data.auditType; applyAuditType(data.auditType); }
+  }
+
+  // Section A
+  // Handle customer — if it was a new customer, show the naming fields
+  if (data.customerName) {
+    const custEl = document.getElementById('customerSelect');
+    if (custEl) {
+      // Try to find matching customer in list first
+      let found = false;
+      for (let i = 0; i < custEl.options.length; i++) {
+        const siteNum = custEl.options[i].value;
+        if (siteNum && CUSTOMERS[siteNum] && CUSTOMERS[siteNum].name === data.customerName) {
+          custEl.value = siteNum;
+          autoFillCustomer(siteNum);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        // Was a new customer — restore naming fields
+        const stateForFilter = data.state || '';
+        if (stateForFilter) {
+          document.getElementById('stateFilter').value = stateForFilter;
+          filterCustomersByState(stateForFilter);
+        }
+        custEl.value = 'new';
+        autoFillCustomer('new');
+        // Restore generated name directly
+        const hiddenEl = document.getElementById('customerName');
+        const hiddenEl2 = document.getElementById('customerNameHidden');
+        if (hiddenEl) hiddenEl.value = data.customerName;
+        if (hiddenEl2) hiddenEl2.value = data.customerName;
+        const textEl = document.getElementById('generatedNameText');
+        if (textEl) { textEl.textContent = data.customerName; textEl.style.color='#003466'; textEl.style.fontStyle='normal'; }
+      }
+    }
+  }
+
+  setVal('auditDate', data.auditDate);
+  setVal('podEmail', data.podEmail);
+  setVal('siteAddress', data.siteAddress);
+  setVal('suburb', data.suburb);
+  setVal('postcode', data.postcode);
+
+  // State dropdown in Section A
+  if (data.state) {
+    const stEl = document.getElementById('state');
+    if (stEl) { for (let i=0;i<stEl.options.length;i++) { if (stEl.options[i].value===data.state) { stEl.selectedIndex=i; break; } } }
+  }
+
+  setVal('siteContact', data.siteContact);
+  setVal('siteContactTitle', data.siteContactTitle);
+  setVal('siteEmail', data.siteEmail);
+  setVal('siteMobile', data.siteMobile);
+
+  // Section B
+  if (data.open24hrs) {
+    document.getElementById('open24hrs').checked = true;
+    toggle24hrs(document.getElementById('open24hrs'));
+  } else {
+    setVal('accessOpen', data.accessOpen);
+    setVal('accessClose', data.accessClose);
+    setVal('accessRestrictions', data.accessRestrictions);
+    updateAccessHours();
+  }
+  setVal('maxVehicle', data.maxVehicle);
+  setVal('keyCode', data.keyCode);
+  setVal('inductionDetails', data.inductionDetails);
+
+  // PPE
+  if (data.ppeDetails) {
+    const ppeVals = data.ppeDetails.split(', ');
+    document.querySelectorAll('input[name="ppe"]').forEach(cb => {
+      cb.checked = ppeVals.some(v => v === cb.value || v.startsWith('Other:') && cb.value === 'Other');
+    });
+    updatePPE();
+    if (ppeVals.some(v => v.startsWith('Other:'))) {
+      const otherText = ppeVals.find(v => v.startsWith('Other:'))?.replace('Other: ','') || '';
+      setVal('ppeOtherText', otherText);
+      document.getElementById('ppeOtherField').style.display = 'block';
+    }
+  }
+
+  // Section C
+  setVal('tankId', data.tankId);
+  setVal('tankSerial', data.tankSerial);
+  if (data.tankOwner) { const el=document.getElementById('tankOwner'); for(let i=0;i<el.options.length;i++){if(el.options[i].value===data.tankOwner){el.selectedIndex=i;break;}} }
+  if (data.tankType) {
+    const ttEl = document.getElementById('tankType');
+    let matched = false;
+    for (let i=0;i<ttEl.options.length;i++) { if (ttEl.options[i].value===data.tankType) { ttEl.selectedIndex=i; matched=true; break; } }
+    if (!matched && data.tankType.startsWith('Other:')) { ttEl.value='Other'; setVal('tankTypeOther', data.tankType.replace('Other: ','')); document.getElementById('tankTypeOther').style.display='block'; }
+  }
+  if (data.tankVolume) {
+    const vs = document.getElementById('tankVolumeSelect');
+    const volOptions = ['1000','2500','3000','5000','10000','20000'];
+    if (volOptions.includes(data.tankVolume)) { vs.value=data.tankVolume; document.getElementById('tankVolume').style.display='none'; document.getElementById('tankVolume').value=data.tankVolume; }
+    else { vs.value='other'; document.getElementById('tankVolume').style.display='block'; setVal('tankVolume',data.tankVolume); }
+  }
+  setVal('safeFill', data.safeFill);
+  setVal('currentLevel', data.currentLevel);
+  if (data.fillConnType) { const el=document.getElementById('fillConnType'); for(let i=0;i<el.options.length;i++){if(el.options[i].value===data.fillConnType){el.selectedIndex=i;break;}} }
+  if (data.fillConnSize) { const el=document.getElementById('fillConnSize'); for(let i=0;i<el.options.length;i++){if(el.options[i].value===data.fillConnSize){el.selectedIndex=i;break;}} }
+  if (data.dipSystem) {
+    const ds = document.getElementById('dipSystem');
+    let matched = false;
+    for (let i=0;i<ds.options.length;i++) { if (ds.options[i].value===data.dipSystem) { ds.selectedIndex=i; matched=true; break; } }
+    if (!matched && data.dipSystem.startsWith('Other:')) { ds.value='Other'; setVal('dipSystemOther', data.dipSystem.replace('Other: ','')); document.getElementById('dipSystemOther').style.display='block'; }
+  }
+  if (data.tridentMonitor) { const el=document.getElementById('tridentMonitor'); for(let i=0;i<el.options.length;i++){if(el.options[i].value===data.tridentMonitor){el.selectedIndex=i;break;}} }
+
+  // Section D
+  setVal('correctiveActions', data.correctiveActions);
+
+  // Photos checkboxes
+  if (data.photoGateDone) document.getElementById('photoGateDone').checked = true;
+  if (data.photoTankDone) document.getElementById('photoTankDone').checked = true;
+
+  // Auditor
+  if (data.auditorName) { setVal('auditorName', data.auditorName); autoFillAuditor(data.auditorName); }
+  setVal('auditorTitle', data.auditorTitle);
+  setVal('auditorEmail', data.auditorEmail);
+  setVal('auditorMobile', data.auditorMobile);
+
+  // Site rep
+  setVal('repName', data.repName);
+  setVal('repTitle', data.repTitle);
+  setVal('repEmail', data.repEmail);
+  setVal('repMobile', data.repMobile);
+
+  // Mud map address
+  setVal('mudmapAddress', data.siteAddress ? [data.siteAddress, data.suburb, data.postcode].filter(Boolean).join(', ') : '');
+
+  // Y/N answers — restore last
+  if (data.ynValues) {
+    setTimeout(() => {
+      for (const [id, val] of Object.entries(data.ynValues)) {
+        const q = Object.values(ynQuestions).flat().find(q => q.id === id);
+        if (q) {
+          const grp = Object.entries(ynQuestions).find(([g,qs]) => qs.some(q2=>q2.id===id))?.[0];
+          if (grp) setYN(id, val, grp, q.triggerField||'');
+        }
+      }
+      updateProgress();
+      updateComplianceBanner();
+      updateAuditResults();
+      checkC2Compliance();
+      checkCorrectiveActionsRequired();
+      updateFieldStates();
+    }, 300);
+  } else {
+    updateProgress();
+    updateFieldStates();
+  }
+}
+
+// =====================================================================
 // Generate Excel as Blob for Drive upload
 function exportExcelAsBlob(d) {
   const wb = buildExcelWorkbook(d);
@@ -4639,6 +5037,8 @@ async function saveAndSend() { return uploadAndSend(); } // alias for backwards 
 const GDRIVE_CLIENT_ID   = '49055725643-mlnqu8l92vmau83rnrk8imupiqvs03t1.apps.googleusercontent.com';
 const GDRIVE_FOLDER_NAME = 'BioBlue Audits';
 let gdriveToken = null;
+let _auditJsonFileId = null;   // tracks JSON file ID when editing an existing audit
+let _auditPdfFileId  = null;   // tracks PDF file ID when editing an existing audit
 
 
 
@@ -4840,6 +5240,11 @@ function clearForm() {
   if (auditTypeEl) auditTypeEl.value = '';
   applyAuditType('');
   window._auditType = '';
+
+  // Reset editing state
+  _auditJsonFileId = null;
+  _auditPdfFileId = null;
+  document.getElementById('editingBanner')?.remove();
 
   // Clear localStorage draft
   try { localStorage.removeItem('bioblue_draft'); } catch(e) {}
