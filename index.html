@@ -4112,40 +4112,58 @@ function osmAutocomplete(input, dropdownId) {
   const dropdown = document.getElementById(dropdownId);
   if (q.length < 4) { dropdown.style.display = 'none'; return; }
   clearTimeout(osmTimer);
-  // Extract leading house number from query to prepend back to results
-  const houseMatch = q.match(/^(\d+[a-zA-Z]?)\s+/);
-  const typedHouseNum = houseMatch ? houseMatch[1] : null;
 
-  osmTimer = setTimeout(async () => {
-    try {
+  osmTimer = setTimeout(() => {
+    // Use Google Places Autocomplete for accurate Australian address lookup
+    if (window.google && window.google.maps && window.google.maps.places) {
+      const service = new google.maps.places.AutocompleteService();
+      service.getPlacePredictions({
+        input: q,
+        componentRestrictions: { country: 'au' },
+        types: ['address'],
+      }, (predictions, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
+          dropdown.style.display = 'none';
+          return;
+        }
+        // Store predictions for osmSelect to use via Places Details
+        dropdown._predictions = predictions;
+        dropdown._results = predictions.map(p => ({
+          display_name: p.description,
+          place_id: p.place_id,
+          address: {},
+        }));
+        dropdown.innerHTML = predictions.map((p, i) => `
+          <div onclick="osmSelect(${i},'${dropdownId}')" data-idx="${i}"
+            style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333;"
+            onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
+            📍 ${p.description}
+          </div>
+        `).join('');
+        dropdown.style.display = 'block';
+      });
+    } else {
+      // Fallback to Nominatim if Google Places not yet loaded
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=au&format=json&addressdetails=1&limit=6`;
-      const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
-      const data = await res.json();
-      if (!data.length) { dropdown.style.display = 'none'; return; }
-      // Deduplicate by display_name before rendering
-      // If user typed a house number, prepend it to results that don't include it
-      if (typedHouseNum) {
-        data.forEach(r => {
-          // Prepend house number if not already present anywhere near the start
-          const hasNum = r.display_name.match(/^\d+/);
-          if (!hasNum) {
-            r.display_name = typedHouseNum + ' ' + r.display_name;
-          }
-        });
-      }
-      const unique = data.filter((r, i, arr) =>
-        arr.findIndex(x => x.display_name === r.display_name) === i
-      );
-      dropdown.innerHTML = unique.map((r, i) => `
-        <div onclick="osmSelect(${i},'${dropdownId}')" data-idx="${i}"
-          style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333;"
-          onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
-          📍 ${r.display_name}
-        </div>
-      `).join('');
-      dropdown._results = unique;
-      dropdown.style.display = 'block';
-    } catch(e) { dropdown.style.display = 'none'; }
+      fetch(url, { headers: { 'Accept-Language': 'en' } })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.length) { dropdown.style.display = 'none'; return; }
+          const unique = data.filter((r, i, arr) =>
+            arr.findIndex(x => x.display_name === r.display_name) === i
+          );
+          dropdown.innerHTML = unique.map((r, i) => `
+            <div onclick="osmSelect(${i},'${dropdownId}')" data-idx="${i}"
+              style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0;color:#333;"
+              onmouseover="this.style.background='#f0f6ff'" onmouseout="this.style.background='white'">
+              📍 ${r.display_name}
+            </div>
+          `).join('');
+          dropdown._results = unique;
+          dropdown.style.display = 'block';
+        })
+        .catch(() => { dropdown.style.display = 'none'; });
+    }
   }, 350);
 }
 
@@ -4153,8 +4171,50 @@ function osmSelect(idx, dropdownId) {
   const dropdown = document.getElementById(dropdownId);
   const r = dropdown._results[idx];
   if (!r) return;
-  const a = r.address || {};
   dropdown.style.display = 'none';
+
+  // If this is a Google Places result, use Places Details for accurate address parsing
+  if (r.place_id && window.google && window.google.maps && window.google.maps.places) {
+    const dummyMap = new google.maps.Map(document.createElement('div'));
+    const svc = new google.maps.places.PlacesService(dummyMap);
+    svc.getDetails({ placeId: r.place_id, fields: ['address_components','geometry','formatted_address'] }, (place, status) => {
+      if (status !== google.maps.places.PlacesServiceStatus.OK || !place) return;
+      const comp = place.address_components;
+      const get = (type) => comp.find(c => c.types.includes(type))?.long_name || '';
+      const getShort = (type) => comp.find(c => c.types.includes(type))?.short_name || '';
+      const streetNum = get('street_number');
+      const route = get('route');
+      const suburb = get('locality') || get('sublocality');
+      const stateCode = getShort('administrative_area_level_1');
+      const postcode = get('postal_code');
+      const street = [streetNum, route].filter(Boolean).join(' ');
+
+      if (dropdownId === 'mudmapAddrSuggestions') {
+        const mapField = document.getElementById('mudmapAddress');
+        if (mapField) {
+          mapField.value = place.formatted_address?.split(',').slice(0,3).join(',') || street;
+          setTimeout(() => { if (mapField.value.trim()) loadMudmapSatellite(); }, 300);
+        }
+        return;
+      }
+      if (street) document.getElementById('siteAddress').value = street;
+      if (suburb) document.getElementById('suburb').value = suburb;
+      if (postcode) document.getElementById('postcode').value = postcode;
+      if (stateCode) {
+        const stateEl = document.getElementById('state');
+        for (let i = 0; i < stateEl.options.length; i++) {
+          if (stateEl.options[i].value === stateCode) { stateEl.selectedIndex = i; break; }
+        }
+      }
+      updateProgress();
+      const mapField = document.getElementById('mudmapAddress');
+      if (mapField && !mapField.value) mapField.value = place.formatted_address?.split(',').slice(0,3).join(',') || street;
+    });
+    return;
+  }
+
+  // Fallback: Nominatim result handling
+  const a = r.address || {};
 
   // If selected from mud map field — fill field then auto-load map
   if (dropdownId === 'mudmapAddrSuggestions') {
