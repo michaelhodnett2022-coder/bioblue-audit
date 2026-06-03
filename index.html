@@ -1514,7 +1514,22 @@
                   <input type="time" id="accessClose" onchange="updateAccessHours()">
                 </div>
               </div>
-              <input type="text" id="accessRestrictions" placeholder="Any other restrictions..." style="margin-top:8px;" oninput="updateAccessHours()">
+              <div style="margin-top:8px;">
+                <label style="font-size:10px;font-weight:700;color:var(--gray-mid);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Additional Windows / Restrictions</label>
+                <input type="text" id="accessRestrictions" placeholder="e.g. 4:00pm–6:00pm also available · No deliveries Sat/Sun" style="width:100%;" oninput="updateAccessHours()">
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;"
+                onmouseover="this.style.borderColor='var(--blue-bright)'" onmouseout="this.style.borderColor=satDelivery.checked?'var(--green)':'var(--gray-light)'">
+                <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;">
+                <span>📦 Saturday delivery OK</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;"
+                onmouseover="this.style.borderColor='var(--blue-bright)'" onmouseout="this.style.borderColor=sunDelivery.checked?'var(--green)':'var(--gray-light)'">
+                <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;">
+                <span>📦 Sunday delivery OK</span>
+              </label>
             </div>
             <label class="open24-label">
               <span class="open24-or">— Or —</span>
@@ -2839,6 +2854,8 @@ function collectFormData() {
     accessClose: get('accessClose'),
     accessRestrictions: get('accessRestrictions'),
     open24hrs: document.getElementById('open24hrs')?.checked,
+    satDelivery: document.getElementById('satDelivery')?.checked || false,
+    sunDelivery: document.getElementById('sunDelivery')?.checked || false,
     maxVehicle: get('maxVehicle'),
     keyCode: get('keyCode','inductionDetails'),
     inductionDetails: get('inductionDetails'),
@@ -3330,6 +3347,8 @@ function updateAccessHours() {
   const open = document.getElementById('accessOpen').value;
   const close = document.getElementById('accessClose').value;
   const restrictions = document.getElementById('accessRestrictions').value.trim();
+  const sat = document.getElementById('satDelivery')?.checked;
+  const sun = document.getElementById('sunDelivery')?.checked;
 
   let result = '';
   if (open && close) {
@@ -3340,7 +3359,37 @@ function updateAccessHours() {
     result = `Closes ${formatTime12(close)}`;
   }
   if (restrictions) result = result ? `${result} · ${restrictions}` : restrictions;
+
+  // Append weekend delivery info
+  const weekend = [sat ? 'Saturday ✓' : '', sun ? 'Sunday ✓' : ''].filter(Boolean).join(', ');
+  if (weekend) result = result ? `${result} · Weekend: ${weekend}` : `Weekend: ${weekend}`;
+  else if (sat === false && sun === false) {} // neither checked — no addition
+
   document.getElementById('accessHours').value = result;
+}
+
+function updateWeekendStyle() {
+  // Update pill styles when checked
+  const satEl = document.getElementById('satDelivery');
+  const sunEl = document.getElementById('sunDelivery');
+  if (satEl) {
+    const pill = satEl.closest('label');
+    if (pill) {
+      pill.style.background = satEl.checked ? 'var(--green-light)' : 'white';
+      pill.style.borderColor = satEl.checked ? 'var(--green)' : 'var(--gray-light)';
+      pill.style.color = satEl.checked ? 'var(--green)' : '';
+      pill.style.fontWeight = satEl.checked ? '600' : '500';
+    }
+  }
+  if (sunEl) {
+    const pill = sunEl.closest('label');
+    if (pill) {
+      pill.style.background = sunEl.checked ? 'var(--green-light)' : 'white';
+      pill.style.borderColor = sunEl.checked ? 'var(--green)' : 'var(--gray-light)';
+      pill.style.color = sunEl.checked ? 'var(--green)' : '';
+      pill.style.fontWeight = sunEl.checked ? '600' : '500';
+    }
+  }
 }
 
 function formatTime12(time24) {
@@ -3586,7 +3635,9 @@ async function generatePDF(returnDoc=false) {
   // ---- SECTION B ----
   sectionHeader('2. ACCESS & SITE SAFETY');
   
+  const weekendLabel = [d.satDelivery ? 'Saturday ✓' : 'Saturday ✗', d.sunDelivery ? 'Sunday ✓' : 'Sunday ✗'].join('  ');
   twoFieldRow('Access Hours / Restrictions', d.accessHours, 'Maximum Vehicle Size', d.maxVehicle);
+  twoFieldRow('Weekend Delivery', weekendLabel, '', '');
   if (d.keyCode) fieldRow('Key / Access Code', d.keyCode);
   if (d.generalAccessNotes) fieldRow('General Site Access Notes', d.generalAccessNotes);
   ynQuestions['b1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
@@ -4540,7 +4591,7 @@ async function appendToAuditLog(xlFolderId, d) {
     'Address','Suburb','State','Postcode',
     'Audit Date','Auditor Name','Auditor Title','Auditor Email','Auditor Mobile',
     'Site Contact','Contact Title','Site Email','Site Mobile',
-    'Access Hours','Max Vehicle','Key / Access Code','PPE Details',
+    'Access Hours','Sat Delivery OK','Sun Delivery OK','Max Vehicle','Key / Access Code','PPE Details',
     'Tank ID','Tank Serial','Tank Owner','Tank Type',
     'Tank Volume (L)','Safe Fill (L)','Current Level (L)',
     'Fill Conn Type','Fill Conn Size','Level Monitor','Trident Monitor',
@@ -4557,7 +4608,7 @@ async function appendToAuditLog(xlFolderId, d) {
     d.siteAddress, d.suburb, d.state, d.postcode,
     d.auditDate, d.auditorName, d.auditorTitle, d.auditorEmail, d.auditorMobile,
     d.siteContact, d.siteContactTitle, d.siteEmail, d.siteMobile,
-    d.accessHours, d.maxVehicle, d.keyCode, d.ppeDetails,
+    d.accessHours, d.satDelivery ? 'Yes' : 'No', d.sunDelivery ? 'Yes' : 'No', d.maxVehicle, d.keyCode, d.ppeDetails,
     d.tankId, d.tankSerial, d.tankOwner, d.tankType,
     d.tankVolume, d.safeFill, d.currentLevel,
     d.fillConnType, d.fillConnSize, d.dipSystem, d.tridentMonitor,
@@ -4933,6 +4984,9 @@ function restoreFromJSON(data) {
     setVal('accessRestrictions', data.accessRestrictions);
     updateAccessHours();
   }
+  if (data.satDelivery) { const el = document.getElementById('satDelivery'); if(el) el.checked = true; }
+  if (data.sunDelivery) { const el = document.getElementById('sunDelivery'); if(el) el.checked = true; }
+  updateWeekendStyle();
   setVal('maxVehicle', data.maxVehicle);
   setVal('keyCode', data.keyCode);
   setVal('inductionDetails', data.inductionDetails);
@@ -5270,6 +5324,9 @@ function clearForm() {
 
   // Reset access hours
   document.getElementById('open24hrs').checked = false;
+  const satCb = document.getElementById('satDelivery'); if(satCb) { satCb.checked = false; }
+  const sunCb = document.getElementById('sunDelivery'); if(sunCb) { sunCb.checked = false; }
+  updateWeekendStyle();
   document.getElementById('timeFields').classList.remove('hidden');
   document.getElementById('accessOpen').value = '';
   document.getElementById('accessClose').value = '';
