@@ -1416,30 +1416,7 @@
         <div style="flex:1;border-top:3px solid var(--blue-mid);"></div>
       </div>
 
-      <div style="
-        display:flex;align-items:center;gap:12px;
-        background:linear-gradient(135deg,#003466 0%,#0055a5 100%);
-        border-radius:10px;padding:12px 16px;margin-bottom:16px;
-        border-left:5px solid #64d2ff;
-        box-shadow:0 2px 8px rgba(0,52,102,0.18);
-      ">
-        <div style="font-size:22px;flex-shrink:0;">📧</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#64d2ff;margin-bottom:4px;">
-            Email for POD — Proof of Delivery Notifications
-          </div>
-          <input type="email" id="podEmail"
-            placeholder="e.g. invoices@company.com"
-            oninput="updateProgress()"
-            style="
-              width:100%;padding:9px 12px;border-radius:8px;
-              border:1.5px solid rgba(255,255,255,0.3);
-              background:rgba(255,255,255,0.92);
-              color:#1a1a2e;font-size:14px;font-weight:500;
-              box-sizing:border-box;
-            ">
-        </div>
-      </div>
+
 
       <div class="field-group" style="margin-bottom:12px;">
         <label class="field-label required">Delivery Site Address</label>
@@ -1597,6 +1574,11 @@
         </div>
       </div>
 
+      <div class="field-group" style="margin-top:14px;">
+        <label class="field-label">General Site Access Notes</label>
+        <textarea id="generalAccessNotes" rows="3" placeholder="Any additional site access information for the driver..." oninput="updateProgress()"></textarea>
+      </div>
+
       <div id="section3Block">
       <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
         <div class="section-header-icon">🌿</div>
@@ -1727,6 +1709,11 @@
           </select>
         </div>
       </div>
+      <div class="field-group" style="margin-top:14px;">
+        <label class="field-label">Tank Location Description</label>
+        <textarea id="tankLocationNotes" rows="3" placeholder="Describe where the tank is located on site to help the driver find it..." oninput="updateProgress()"></textarea>
+      </div>
+
       <div id="section5Block">
       <div class="section-header" style="margin:20px -20px 20px;border-radius:0;cursor:default;">
         <div class="section-header-icon">🔧</div>
@@ -2093,7 +2080,7 @@ function getCustomerName() {
 
 const ynQuestions = {
   'b1': [
-    { id: 'gateAccess',    num: 1,  text: 'Are any gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
+    { id: 'gateAccess',    num: 1,  text: 'Are any specific access instructions, gate codes, swipe access, or key arrangements required?', triggerField: 'keyCodeField', inlineDetails: true, scoreNeutral: true, solidColor: true, reverseColor: true },
     { id: 'truckAccess',   num: 2,  text: 'Is the access route to the delivery zone clear of obstructions?' },
     { id: 'overheadWires', num: 3,  text: 'Are there overhead power lines or cables that could obstruct delivery?', reverseColor: true, solidColor: true },
     { id: 'manoeuvre',     num: 4,  text: 'Is there sufficient space on site to manoeuvre the delivery vehicle safely?' },
@@ -2119,9 +2106,9 @@ const ynQuestions = {
     { id: 'fillCondition',  num: 21, text: 'Are fill connections in good condition?' },
     { id: 'driverAccess',   num: 22, text: 'Is driver able to complete delivery (access fill point) without risking injury?' },
     { id: 'highAccess',     num: 23, text: 'If the fill point is above 2m, is a safe working platform, handrail or fall restraint available?', hasNA: true },
-    { id: 'fillLabelled',   num: 24, text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?' },
+    { id: 'fillLabelled',   num: 24, text: 'Are fill points correctly labelled for AdBlue® and with tank number (if applicable)?', hasNA: true },
     { id: 'safeFillMarked', num: 25, text: 'Is the safe fill level clearly marked on the tank?' },
-    { id: 'dipLabelled',    num: 26, text: 'Is the dip point labelled for AdBlue® use and tank number (where applicable)?' },
+    { id: 'dipLabelled',    num: 26, text: 'Is the dip point labelled for AdBlue® use and tank number (where applicable)?', hasNA: true },
     { id: 'levelAccurate',  num: 27, text: 'Is the level monitoring system reading accurate and displayed in litres?', hasNA: true },
   ],
   'c2': [
@@ -2840,7 +2827,6 @@ function collectFormData() {
     suburb: get('suburb'),
     state: get('state'),
     postcode: get('postcode'),
-    podEmail: get('podEmail'),
     siteContact: get('siteContact'),
     siteContactTitle: get('siteContactTitle'),
     siteEmail: get('siteEmail'),
@@ -2870,6 +2856,8 @@ function collectFormData() {
     dipSystem: getDipValue(),
     tridentMonitor: get('tridentMonitor'),
     // D
+    generalAccessNotes: get('generalAccessNotes'),
+    tankLocationNotes: get('tankLocationNotes'),
     correctiveActions: get('correctiveActions'),
     // E/F
     photoGateDone: document.getElementById('photoGateDone')?.checked,
@@ -3192,7 +3180,7 @@ function autoFillCustomer(siteNum) {
 
 function clearCustomerFields() {
   ['siteAddress','suburb','postcode','siteContact','siteContactTitle','siteEmail',
-   'podEmail','siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem','dipSystemOther',
+   'siteMobile','tankVolume','safeFill','tankSerial','tankType','tankTypeOther','dipSystem','dipSystemOther',
    'siteNumber','siteNetwork'].forEach(id => setField(id, ''));
   document.getElementById('state').selectedIndex = 0;
   document.getElementById('tankOwner').selectedIndex = 0;
@@ -3592,7 +3580,6 @@ async function generatePDF(returnDoc=false) {
   twoFieldRow('Customer / Business Name', d.customerName, 'Date of Audit', d.auditDate);
   twoFieldRow('Site Number', d.siteNumber, 'Network', d.siteNetwork);
   fieldRow('Delivery Site Address', [d.siteAddress, d.suburb, d.state, d.postcode].filter(Boolean).join(', '));
-  twoFieldRow('Email for POD', d.podEmail || '—', '', '');
   twoFieldRow('Site Contact Name', d.siteContact + (d.siteContactTitle ? ' – ' + d.siteContactTitle : ''), 'Mobile', d.siteMobile);
   twoFieldRow('Email', d.siteEmail, '', '');
 
@@ -3601,6 +3588,7 @@ async function generatePDF(returnDoc=false) {
   
   twoFieldRow('Access Hours / Restrictions', d.accessHours, 'Maximum Vehicle Size', d.maxVehicle);
   if (d.keyCode) fieldRow('Key / Access Code', d.keyCode);
+  if (d.generalAccessNotes) fieldRow('General Site Access Notes', d.generalAccessNotes);
   ynQuestions['b1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
 
   
@@ -3620,6 +3608,7 @@ async function generatePDF(returnDoc=false) {
   twoFieldRow('Fill Connection Type', d.fillConnType, 'Fill Connection Size', d.fillConnSize);
   twoFieldRow('Level Monitoring System', d.dipSystem, 'Trident Monitor', d.tridentMonitor);
   twoFieldRow('Current Level (L)', d.currentLevel, '', '');
+  if (d.tankLocationNotes) fieldRow('Tank Location Description', d.tankLocationNotes);
   sectionHeader('5. FILL POINT & ACCESS CHECKS');
   ynQuestions['c1'].forEach(q => ynRow(q.text, d.ynValues[q.id]));
 
@@ -4556,6 +4545,7 @@ async function appendToAuditLog(xlFolderId, d) {
     'Tank Volume (L)','Safe Fill (L)','Current Level (L)',
     'Fill Conn Type','Fill Conn Size','Level Monitor','Trident Monitor',
     ...qHeaders,
+    'General Site Access Notes','Tank Location Description',
     'Corrective Actions',
     'Site Rep Name','Site Rep Title','Site Rep Email','Site Rep Mobile',
     'Photos Taken','Audit Score %',
@@ -4572,6 +4562,7 @@ async function appendToAuditLog(xlFolderId, d) {
     d.tankVolume, d.safeFill, d.currentLevel,
     d.fillConnType, d.fillConnSize, d.dipSystem, d.tridentMonitor,
     ...qValues,
+    d.generalAccessNotes || '', d.tankLocationNotes || '',
     d.correctiveActions,
     d.repName, d.repTitle, d.repEmail, d.repMobile,
     photos.length, scorePct,
@@ -4916,7 +4907,7 @@ function restoreFromJSON(data) {
   }
 
   setVal('auditDate', data.auditDate);
-  setVal('podEmail', data.podEmail);
+  setVal( data.podEmail);
   setVal('siteAddress', data.siteAddress);
   setVal('suburb', data.suburb);
   setVal('postcode', data.postcode);
@@ -4989,6 +4980,8 @@ function restoreFromJSON(data) {
   if (data.tridentMonitor) { const el=document.getElementById('tridentMonitor'); for(let i=0;i<el.options.length;i++){if(el.options[i].value===data.tridentMonitor){el.selectedIndex=i;break;}} }
 
   // Section D
+  setVal('generalAccessNotes', data.generalAccessNotes);
+  setVal('tankLocationNotes', data.tankLocationNotes);
   setVal('correctiveActions', data.correctiveActions);
 
   // Photos checkboxes
@@ -5180,7 +5173,9 @@ function loadDraft() {
     setVal('fillConnSize', data.fillConnSize);
     setVal('dipSystem', data.dipSystem);
     setVal('tridentMonitor', data.tridentMonitor);
-    setVal('correctiveActions', data.correctiveActions);
+    setVal('generalAccessNotes', data.generalAccessNotes);
+  setVal('tankLocationNotes', data.tankLocationNotes);
+  setVal('correctiveActions', data.correctiveActions);
     setVal('auditorName', data.auditorName);
     setVal('auditorTitle', data.auditorTitle);
     setVal('auditorEmail', data.auditorEmail);
@@ -5228,6 +5223,8 @@ function clearForm() {
   for (const k in ynValues) delete ynValues[k];
   photos.length = 0;
   renderPhotos();
+  const gaN = document.getElementById('generalAccessNotes'); if(gaN) gaN.value='';
+  const tlN = document.getElementById('tankLocationNotes'); if(tlN) tlN.value='';
   clearSig('sigAuditor','sigAuditorLabel');
   clearSig('sigRep','sigRepLabel');
 
