@@ -1516,30 +1516,28 @@
               </div>
               <div style="margin-top:8px;">
                 <label style="font-size:10px;font-weight:700;color:var(--gray-mid);text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Additional Windows / Restrictions</label>
-                <input type="text" id="accessRestrictions" placeholder="e.g. 4:00pm–6:00pm also available · No deliveries Sat/Sun" style="width:100%;" oninput="updateAccessHours()">
+                <input type="text" id="accessRestrictions" placeholder="e.g. 4:00pm–6:00pm also available" style="width:100%;" oninput="updateAccessHours()">
               </div>
-            </div>
-            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;"
-                onmouseover="this.style.borderColor='var(--blue-bright)'" onmouseout="this.style.borderColor=satDelivery.checked?'var(--green)':'var(--gray-light)'">
-                <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;">
-                <span>📦 Saturday delivery OK</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;"
-                onmouseover="this.style.borderColor='var(--blue-bright)'" onmouseout="this.style.borderColor=sunDelivery.checked?'var(--green)':'var(--gray-light)'">
-                <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;">
-                <span>📦 Sunday delivery OK</span>
-              </label>
             </div>
             <label class="open24-label">
               <span class="open24-or">— Or —</span>
               <input type="checkbox" id="open24hrs" onchange="toggle24hrs(this)">
               <span class="open24-badge">Open 24 Hours</span>
             </label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+              <label id="satPill" style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;">
+                <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+                <span>Saturday delivery OK</span>
+              </label>
+              <label id="sunPill" style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;">
+                <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+                <span>Sunday delivery OK</span>
+              </label>
+            </div>
             <input type="hidden" id="accessHours">
           </div>
         </div>
-        <div class="field-group">
+        <div class="field-group" style="align-self:flex-start;padding-top:2px;">
           <label class="field-label">Maximum Vehicle Size</label>
           <select id="maxVehicle">
             <option value="">Select...</option>
@@ -3369,26 +3367,21 @@ function updateAccessHours() {
 }
 
 function updateWeekendStyle() {
-  // Update pill styles when checked
   const satEl = document.getElementById('satDelivery');
   const sunEl = document.getElementById('sunDelivery');
-  if (satEl) {
-    const pill = satEl.closest('label');
-    if (pill) {
-      pill.style.background = satEl.checked ? 'var(--green-light)' : 'white';
-      pill.style.borderColor = satEl.checked ? 'var(--green)' : 'var(--gray-light)';
-      pill.style.color = satEl.checked ? 'var(--green)' : '';
-      pill.style.fontWeight = satEl.checked ? '600' : '500';
-    }
+  const satPill = document.getElementById('satPill');
+  const sunPill = document.getElementById('sunPill');
+  if (satEl && satPill) {
+    satPill.style.background   = satEl.checked ? 'var(--green-light)' : 'white';
+    satPill.style.borderColor  = satEl.checked ? 'var(--green)' : 'var(--gray-light)';
+    satPill.style.color        = satEl.checked ? 'var(--green)' : '';
+    satPill.style.fontWeight   = satEl.checked ? '700' : '500';
   }
-  if (sunEl) {
-    const pill = sunEl.closest('label');
-    if (pill) {
-      pill.style.background = sunEl.checked ? 'var(--green-light)' : 'white';
-      pill.style.borderColor = sunEl.checked ? 'var(--green)' : 'var(--gray-light)';
-      pill.style.color = sunEl.checked ? 'var(--green)' : '';
-      pill.style.fontWeight = sunEl.checked ? '600' : '500';
-    }
+  if (sunEl && sunPill) {
+    sunPill.style.background   = sunEl.checked ? 'var(--green-light)' : 'white';
+    sunPill.style.borderColor  = sunEl.checked ? 'var(--green)' : 'var(--gray-light)';
+    sunPill.style.color        = sunEl.checked ? 'var(--green)' : '';
+    sunPill.style.fontWeight   = sunEl.checked ? '700' : '500';
   }
 }
 
