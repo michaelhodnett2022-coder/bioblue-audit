@@ -1524,20 +1524,10 @@
               <input type="checkbox" id="open24hrs" onchange="toggle24hrs(this)">
               <span class="open24-badge">Open 24 Hours</span>
             </label>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-              <label id="satPill" style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;">
-                <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
-                <span>Saturday delivery OK</span>
-              </label>
-              <label id="sunPill" style="display:flex;align-items:center;gap:7px;cursor:pointer;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:500;transition:all 0.15s;user-select:none;">
-                <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
-                <span>Sunday delivery OK</span>
-              </label>
-            </div>
             <input type="hidden" id="accessHours">
           </div>
         </div>
-        <div class="field-group" style="align-self:flex-start;padding-top:2px;">
+        <div class="field-group" style="align-self:flex-start;">
           <label class="field-label">Maximum Vehicle Size</label>
           <select id="maxVehicle">
             <option value="">Select...</option>
@@ -1546,6 +1536,16 @@
             <option value="B-Double Trailer">B-Double Trailer</option>
             <option value="Road Train">Road Train</option>
           </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div id="satPill" style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:10px 12px;cursor:pointer;" onclick="document.getElementById('satDelivery').click()">
+          <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+          <span style="font-size:13px;font-weight:500;color:var(--gray-dark);line-height:1.2;">Saturday<br>delivery OK</span>
+        </div>
+        <div id="sunPill" style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:10px 12px;cursor:pointer;" onclick="document.getElementById('sunDelivery').click()">
+          <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+          <span style="font-size:13px;font-weight:500;color:var(--gray-dark);line-height:1.2;">Sunday<br>delivery OK</span>
         </div>
       </div>
 
@@ -6041,4 +6041,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
