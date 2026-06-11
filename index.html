@@ -1146,6 +1146,7 @@
     <div class="header-logo">
       <div class="logo-badge">BIOBLUE</div>
       <div>
+        <a href="https://michaelhodnett2022-coder.github.io/bioblue-field-tools" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.8);text-decoration:none;margin-bottom:4px;">← Field Tools</a>
         <div class="header-title">Site Audit Checklist</div>
         <div class="header-subtitle">Bulk AdBlue® Safety &amp; QA · v2 2025</div>
       </div>
@@ -1521,7 +1522,7 @@
             </div>
             <label class="open24-label">
               <span class="open24-or">— Or —</span>
-              <input type="checkbox" id="open24hrs" onchange="toggle24hrs(this)">
+              <input type="checkbox" id="open24hrs" autocomplete="off" onchange="toggle24hrs(this)">
               <span class="open24-badge">Open 24 Hours</span>
             </label>
             <input type="hidden" id="accessHours">
@@ -1540,11 +1541,11 @@
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
         <div id="satPill" style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:10px 12px;cursor:pointer;" onclick="document.getElementById('satDelivery').click()">
-          <input type="checkbox" id="satDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+          <input type="checkbox" id="satDelivery" autocomplete="off" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
           <span style="font-size:13px;font-weight:500;color:var(--gray-dark);line-height:1.2;">Saturday<br>delivery OK</span>
         </div>
         <div id="sunPill" style="display:flex;align-items:center;gap:8px;background:white;border:1.5px solid var(--gray-light);border-radius:8px;padding:10px 12px;cursor:pointer;" onclick="document.getElementById('sunDelivery').click()">
-          <input type="checkbox" id="sunDelivery" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
+          <input type="checkbox" id="sunDelivery" autocomplete="off" onchange="updateAccessHours();updateWeekendStyle()" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0;">
           <span style="font-size:13px;font-weight:500;color:var(--gray-dark);line-height:1.2;">Sunday<br>delivery OK</span>
         </div>
       </div>
@@ -6027,6 +6028,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem('bioblue_draft')) {
     setTimeout(() => showDraftBanner(), 600);
   }
+
+  // Force weekend/24hr checkboxes unchecked on load (prevents browser auto-restore)
+  const _sat = document.getElementById('satDelivery'); if(_sat) _sat.checked = false;
+  const _sun = document.getElementById('sunDelivery'); if(_sun) _sun.checked = false;
+  const _24  = document.getElementById('open24hrs');   if(_24)  _24.checked = false;
+  updateWeekendStyle();
 
   updateProgress();
   setTimeout(updateFieldStates, 300);
