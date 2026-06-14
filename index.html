@@ -1429,7 +1429,6 @@
         <div class="field-group">
           <label class="field-label required">Customer / Business Name</label>
           <div class="customer-select-wrap">
-            <input type="hidden" id="customerNameHidden">
             <div id="newCustomerField2" style="display:none;">
               <input type="text" id="customerNameInline" placeholder="Enter customer / business name" oninput="document.getElementById('customerName').value=this.value;updateProgress()">
             </div>
@@ -4530,6 +4529,10 @@ async function uploadAndSend() {
       showToast('⚠️ Log update failed: ' + logErr.message, 4000);
     }
 
+    // Update client record — tick Site Audit ✓ + Customer ✓
+    showToast('📊 Updating client record...');
+    await updateClientRecordFromAudit(folderId, _auditClientId);
+
     showToast('✅ PDF uploaded + audit log updated!');
   } catch(driveErr) {
     console.error('Drive upload error:', driveErr);
@@ -5451,11 +5454,14 @@ function undoMudmap() {
   const prev = mudmapHistory.pop();
   const img = new Image();
   img.onload = () => {
+    // Reset transform to identity so we draw at raw canvas pixel dimensions
+    // (bypasses the devicePixelRatio scale that was applied on init)
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Draw at CSS pixel dimensions (not physical pixels) to avoid scale issue on iPhone
-    const cssW = parseFloat(canvas.style.width)  || canvas.offsetWidth;
-    const cssH = parseFloat(canvas.style.height) || canvas.offsetHeight;
-    ctx.drawImage(img, 0, 0, cssW, cssH);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    // ctx.restore() brings back the DPR scale so subsequent drawing still works
   };
   img.src = prev;
 }
@@ -6313,6 +6319,83 @@ async function saveClientFolderIdToRecord(parentFolderId, clientId, folderId) {
       { method: 'PATCH', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form });
   } catch(e) {
     console.warn('Could not save folder ID to sheet:', e.message);
+  }
+}
+
+// =====================================================================
+// UPDATE CLIENT RECORD — tick Site Audit ✓ + Customer ✓
+// =====================================================================
+async function updateClientRecordFromAudit(rootFolderId, clientId) {
+  if (!clientId) return; // No client selected — standalone audit, skip
+  try {
+    // Find BioBlue_Client_Records.xlsx in root folder
+    const sr = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='BioBlue_Client_Records.xlsx' and '${rootFolderId}' in parents and trashed=false&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const sd = await sr.json();
+    if (!sd.files || !sd.files.length) {
+      console.warn('Client Records sheet not found — skipping tick update');
+      return;
+    }
+
+    const fileId = sd.files[0].id;
+    const dl = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${gdriveToken}` } }
+    );
+    const ab   = await dl.arrayBuffer();
+    const wb   = XLSX.read(new Uint8Array(ab), { type: 'array' });
+    const ws   = wb.Sheets['Client Records'];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const hdrs = rows[0] || [];
+
+    const idCol        = hdrs.indexOf('Client ID');
+    const auditCol     = hdrs.indexOf('Site Audit ✓');
+    const customerCol  = hdrs.indexOf('Customer ✓');
+
+    // Add columns if missing
+    if (auditCol === -1)    { hdrs.push('Site Audit ✓');  rows[0] = hdrs; }
+    if (customerCol === -1) { hdrs.push('Customer ✓');    rows[0] = hdrs; }
+
+    const finalAuditCol    = hdrs.indexOf('Site Audit ✓');
+    const finalCustomerCol = hdrs.indexOf('Customer ✓');
+
+    // Find matching row and tick
+    let updated = false;
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][idCol] === clientId) {
+        rows[i][finalAuditCol]    = '✓';
+        rows[i][finalCustomerCol] = '✓';
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      console.warn('Client ID not found in records:', clientId);
+      return;
+    }
+
+    // Save back
+    const notesCol = hdrs.indexOf('Notes Log');
+    const newWs    = XLSX.utils.aoa_to_sheet(rows);
+    newWs['!cols'] = hdrs.map((h, i) => ({ wch: i === notesCol ? 60 : i < 4 ? 20 : 16 }));
+    wb.Sheets['Client Records'] = newWs;
+
+    const out  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({})], { type: 'application/json' }));
+    form.append('file', blob, 'BioBlue_Client_Records.xlsx');
+    await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,
+      { method: 'PATCH', headers: { Authorization: `Bearer ${gdriveToken}` }, body: form }
+    );
+    console.log('✓ Client record updated — Site Audit ✓ + Customer ✓ ticked');
+  } catch(e) {
+    console.warn('Could not update client record from audit:', e.message);
+    // Non-fatal — audit PDF still uploaded successfully
   }
 }
 </script>
